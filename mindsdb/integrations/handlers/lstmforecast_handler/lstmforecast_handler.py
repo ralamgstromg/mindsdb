@@ -13,7 +13,7 @@ from mindsdb.integrations.utilities.time_series_utils import (
 )
 from neuralforecast import NeuralForecast
 from neuralforecast.models import LSTM
-#from neuralforecast.auto import AutoNHITS
+from neuralforecast.auto import AutoLSTM
 from ray.tune.search.hyperopt import HyperOptSearch
 
 # # hierarchicalforecast is an optional dependency
@@ -28,7 +28,7 @@ class LstmForecastHandler(BaseMLEngine):
     time series forecasting with neural networks.
     """
 
-    name = "neuralforecast"
+    name = "lstmforecast"
 
     def create(self, target, df, args={}):
         """Create the NeuralForecast Handler.
@@ -50,14 +50,24 @@ class LstmForecastHandler(BaseMLEngine):
         model_args["frequency"] = (
             using_args["frequency"] if "frequency" in using_args else infer_frequency(df, time_settings["order_by"])
         )
+        model_args["scaler_type"] = using_args.get("scaler_type", "standard")
         model_args["exog_vars"] = using_args["exogenous_vars"] if "exogenous_vars" in using_args else []
-        model_args["max_steps"] = using_args.get('max_steps', 20)
+        model_args["max_steps"] = using_args.get('max_steps', 500)
         model_args["val_check_steps"] = using_args.get('val_check_steps', 10)
         model_args["n_auto_trials"] = using_args.get('n_auto_trials', 0)
         model_args["model_folder"] = tempfile.mkdtemp()
 
+        model_args["encoder_hidden_size"] = using_args.get('encoder_hidden_size', 300)
+        model_args["decoder_hidden_size"] = using_args.get('decoder_hidden_size', 300)
+
+        model_args["encoder_n_layers"] = using_args.get('encoder_n_layers', 12)
+        model_args["decoder_layers"] = using_args.get('decoder_layers', 12)
+
+        model_args["batch_size"] = using_args.get('batch_size', 32)
+        model_args["context_size"] = using_args.get('context_size', 15)
+
         # Deal with hierarchy
-        model_args["hierarchy"] = using_args["hierarchy"] if "hierarchy" in using_args else False
+        # model_args["hierarchy"] = using_args["hierarchy"] if "hierarchy" in using_args else False
         # if model_args["hierarchy"] and HierarchicalReconciliation is not None:
         #     training_df, hier_df, hier_dict = get_hierarchy_from_df(df, model_args)
         #     self.model_storage.file_set("hier_dict", dill.dumps(hier_dict))
@@ -67,12 +77,24 @@ class LstmForecastHandler(BaseMLEngine):
         training_df = transform_to_nixtla_df(df, model_args, model_args["exog_vars"])
 
         # Train model
-        # if model_args["n_auto_trials"]:
-        #     model = AutoNHITS(time_settings["horizon"], gpus=0, num_samples=model_args["n_auto_trials"], search_alg=HyperOptSearch())
-        # else:
-        #     # faster implementation without auto parameter tuning
-        #     model = NHITS(time_settings["horizon"], time_settings["window"], hist_exog_list=model_args["exog_vars"], max_steps=model_args["max_steps"])
-        model = LSTM(time_settings["horizon"], time_settings["window"], hist_exog_list=model_args["exog_vars"], max_steps=model_args["max_steps"])
+        if model_args["n_auto_trials"]:
+            model = AutoLSTM(time_settings["horizon"], gpus=0, num_samples=model_args["n_auto_trials"], search_alg=HyperOptSearch())
+        else:
+            # faster implementation without auto parameter tuning
+            # model = NHITS(time_settings["horizon"], time_settings["window"], hist_exog_list=model_args["exog_vars"], max_steps=model_args["max_steps"])
+            model = LSTM(time_settings["horizon"], 
+                        time_settings["window"], 
+                        scaler_type=model_args["scaler_type"],
+                        alias="LSTM",
+                        encoder_hidden_size=model_args["encoder_hidden_size"],
+                        decoder_hidden_size=model_args["decoder_hidden_size"],
+                        encoder_n_layers=model_args["encoder_n_layers"],
+                        decoder_layers=model_args["decoder_layers"],
+                        batch_size=model_args["batch_size"],
+                        context_size=model_args["context_size"],
+                        max_steps=model_args["max_steps"],
+                        hist_exog_list=model_args["exog_vars"])
+            
         neural = NeuralForecast(models=[model], freq=model_args["frequency"])
 
         if model_args.get('crossval', False):
@@ -115,6 +137,7 @@ class LstmForecastHandler(BaseMLEngine):
         results_df = forecast_df[forecast_df.index.isin(groups_to_keep)].rename({
                 "y": model_args["target"],  # auto mode
                 "LSTM": model_args["target"],  # non-auto mode
+                "AutoLSTM": model_args["target"],  # non-auto mode
             }, axis=1)
         return get_results_from_nixtla_df(results_df, model_args)
 
