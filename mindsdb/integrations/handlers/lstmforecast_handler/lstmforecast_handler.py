@@ -20,6 +20,8 @@ from neuralforecast.models import LSTM
 from neuralforecast.auto import AutoLSTM
 from ray.tune.search.hyperopt import HyperOptSearch
 
+from prophet.make_holidays import make_holidays_df
+
 # # hierarchicalforecast is an optional dependency
 # try:
 #     from hierarchicalforecast.core import HierarchicalReconciliation
@@ -80,8 +82,46 @@ def transform_to_nixtla_df(df, settings_dict, exog_vars=[]):
         # add to dataframe as it is expected by statsforecast
         nixtla_df["unique_id"] = '1'
 
-    columns_to_keep = ["unique_id", "ds", "y"] + exog_vars
     nixtla_df["ds"] = pd.to_datetime(nixtla_df["ds"])
+
+    for prop in settings_dict["ds_props"]:
+        if prop == "year":
+            nixtla_df.loc[:,"year"] = nixtla_df["ds"].dt.year
+        elif prop == "month":
+            nixtla_df.loc[:,"month"] = nixtla_df["ds"].dt.month
+        elif prop == "day":
+            nixtla_df.loc[:,"day"] = nixtla_df["ds"].dt.day
+        elif prop == "dayofweek":
+            nixtla_df.loc[:,"dayofweek"] = nixtla_df["ds"].dt.dayofweek
+        elif prop == "dayofyear":
+            nixtla_df.loc[:,"dayofyear"] = nixtla_df["ds"].dt.dayofyear
+        elif prop == "quarter":
+            nixtla_df.loc[:,"quarter"] = nixtla_df["ds"].dt.quarter
+        elif prop == "weekofyear":
+            nixtla_df.loc[:,"weekofyear"] = nixtla_df["ds"].dt.isocalendar().week
+        elif prop == "holiday":
+            holidays = make_holidays_df(
+                year_list=nixtla_df["ds"].dt.year.unique(), 
+                country=settings_dict["ds_holiday_country"]
+            )
+            holidays["holiday"] = 1.0
+            holidays = holidays.convert_dtypes({"holiday":np.float16})
+
+            nixtla_df = pd.merge(nixtla_df, holidays, how="left", on=["ds"])    
+            nixtla_df["holiday"] = nixtla_df["holiday"].fillna(0.0)
+
+    lags_cols = []
+    for lag in range(1,settings_dict["lags"]):
+        nixtla_df.loc[:,f"lag_[{lag}]"] = nixtla_df.groupby(["unique_id"])["y"].shift(lag)
+        lags_cols.append(f"lag_[{lag}]")
+
+    nixtla_df[lags_cols]=nixtla_df[lags_cols].fillna(0.0)
+
+    columns_to_keep = ["unique_id", "ds", "y"] + exog_vars + settings_dict["ds_props"] + lags_cols
+
+    logger.info(nixtla_df.shape)
+    logger.info(nixtla_df.head(7))
+    
 
     logger.info("returning df FINISHED")
 
@@ -165,6 +205,10 @@ class LstmForecastHandler(BaseMLEngine):
         model_args["batch_size"] = using_args.get('batch_size', 32)
         model_args["context_size"] = using_args.get('context_size', 15)
 
+        model_args["lags"] = using_args.get('lags', 0)
+        model_args["ds_props"] = using_args["ds_props"] if "ds_props" in using_args else []
+        model_args["ds_holiday_country"] = using_args.get("ds_holiday_country", "CO")
+
         # Deal with hierarchy
         # model_args["hierarchy"] = using_args["hierarchy"] if "hierarchy" in using_args else False
         # if model_args["hierarchy"] and HierarchicalReconciliation is not None:
@@ -186,7 +230,7 @@ class LstmForecastHandler(BaseMLEngine):
             # faster implementation without auto parameter tuning
             # model = NHITS(time_settings["horizon"], time_settings["window"], hist_exog_list=model_args["exog_vars"], max_steps=model_args["max_steps"])
             model = LSTM(time_settings["horizon"], 
-                        time_settings["window"], 
+                        time_settings["window"]+model_args["lags"], 
                         scaler_type=model_args["scaler_type"],
                         alias="LSTM",
                         encoder_hidden_size=model_args["encoder_hidden_size"],
@@ -196,7 +240,11 @@ class LstmForecastHandler(BaseMLEngine):
                         batch_size=model_args["batch_size"],
                         context_size=model_args["context_size"],
                         max_steps=model_args["max_steps"],
-                        hist_exog_list=model_args["exog_vars"])
+                        hist_exog_list=model_args["exog_vars"]+[f"lag_[{lag}]" for lag in range(1,model_args["lags"])]+model_args["ds_props"],
+                        )
+
+        logger.info("procesing hist_exog_list")    
+        logger.info(model_args["exog_vars"]+[f"lag_[{lag}]" for lag in range(1,model_args["lags"])]+model_args["ds_props"])
             
         neural = NeuralForecast(models=[model], freq=model_args["frequency"], local_scaler_type=model_args["local_scaler_type"])
 
