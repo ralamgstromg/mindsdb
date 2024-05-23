@@ -1,3 +1,6 @@
+# import os
+# os.environ['CUDA_VISIBLE_DEVICES'] = ''
+
 from sklearn.metrics import r2_score
 import dill
 import numpy as np
@@ -5,19 +8,14 @@ import pandas as pd
 import tempfile
 from mindsdb.integrations.libs.base import BaseMLEngine
 from mindsdb.integrations.utilities.time_series_utils import (
-    # transform_to_nixtla_df,
-    #get_results_from_nixtla_df,
-    # infer_frequency,
     get_model_accuracy_dict,
-    #get_hierarchy_from_df,
-    #reconcile_forecasts
 )
 from mindsdb.utilities import log
 logger = log.getLogger(__name__)
 
 from neuralforecast import NeuralForecast
-from neuralforecast.models import LSTM
-from neuralforecast.auto import AutoLSTM
+from neuralforecast.models import LSTM, GRU, RNN, DilatedRNN, DeepAR, TCN, TimesNet, MLP, NBEATS, NBEATSx, NHITS, TFT, VanillaTransformer, Informer, Autoformer, FEDformer, PatchTST, StemGNN
+from neuralforecast.auto import AutoLSTM, AutoGRU, AutoRNN, AutoDilatedRNN, AutoDeepAR, AutoTCN, AutoTimesNet, AutoMLP, AutoMLP, AutoNBEATS, AutoNBEATSx, AutoNHITS, AutoTFT, AutoVanillaTransformer, AutoInformer, AutoAutoformer, AutoFEDformer, AutoPatchTST, AutoStemGNN
 from ray.tune.search.hyperopt import HyperOptSearch
 
 from prophet.make_holidays import make_holidays_df
@@ -156,12 +154,12 @@ def get_model_accuracy_dict(nixtla_results_df, metric=r2_score):
     return accuracy_dict
 
 
-class LstmForecastHandler(BaseMLEngine):
+class NgxForecastHandler(BaseMLEngine):
     """Integration with the Nixtla NeuralForecast library for
     time series forecasting with neural networks.
     """
 
-    name = "lstmforecast"
+    name = "ngxforecast"
 
     def __init__(self, model_storage, engine_storage, **kwargs):
         super().__init__(model_storage, engine_storage, **kwargs)
@@ -209,6 +207,10 @@ class LstmForecastHandler(BaseMLEngine):
         model_args["ds_props"] = using_args["ds_props"] if "ds_props" in using_args else []
         model_args["ds_holiday_country"] = using_args.get("ds_holiday_country", "CO")
 
+        model_args["model_type"] = using_args.get("model_type", "lstm")
+
+        model_args["n_series"] = using_args.get('n_series', 15)
+
         # Deal with hierarchy
         # model_args["hierarchy"] = using_args["hierarchy"] if "hierarchy" in using_args else False
         # if model_args["hierarchy"] and HierarchicalReconciliation is not None:
@@ -223,43 +225,239 @@ class LstmForecastHandler(BaseMLEngine):
 
         logger.info("changinf y type to float16 FINISHED")
 
+        model = None
+
+        # Model	Structure	Sampling	Point Forecast	Probabilistic Forecast	Exogenous features	Auto Model
+        # LSTM	RNN	recurrent	✅	✅	✅	✅
+        # GRU	RNN	recurrent	✅	✅	✅	✅
+        # RNN	RNN	recurrent	✅	✅	✅	✅
+        # DilatedRNN	RNN	recurrent	✅	✅	✅	✅
+        # DeepAR	RNN	recurrent		✅	✅	✅
+        # TCN	CNN	recurrent	✅	✅	✅	✅
+        # TimesNet	CNN	windows	✅	✅		✅
+        # DLinear	Linear	windows	✅	✅		✅
+        # MLP	MLP	windows	✅	✅	✅	✅
+        # NBEATS	MLP	windows	✅	✅		✅
+        # NBEATSx	MLP	windows	✅	✅	✅	✅
+        # NHITS	MLP	windows	✅	✅	✅	✅
+        # TFT	Transformer	windows	✅	✅	✅	✅
+        # Transformer	Transformer	windows	✅	✅	✅	✅
+        # Informer	Transformer	windows	✅	✅	✅	✅
+        # Autoformer	Transformer	windows	✅	✅	✅	✅
+        # FEDFormer	Transformer	windows	✅	✅	✅	✅
+        # PatchTST	Transformer	windows	✅	✅		✅
+        # StemGNN	GNN	multivariate	✅			✅
+
         # Train model
         if model_args["n_auto_trials"]:
-            model = AutoLSTM(time_settings["horizon"], gpus=0, num_samples=model_args["n_auto_trials"], search_alg=HyperOptSearch())
+            conf = {
+                'h': time_settings["horizon"], 
+                'gpus':0, 
+                'num_samples': model_args["n_auto_trials"], 
+                'search_alg':HyperOptSearch()
+                }
+            if model_args["model_type"].lower() == 'lstm':
+                model = AutoLSTM(**conf)
+            elif model_args["model_type"].lower() == 'gru':
+                model = AutoGRU(**conf)
+            elif model_args["model_type"].lower() == 'rnn':
+                model = AutoRNN(**conf)
+            elif model_args["model_type"].lower() == 'dilatedrnn':
+                model = AutoDilatedRNN(**conf)
+            elif model_args["model_type"].lower() == 'deepar':
+                model = AutoDeepAR(**conf)
+            elif model_args["model_type"].lower() == 'tcn':
+                model = AutoTCN(**conf)
+            elif model_args["model_type"].lower() == 'timesnet':
+                model = AutoTimesNet(**conf)
+            elif model_args["model_type"].lower() == 'mlp':
+                model = AutoMLP(**conf)
+            elif model_args["model_type"].lower() == 'nbeats':
+                model = AutoNBEATS(**conf)
+            elif model_args["model_type"].lower() == 'nbeatsx':
+                model = AutoNBEATSx(**conf)
+            elif model_args["model_type"].lower() == 'nhits':
+                model = AutoNHITS(**conf)
+            elif model_args["model_type"].lower() == 'tft':
+                model = AutoTFT(**conf)
+            elif model_args["model_type"].lower() == 'vanillatransformer':
+                model = AutoVanillaTransformer(**conf)
+            elif model_args["model_type"].lower() == 'informer':
+                model = AutoInformer(**conf)
+            elif model_args["model_type"].lower() == 'autoformer':
+                model = AutoAutoformer(**conf)
+            elif model_args["model_type"].lower() == 'fedformer':
+                model = AutoFEDformer(**conf)
+            elif model_args["model_type"].lower() == 'patchtst':
+                model = AutoPatchTST(**conf)
+            elif model_args["model_type"].lower() == 'stemgnn':
+                model = AutoStemGNN(**conf)
         else:
-            # faster implementation without auto parameter tuning
-            # model = NHITS(time_settings["horizon"], time_settings["window"], hist_exog_list=model_args["exog_vars"], max_steps=model_args["max_steps"])
-            model = LSTM(time_settings["horizon"], 
-                        time_settings["window"]+model_args["lags"], 
-                        scaler_type=model_args["scaler_type"],
-                        alias="LSTM",
-                        encoder_hidden_size=model_args["encoder_hidden_size"],
-                        decoder_hidden_size=model_args["decoder_hidden_size"],
-                        encoder_n_layers=model_args["encoder_n_layers"],
-                        decoder_layers=model_args["decoder_layers"],
-                        batch_size=model_args["batch_size"],
-                        context_size=model_args["context_size"],
-                        max_steps=model_args["max_steps"],
-                        hist_exog_list=model_args["exog_vars"]+[f"lag_[{lag}]" for lag in range(1,model_args["lags"])]+model_args["ds_props"],
-                        )
+            conf = {
+                'h': time_settings["horizon"], 
+                'input_size': time_settings["window"], #+model_args["lags"], 
+                'scaler_type': model_args["scaler_type"],
+                'encoder_hidden_size': model_args["encoder_hidden_size"],
+                'decoder_hidden_size': model_args["decoder_hidden_size"],
+                'encoder_n_layers': model_args["encoder_n_layers"],
+                'decoder_layers': model_args["decoder_layers"],
+                'batch_size': model_args["batch_size"],
+                'context_size': model_args["context_size"],
+                'max_steps': model_args["max_steps"],
+                'hist_exog_list': model_args["exog_vars"]+[f"lag_[{lag}]" for lag in range(1,model_args["lags"])]+model_args["ds_props"],
+                'n_series': model_args["n_series"]
+            }
+            if model_args["model_type"].lower() == 'lstm':
+                del conf["n_series"]
+                model = LSTM(**conf)
+            elif model_args["model_type"].lower() == 'gru':
+                del conf["n_series"]
+                model = GRU(**conf)
+            elif model_args["model_type"].lower() == 'rnn':
+                del conf["n_series"]
+                model = RNN(**conf)
+            elif model_args["model_type"].lower() == 'dilatedrnn':                
+                del conf["n_series"]
+                del conf["encoder_n_layers"]
+                model = DilatedRNN(**conf)
 
-        logger.info("procesing hist_exog_list")    
-        logger.info(model_args["exog_vars"]+[f"lag_[{lag}]" for lag in range(1,model_args["lags"])]+model_args["ds_props"])
+            elif model_args["model_type"].lower() == 'deepar':
+                del conf["n_series"]
+                del conf["hist_exog_list"]                
+                del conf["encoder_hidden_size"]
+                del conf['encoder_n_layers']
+                del conf['decoder_layers']
+                del conf['context_size']
+                model = DeepAR(**conf)
+            elif model_args["model_type"].lower() == 'tcn':
+                del conf["n_series"]
+                del conf['encoder_n_layers']
+                model = TCN(**conf)
+            elif model_args["model_type"].lower() == 'timesnet':
+                del conf["n_series"]
+                del conf["hist_exog_list"]
+                del conf["encoder_hidden_size"]
+                del conf['encoder_n_layers']
+                del conf['decoder_layers']
+                del conf['context_size']
+                del conf['decoder_hidden_size']
+                model = TimesNet(**conf)
             
-        neural = NeuralForecast(models=[model], freq=model_args["frequency"], local_scaler_type=model_args["local_scaler_type"])
+            elif model_args["model_type"].lower() == 'mlp':
+                del conf["n_series"]
+                del conf["encoder_hidden_size"]
+                del conf['encoder_n_layers']
+                del conf['decoder_layers']
+                del conf['context_size']
+                del conf['decoder_hidden_size']
+                model = MLP(**conf)
+            elif model_args["model_type"].lower() == 'nbeats':
+                del conf["n_series"]
+                del conf["encoder_hidden_size"]
+                del conf['encoder_n_layers']
+                del conf['decoder_layers']
+                del conf['context_size']
+                del conf['decoder_hidden_size']
+                model = NBEATS(**conf)
+            elif model_args["model_type"].lower() == 'nbeatsx':
+                del conf["n_series"]
+                del conf["encoder_hidden_size"]
+                del conf['encoder_n_layers']
+                del conf['decoder_layers']
+                del conf['context_size']
+                del conf['decoder_hidden_size']
+                model = NBEATSx(**conf)
+            elif model_args["model_type"].lower() == 'nhits':
+                del conf["n_series"]
+                del conf["encoder_hidden_size"]
+                del conf['encoder_n_layers']
+                del conf['decoder_layers']
+                del conf['context_size']
+                del conf['decoder_hidden_size']
+                model = NHITS(**conf)
+            
+            elif model_args["model_type"].lower() == 'tft':
+                del conf["n_series"]
+                del conf["encoder_hidden_size"]
+                del conf['encoder_n_layers']
+                del conf['decoder_layers']
+                del conf['context_size']
+                del conf['decoder_hidden_size']
+                model = TFT(**conf)
+            elif model_args["model_type"].lower() == 'vanillatransformer':
+                del conf["n_series"]
+                del conf["hist_exog_list"]
+                del conf["encoder_hidden_size"]
+                del conf['encoder_n_layers']
+                del conf['decoder_layers']
+                del conf['context_size']
+                del conf['decoder_hidden_size']
+                model = VanillaTransformer(**conf)                
+            elif model_args["model_type"].lower() == 'informer':
+                del conf["n_series"]
+                del conf["hist_exog_list"]
+                del conf["encoder_hidden_size"]
+                del conf['encoder_n_layers']
+                del conf['decoder_layers']
+                del conf['context_size']
+                del conf['decoder_hidden_size']
+                model = Informer(**conf)
+            elif model_args["model_type"].lower() == 'autoformer':
+                del conf["n_series"]
+                del conf["hist_exog_list"]
+                del conf["encoder_hidden_size"]
+                del conf['encoder_n_layers']
+                del conf['decoder_layers']
+                del conf['context_size']
+                del conf['decoder_hidden_size']
+                model = Autoformer(**conf)
+            elif model_args["model_type"].lower() == 'fedformer':
+                del conf["n_series"]
+                del conf["hist_exog_list"]
+                del conf["encoder_hidden_size"]
+                del conf['encoder_n_layers']
+                del conf['decoder_layers']
+                del conf['context_size']
+                del conf['decoder_hidden_size']
+                model = FEDformer(**conf)
+            elif model_args["model_type"].lower() == 'patchtst':
+                del conf["n_series"]
+                del conf["hist_exog_list"]
+                del conf["encoder_hidden_size"]
+                del conf['encoder_n_layers']
+                del conf['decoder_layers']
+                del conf['context_size']
+                del conf['decoder_hidden_size']
+                model = PatchTST(**conf)
 
-        if model_args.get('crossval', False):
-            results_df = neural.cross_validation(training_df)
-            model_args["accuracies"] = get_model_accuracy_dict(results_df, r2_score)
+            elif model_args["model_type"].lower() == 'stemgnn':
+                del conf["encoder_hidden_size"]
+                del conf['encoder_n_layers']
+                del conf['decoder_layers']
+                del conf['context_size']
+                del conf['decoder_hidden_size']
+                model = StemGNN(**conf)
+                
+        if model != None:
+
+            logger.info("procesing hist_exog_list")    
+            logger.info(model_args["exog_vars"]+[f"lag_[{lag}]" for lag in range(1,model_args["lags"])]+model_args["ds_props"])
+                
+            neural = NeuralForecast(models=[model], freq=model_args["frequency"], local_scaler_type=model_args["local_scaler_type"])
+
+            if model_args.get('crossval', False):
+                results_df = neural.cross_validation(training_df)
+                model_args["accuracies"] = get_model_accuracy_dict(results_df, r2_score)
+            else:
+                neural.fit(training_df)
+
+            # persist changes to handler folder
+            neural.save(model_args["model_folder"], overwrite=True)
+            self.model_storage.json_set("model_args", model_args)
+        
         else:
-            neural.fit(training_df)
+            logger.error("Model not compiled")
 
-        # persist changes to handler folder
-        #neural.save(model_args["model_folder"], overwrite=True, save_dataset=False)
-        neural.save(model_args["model_folder"], overwrite=True)
-        self.model_storage.json_set("model_args", model_args)
-
-        # self.model_cache[model_args["model_folder"]] = neural
 
     def predict(self, df, args={}):
         """Makes forecasts with the NeuralForecast Handler.
@@ -307,7 +505,27 @@ class LstmForecastHandler(BaseMLEngine):
         #     }, axis=1)
         results_df = forecast_df[forecast_df.index.isin(groups_to_keep)].rename({
                 "y": model_args["target"],  # auto mode
-                "LSTM": model_args["target"],  # non-auto mode
+                "LSTM": model_args["target"],  # non-auto mode                
+                "GRU": model_args["target"],
+                "RNN": model_args["target"],
+                "DilatedRNN": model_args["target"],
+                "DeepAR": model_args["target"],
+
+                "TCN": model_args["target"],
+                "TimesNet": model_args["target"],
+
+                "MLP": model_args["target"],
+                "NBEATS": model_args["target"],
+                "NBEATSx": model_args["target"],
+                "NHITS": model_args["target"],
+
+                "TFT": model_args["target"],
+                "VanillaTransformer": model_args["target"],
+                "Informer": model_args["target"],
+                "Autoformer": model_args["target"],
+                "FEDFormer": model_args["target"],
+                "PatchTST": model_args["target"],
+
                 "AutoLSTM": model_args["target"],  # non-auto mode
             }, axis=1)
         
