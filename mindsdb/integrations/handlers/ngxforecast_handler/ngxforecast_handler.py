@@ -2,29 +2,59 @@
 # os.environ['CUDA_VISIBLE_DEVICES'] = ''
 
 from sklearn.metrics import r2_score
-import dill
 import numpy as np
 import pandas as pd
 import tempfile
 from mindsdb.integrations.libs.base import BaseMLEngine
-from mindsdb.integrations.utilities.time_series_utils import (
-    get_model_accuracy_dict,
-)
+# from mindsdb.integrations.utilities.time_series_utils import (
+#     get_model_accuracy_dict,
+# )
 from mindsdb.utilities import log
-logger = log.getLogger(__name__)
-
 from neuralforecast import NeuralForecast
-from neuralforecast.models import LSTM, GRU, RNN, DilatedRNN, DeepAR, TCN, TimesNet, MLP, NBEATS, NBEATSx, NHITS, TFT, VanillaTransformer, Informer, Autoformer, FEDformer, PatchTST, StemGNN
-from neuralforecast.auto import AutoLSTM, AutoGRU, AutoRNN, AutoDilatedRNN, AutoDeepAR, AutoTCN, AutoTimesNet, AutoMLP, AutoMLP, AutoNBEATS, AutoNBEATSx, AutoNHITS, AutoTFT, AutoVanillaTransformer, AutoInformer, AutoAutoformer, AutoFEDformer, AutoPatchTST, AutoStemGNN
+from neuralforecast.models import (
+    LSTM,
+    GRU,
+    RNN,
+    DilatedRNN,
+    DeepAR,
+    TCN,
+    TimesNet,
+    MLP,
+    NBEATS,
+    NBEATSx,
+    NHITS,
+    TFT,
+    VanillaTransformer,
+    Informer,
+    Autoformer,
+    FEDformer,
+    PatchTST,
+    StemGNN,
+)
+from neuralforecast.auto import (
+    AutoLSTM,
+    AutoGRU,
+    AutoRNN,
+    AutoDilatedRNN,
+    AutoDeepAR,
+    AutoTCN,
+    AutoTimesNet,
+    AutoMLP,
+    AutoNBEATS,
+    AutoNBEATSx,
+    AutoNHITS,
+    AutoTFT,
+    AutoVanillaTransformer,
+    AutoInformer,
+    AutoAutoformer,
+    AutoFEDformer,
+    AutoPatchTST,
+    AutoStemGNN,
+)
 from ray.tune.search.hyperopt import HyperOptSearch
-
 from prophet.make_holidays import make_holidays_df
 
-# # hierarchicalforecast is an optional dependency
-# try:
-#     from hierarchicalforecast.core import HierarchicalReconciliation
-# except ImportError:
-#     HierarchicalReconciliation = None
+logger = log.getLogger(__name__)
 
 
 def transform_to_nixtla_df(df, settings_dict, exog_vars=[]):
@@ -41,107 +71,96 @@ def transform_to_nixtla_df(df, settings_dict, exog_vars=[]):
     """
     nixtla_df = df.copy()
 
-    logger.info("copy df FINISHED")
-
-    # Resample every group
-    # freq = settings_dict['frequency']
-    # resampled_df = pd.DataFrame(columns=nixtla_df.columns)
-    # if settings_dict["group_by"] and settings_dict["group_by"] != ['__group_by']:
-    #     for group, groupdf in nixtla_df.groupby(by=settings_dict["group_by"]):
-    #         groupdf.index = pd.to_datetime(groupdf.pop(settings_dict["order_by"]))
-    #         resampled_groupdf = pd.DataFrame(groupdf[settings_dict['target']].resample(freq).mean())
-    #         for k, v in zip(settings_dict["group_by"], group):
-    #             resampled_groupdf[k] = v
-    #         resampled_groupdf = resampled_groupdf.reset_index()
-    #         resampled_df = pd.concat([resampled_df, resampled_groupdf])
-    #     nixtla_df = resampled_df
-
-    # logger.info("resample frequency FINISHED")
-
     # Transform group columns into single unique_id column
     if len(settings_dict["group_by"]) > 1:
         for col in settings_dict["group_by"]:
             nixtla_df[col] = nixtla_df[col].astype(str)
-        nixtla_df["unique_id"] = nixtla_df[settings_dict["group_by"]].agg("/".join, axis=1)
+        nixtla_df["unique_id"] = nixtla_df[settings_dict["group_by"]].agg(
+            "/".join, axis=1
+        )
         group_col = "ignore this"
     else:
         group_col = settings_dict["group_by"][0]
 
-    logger.info("transform group by FINISHED")
-
     # Rename columns to statsforecast names
     nixtla_df = nixtla_df.rename(
-        {settings_dict["target"]: "y", settings_dict["order_by"]: "ds", group_col: "unique_id"}, axis=1
+        {
+            settings_dict["target"]: "y",
+            settings_dict["order_by"]: "ds",
+            group_col: "unique_id",
+        },
+        axis=1,
     )
-
-    logger.info("renaming df FINISHED")
 
     if "unique_id" not in nixtla_df.columns:
         # add to dataframe as it is expected by statsforecast
-        nixtla_df["unique_id"] = '1'
+        nixtla_df["unique_id"] = "1"
 
     nixtla_df["ds"] = pd.to_datetime(nixtla_df["ds"])
 
     for prop in settings_dict["ds_props"]:
         if prop == "year":
-            nixtla_df.loc[:,"year"] = nixtla_df["ds"].dt.year
+            nixtla_df.loc[:, "year"] = nixtla_df["ds"].dt.year
         elif prop == "month":
-            nixtla_df.loc[:,"month"] = nixtla_df["ds"].dt.month
+            nixtla_df.loc[:, "month"] = nixtla_df["ds"].dt.month
         elif prop == "day":
-            nixtla_df.loc[:,"day"] = nixtla_df["ds"].dt.day
+            nixtla_df.loc[:, "day"] = nixtla_df["ds"].dt.day
         elif prop == "dayofweek":
-            nixtla_df.loc[:,"dayofweek"] = nixtla_df["ds"].dt.dayofweek
+            nixtla_df.loc[:, "dayofweek"] = nixtla_df["ds"].dt.dayofweek
         elif prop == "dayofyear":
-            nixtla_df.loc[:,"dayofyear"] = nixtla_df["ds"].dt.dayofyear
+            nixtla_df.loc[:, "dayofyear"] = nixtla_df["ds"].dt.dayofyear
         elif prop == "quarter":
-            nixtla_df.loc[:,"quarter"] = nixtla_df["ds"].dt.quarter
+            nixtla_df.loc[:, "quarter"] = nixtla_df["ds"].dt.quarter
         elif prop == "weekofyear":
-            nixtla_df.loc[:,"weekofyear"] = nixtla_df["ds"].dt.isocalendar().week
+            nixtla_df.loc[:, "weekofyear"] = nixtla_df["ds"].dt.isocalendar().week
         elif prop == "holiday":
             holidays = make_holidays_df(
-                year_list=nixtla_df["ds"].dt.year.unique(), 
-                country=settings_dict["ds_holiday_country"]
+                year_list=nixtla_df["ds"].dt.year.unique(),
+                country=settings_dict["ds_holiday_country"],
             )
             holidays["holiday"] = 1.0
-            holidays = holidays.convert_dtypes({"holiday":np.float16})
+            holidays = holidays.convert_dtypes({"holiday": np.float16})
 
-            nixtla_df = pd.merge(nixtla_df, holidays, how="left", on=["ds"])    
+            nixtla_df = pd.merge(nixtla_df, holidays, how="left", on=["ds"])
             nixtla_df["holiday"] = nixtla_df["holiday"].fillna(0.0)
 
     lags_cols = []
-    for lag in range(1,settings_dict["lags"]):
-        nixtla_df.loc[:,f"lag_[{lag}]"] = nixtla_df.groupby(["unique_id"])["y"].shift(lag)
+    for lag in range(1, settings_dict["lags"]):
+        nixtla_df.loc[:, f"lag_[{lag}]"] = nixtla_df.groupby(["unique_id"])["y"].shift(
+            lag
+        )
         lags_cols.append(f"lag_[{lag}]")
 
-    nixtla_df[lags_cols]=nixtla_df[lags_cols].fillna(0.0)
+    nixtla_df[lags_cols] = nixtla_df[lags_cols].fillna(0.0)
 
-    columns_to_keep = ["unique_id", "ds", "y"] + exog_vars + settings_dict["ds_props"] + lags_cols
-
-    logger.info(nixtla_df.shape)
-    logger.info(nixtla_df.head(7))
-    
-
-    logger.info("returning df FINISHED")
+    columns_to_keep = (
+        ["unique_id", "ds", "y"] + exog_vars + settings_dict["ds_props"] + lags_cols
+    )
 
     return nixtla_df[columns_to_keep]
 
+
 def get_results_from_nixtla_df(nixtla_df, model_args):
     """Transform dataframes generated by StatsForecast back to their original format.
-
     This will return the dataframe to the original format supplied by the MindsDB query.
     """
-    return_df = nixtla_df.reset_index(drop=True if 'unique_id' in nixtla_df.columns else False)
+    return_df = nixtla_df.reset_index(
+        drop=True if "unique_id" in nixtla_df.columns else False
+    )
     if len(model_args["group_by"]) > 0:
         if len(model_args["group_by"]) > 1:
             for i, group in enumerate(model_args["group_by"]):
-                return_df[group] = return_df["unique_id"].apply(lambda x: x.split("/")[i])
+                return_df[group] = return_df["unique_id"].apply(
+                    lambda x: x.split("/")[i]
+                )
         else:
             group_by_col = model_args["group_by"][0]
             return_df[group_by_col] = return_df["unique_id"]
 
-    logger.info("get results in original format df FINISHED")
+    return return_df.drop(["unique_id"], axis=1).rename(
+        {"ds": model_args["order_by"]}, axis=1
+    )
 
-    return return_df.drop(["unique_id"], axis=1).rename({"ds": model_args["order_by"]}, axis=1)
 
 def get_model_accuracy_dict(nixtla_results_df, metric=r2_score):
     """Calculates accuracy for each model in the nixtla results df."""
@@ -163,8 +182,7 @@ class NgxForecastHandler(BaseMLEngine):
 
     def __init__(self, model_storage, engine_storage, **kwargs):
         super().__init__(model_storage, engine_storage, **kwargs)
-        #self.model_cache = {}
-
+        # self.model_cache = {}
 
     def create(self, target, df, args={}):
         """Create the NeuralForecast Handler.
@@ -176,40 +194,50 @@ class NgxForecastHandler(BaseMLEngine):
         """
         time_settings = args["timeseries_settings"]
         using_args = args["using"]
-        assert time_settings["is_timeseries"], "Specify time series settings in your query"
-        ###### store model args and time series settings in the model folder
+        assert time_settings[
+            "is_timeseries"
+        ], "Specify time series settings in your query"
+
         model_args = {}
         model_args["target"] = target
         model_args["horizon"] = time_settings["horizon"]
         model_args["order_by"] = time_settings["order_by"]
         model_args["group_by"] = time_settings["group_by"]
         model_args["frequency"] = (
-            using_args["frequency"] if "frequency" in using_args else "D" # infer_frequency(df, time_settings["order_by"])
+            using_args["frequency"]
+            if "frequency" in using_args
+            else "D"  # infer_frequency(df, time_settings["order_by"])
         )
         model_args["scaler_type"] = using_args.get("scaler_type", "standard")
-        model_args["local_scaler_type"] = using_args.get("local_scaler_type", "standard")
-        model_args["exog_vars"] = using_args["exogenous_vars"] if "exogenous_vars" in using_args else []
-        model_args["max_steps"] = using_args.get('max_steps', 500)
-        model_args["val_check_steps"] = using_args.get('val_check_steps', 10)
-        model_args["n_auto_trials"] = using_args.get('n_auto_trials', 0)
+        model_args["local_scaler_type"] = using_args.get(
+            "local_scaler_type", "standard"
+        )
+        model_args["exog_vars"] = (
+            using_args["exogenous_vars"] if "exogenous_vars" in using_args else []
+        )
+        model_args["max_steps"] = using_args.get("max_steps", 500)
+        model_args["val_check_steps"] = using_args.get("val_check_steps", 10)
+        model_args["n_auto_trials"] = using_args.get("n_auto_trials", 0)
         model_args["model_folder"] = tempfile.mkdtemp()
 
-        model_args["encoder_hidden_size"] = using_args.get('encoder_hidden_size', 300)
-        model_args["decoder_hidden_size"] = using_args.get('decoder_hidden_size', 300)
+        model_args["encoder_hidden_size"] = using_args.get("encoder_hidden_size", 300)
+        model_args["decoder_hidden_size"] = using_args.get("decoder_hidden_size", 300)
 
-        model_args["encoder_n_layers"] = using_args.get('encoder_n_layers', 12)
-        model_args["decoder_layers"] = using_args.get('decoder_layers', 12)
+        model_args["encoder_n_layers"] = using_args.get("encoder_n_layers", 12)
+        model_args["decoder_layers"] = using_args.get("decoder_layers", 12)
 
-        model_args["batch_size"] = using_args.get('batch_size', 32)
-        model_args["context_size"] = using_args.get('context_size', 15)
+        model_args["batch_size"] = using_args.get("batch_size", 32)
+        model_args["context_size"] = using_args.get("context_size", 15)
 
-        model_args["lags"] = using_args.get('lags', 0)
-        model_args["ds_props"] = using_args["ds_props"] if "ds_props" in using_args else []
+        model_args["lags"] = using_args.get("lags", 0)
+        model_args["ds_props"] = (
+            using_args["ds_props"] if "ds_props" in using_args else []
+        )
         model_args["ds_holiday_country"] = using_args.get("ds_holiday_country", "CO")
 
         model_args["model_type"] = using_args.get("model_type", "lstm")
 
-        model_args["n_series"] = using_args.get('n_series', 15)
+        model_args["n_series"] = using_args.get("n_series", 15)
 
         # Deal with hierarchy
         # model_args["hierarchy"] = using_args["hierarchy"] if "hierarchy" in using_args else False
@@ -221,9 +249,7 @@ class NgxForecastHandler(BaseMLEngine):
         # else:
         training_df = transform_to_nixtla_df(df, model_args, model_args["exog_vars"])
 
-        training_df = training_df.astype({'y': np.float16})
-
-        logger.info("changinf y type to float16 FINISHED")
+        training_df = training_df.astype({"y": np.float32})
 
         model = None
 
@@ -251,201 +277,203 @@ class NgxForecastHandler(BaseMLEngine):
         # Train model
         if model_args["n_auto_trials"]:
             conf = {
-                'h': time_settings["horizon"], 
-                'gpus':0, 
-                'num_samples': model_args["n_auto_trials"], 
-                'search_alg':HyperOptSearch()
-                }
-            if model_args["model_type"].lower() == 'lstm':
+                "h": time_settings["horizon"],
+                "gpus": 0,
+                "num_samples": model_args["n_auto_trials"],
+                "search_alg": HyperOptSearch(),
+            }
+            if model_args["model_type"].lower() == "lstm":
                 model = AutoLSTM(**conf)
-            elif model_args["model_type"].lower() == 'gru':
+            elif model_args["model_type"].lower() == "gru":
                 model = AutoGRU(**conf)
-            elif model_args["model_type"].lower() == 'rnn':
+            elif model_args["model_type"].lower() == "rnn":
                 model = AutoRNN(**conf)
-            elif model_args["model_type"].lower() == 'dilatedrnn':
+            elif model_args["model_type"].lower() == "dilatedrnn":
                 model = AutoDilatedRNN(**conf)
-            elif model_args["model_type"].lower() == 'deepar':
+            elif model_args["model_type"].lower() == "deepar":
                 model = AutoDeepAR(**conf)
-            elif model_args["model_type"].lower() == 'tcn':
+            elif model_args["model_type"].lower() == "tcn":
                 model = AutoTCN(**conf)
-            elif model_args["model_type"].lower() == 'timesnet':
+            elif model_args["model_type"].lower() == "timesnet":
                 model = AutoTimesNet(**conf)
-            elif model_args["model_type"].lower() == 'mlp':
+            elif model_args["model_type"].lower() == "mlp":
                 model = AutoMLP(**conf)
-            elif model_args["model_type"].lower() == 'nbeats':
+            elif model_args["model_type"].lower() == "nbeats":
                 model = AutoNBEATS(**conf)
-            elif model_args["model_type"].lower() == 'nbeatsx':
+            elif model_args["model_type"].lower() == "nbeatsx":
                 model = AutoNBEATSx(**conf)
-            elif model_args["model_type"].lower() == 'nhits':
+            elif model_args["model_type"].lower() == "nhits":
                 model = AutoNHITS(**conf)
-            elif model_args["model_type"].lower() == 'tft':
+            elif model_args["model_type"].lower() == "tft":
                 model = AutoTFT(**conf)
-            elif model_args["model_type"].lower() == 'vanillatransformer':
+            elif model_args["model_type"].lower() == "vanillatransformer":
                 model = AutoVanillaTransformer(**conf)
-            elif model_args["model_type"].lower() == 'informer':
+            elif model_args["model_type"].lower() == "informer":
                 model = AutoInformer(**conf)
-            elif model_args["model_type"].lower() == 'autoformer':
+            elif model_args["model_type"].lower() == "autoformer":
                 model = AutoAutoformer(**conf)
-            elif model_args["model_type"].lower() == 'fedformer':
+            elif model_args["model_type"].lower() == "fedformer":
                 model = AutoFEDformer(**conf)
-            elif model_args["model_type"].lower() == 'patchtst':
+            elif model_args["model_type"].lower() == "patchtst":
                 model = AutoPatchTST(**conf)
-            elif model_args["model_type"].lower() == 'stemgnn':
+            elif model_args["model_type"].lower() == "stemgnn":
                 model = AutoStemGNN(**conf)
         else:
             conf = {
-                'h': time_settings["horizon"], 
-                'input_size': time_settings["window"], #+model_args["lags"], 
-                'scaler_type': model_args["scaler_type"],
-                'encoder_hidden_size': model_args["encoder_hidden_size"],
-                'decoder_hidden_size': model_args["decoder_hidden_size"],
-                'encoder_n_layers': model_args["encoder_n_layers"],
-                'decoder_layers': model_args["decoder_layers"],
-                'batch_size': model_args["batch_size"],
-                'context_size': model_args["context_size"],
-                'max_steps': model_args["max_steps"],
-                'hist_exog_list': model_args["exog_vars"]+[f"lag_[{lag}]" for lag in range(1,model_args["lags"])]+model_args["ds_props"],
-                'n_series': model_args["n_series"]
+                "h": time_settings["horizon"],
+                "input_size": time_settings["window"],  # +model_args["lags"],
+                "scaler_type": model_args["scaler_type"],
+                "encoder_hidden_size": model_args["encoder_hidden_size"],
+                "decoder_hidden_size": model_args["decoder_hidden_size"],
+                "encoder_n_layers": model_args["encoder_n_layers"],
+                "decoder_layers": model_args["decoder_layers"],
+                "batch_size": model_args["batch_size"],
+                "context_size": model_args["context_size"],
+                "max_steps": model_args["max_steps"],
+                "hist_exog_list": model_args["exog_vars"]
+                + [f"lag_[{lag}]" for lag in range(1, model_args["lags"])]
+                + model_args["ds_props"],
+                "n_series": model_args["n_series"],
             }
-            if model_args["model_type"].lower() == 'lstm':
+            if model_args["model_type"].lower() == "lstm":
                 del conf["n_series"]
                 model = LSTM(**conf)
-            elif model_args["model_type"].lower() == 'gru':
+            elif model_args["model_type"].lower() == "gru":
                 del conf["n_series"]
                 model = GRU(**conf)
-            elif model_args["model_type"].lower() == 'rnn':
+            elif model_args["model_type"].lower() == "rnn":
                 del conf["n_series"]
                 model = RNN(**conf)
-            elif model_args["model_type"].lower() == 'dilatedrnn':                
+            elif model_args["model_type"].lower() == "dilatedrnn":
                 del conf["n_series"]
                 del conf["encoder_n_layers"]
                 model = DilatedRNN(**conf)
 
-            elif model_args["model_type"].lower() == 'deepar':
+            elif model_args["model_type"].lower() == "deepar":
                 del conf["n_series"]
-                del conf["hist_exog_list"]                
+                del conf["hist_exog_list"]
                 del conf["encoder_hidden_size"]
-                del conf['encoder_n_layers']
-                del conf['decoder_layers']
-                del conf['context_size']
+                del conf["encoder_n_layers"]
+                del conf["decoder_layers"]
+                del conf["context_size"]
                 model = DeepAR(**conf)
-            elif model_args["model_type"].lower() == 'tcn':
+            elif model_args["model_type"].lower() == "tcn":
                 del conf["n_series"]
-                del conf['encoder_n_layers']
+                del conf["encoder_n_layers"]
                 model = TCN(**conf)
-            elif model_args["model_type"].lower() == 'timesnet':
+            elif model_args["model_type"].lower() == "timesnet":
                 del conf["n_series"]
                 del conf["hist_exog_list"]
                 del conf["encoder_hidden_size"]
-                del conf['encoder_n_layers']
-                del conf['decoder_layers']
-                del conf['context_size']
-                del conf['decoder_hidden_size']
+                del conf["encoder_n_layers"]
+                del conf["decoder_layers"]
+                del conf["context_size"]
+                del conf["decoder_hidden_size"]
                 model = TimesNet(**conf)
-            
-            elif model_args["model_type"].lower() == 'mlp':
+
+            elif model_args["model_type"].lower() == "mlp":
                 del conf["n_series"]
                 del conf["encoder_hidden_size"]
-                del conf['encoder_n_layers']
-                del conf['decoder_layers']
-                del conf['context_size']
-                del conf['decoder_hidden_size']
+                del conf["encoder_n_layers"]
+                del conf["decoder_layers"]
+                del conf["context_size"]
+                del conf["decoder_hidden_size"]
                 model = MLP(**conf)
-            elif model_args["model_type"].lower() == 'nbeats':
+            elif model_args["model_type"].lower() == "nbeats":
                 del conf["n_series"]
                 del conf["encoder_hidden_size"]
-                del conf['encoder_n_layers']
-                del conf['decoder_layers']
-                del conf['context_size']
-                del conf['decoder_hidden_size']
+                del conf["encoder_n_layers"]
+                del conf["decoder_layers"]
+                del conf["context_size"]
+                del conf["decoder_hidden_size"]
                 model = NBEATS(**conf)
-            elif model_args["model_type"].lower() == 'nbeatsx':
+            elif model_args["model_type"].lower() == "nbeatsx":
                 del conf["n_series"]
                 del conf["encoder_hidden_size"]
-                del conf['encoder_n_layers']
-                del conf['decoder_layers']
-                del conf['context_size']
-                del conf['decoder_hidden_size']
+                del conf["encoder_n_layers"]
+                del conf["decoder_layers"]
+                del conf["context_size"]
+                del conf["decoder_hidden_size"]
                 model = NBEATSx(**conf)
-            elif model_args["model_type"].lower() == 'nhits':
+            elif model_args["model_type"].lower() == "nhits":
                 del conf["n_series"]
                 del conf["encoder_hidden_size"]
-                del conf['encoder_n_layers']
-                del conf['decoder_layers']
-                del conf['context_size']
-                del conf['decoder_hidden_size']
+                del conf["encoder_n_layers"]
+                del conf["decoder_layers"]
+                del conf["context_size"]
+                del conf["decoder_hidden_size"]
                 model = NHITS(**conf)
-            
-            elif model_args["model_type"].lower() == 'tft':
+
+            elif model_args["model_type"].lower() == "tft":
                 del conf["n_series"]
                 del conf["encoder_hidden_size"]
-                del conf['encoder_n_layers']
-                del conf['decoder_layers']
-                del conf['context_size']
-                del conf['decoder_hidden_size']
+                del conf["encoder_n_layers"]
+                del conf["decoder_layers"]
+                del conf["context_size"]
+                del conf["decoder_hidden_size"]
                 model = TFT(**conf)
-            elif model_args["model_type"].lower() == 'vanillatransformer':
+            elif model_args["model_type"].lower() == "vanillatransformer":
                 del conf["n_series"]
                 del conf["hist_exog_list"]
                 del conf["encoder_hidden_size"]
-                del conf['encoder_n_layers']
-                del conf['decoder_layers']
-                del conf['context_size']
-                del conf['decoder_hidden_size']
-                model = VanillaTransformer(**conf)                
-            elif model_args["model_type"].lower() == 'informer':
+                del conf["encoder_n_layers"]
+                del conf["decoder_layers"]
+                del conf["context_size"]
+                del conf["decoder_hidden_size"]
+                model = VanillaTransformer(**conf)
+            elif model_args["model_type"].lower() == "informer":
                 del conf["n_series"]
                 del conf["hist_exog_list"]
                 del conf["encoder_hidden_size"]
-                del conf['encoder_n_layers']
-                del conf['decoder_layers']
-                del conf['context_size']
-                del conf['decoder_hidden_size']
+                del conf["encoder_n_layers"]
+                del conf["decoder_layers"]
+                del conf["context_size"]
+                del conf["decoder_hidden_size"]
                 model = Informer(**conf)
-            elif model_args["model_type"].lower() == 'autoformer':
+            elif model_args["model_type"].lower() == "autoformer":
                 del conf["n_series"]
                 del conf["hist_exog_list"]
                 del conf["encoder_hidden_size"]
-                del conf['encoder_n_layers']
-                del conf['decoder_layers']
-                del conf['context_size']
-                del conf['decoder_hidden_size']
+                del conf["encoder_n_layers"]
+                del conf["decoder_layers"]
+                del conf["context_size"]
+                del conf["decoder_hidden_size"]
                 model = Autoformer(**conf)
-            elif model_args["model_type"].lower() == 'fedformer':
+            elif model_args["model_type"].lower() == "fedformer":
                 del conf["n_series"]
                 del conf["hist_exog_list"]
                 del conf["encoder_hidden_size"]
-                del conf['encoder_n_layers']
-                del conf['decoder_layers']
-                del conf['context_size']
-                del conf['decoder_hidden_size']
+                del conf["encoder_n_layers"]
+                del conf["decoder_layers"]
+                del conf["context_size"]
+                del conf["decoder_hidden_size"]
                 model = FEDformer(**conf)
-            elif model_args["model_type"].lower() == 'patchtst':
+            elif model_args["model_type"].lower() == "patchtst":
                 del conf["n_series"]
                 del conf["hist_exog_list"]
                 del conf["encoder_hidden_size"]
-                del conf['encoder_n_layers']
-                del conf['decoder_layers']
-                del conf['context_size']
-                del conf['decoder_hidden_size']
+                del conf["encoder_n_layers"]
+                del conf["decoder_layers"]
+                del conf["context_size"]
+                del conf["decoder_hidden_size"]
                 model = PatchTST(**conf)
 
-            elif model_args["model_type"].lower() == 'stemgnn':
+            elif model_args["model_type"].lower() == "stemgnn":
                 del conf["encoder_hidden_size"]
-                del conf['encoder_n_layers']
-                del conf['decoder_layers']
-                del conf['context_size']
-                del conf['decoder_hidden_size']
+                del conf["encoder_n_layers"]
+                del conf["decoder_layers"]
+                del conf["context_size"]
+                del conf["decoder_hidden_size"]
                 model = StemGNN(**conf)
-                
-        if model != None:
 
-            logger.info("procesing hist_exog_list")    
-            logger.info(model_args["exog_vars"]+[f"lag_[{lag}]" for lag in range(1,model_args["lags"])]+model_args["ds_props"])
-                
-            neural = NeuralForecast(models=[model], freq=model_args["frequency"], local_scaler_type=model_args["local_scaler_type"])
+        if model is not None:
+            neural = NeuralForecast(
+                models=[model],
+                freq=model_args["frequency"],
+                local_scaler_type=model_args["local_scaler_type"],
+            )
 
-            if model_args.get('crossval', False):
+            if model_args.get("crossval", False):
                 results_df = neural.cross_validation(training_df)
                 model_args["accuracies"] = get_model_accuracy_dict(results_df, r2_score)
             else:
@@ -454,10 +482,9 @@ class NgxForecastHandler(BaseMLEngine):
             # persist changes to handler folder
             neural.save(model_args["model_folder"], overwrite=True)
             self.model_storage.json_set("model_args", model_args)
-        
+
         else:
             logger.error("Model not compiled")
-
 
     def predict(self, df, args={}):
         """Makes forecasts with the NeuralForecast Handler.
@@ -475,61 +502,32 @@ class NgxForecastHandler(BaseMLEngine):
 
         groups_to_keep = prediction_df["unique_id"].unique()
 
-        logger.info("filtyering groups to forecast")
-        logger.info("model_folder=" + model_args["model_folder"])
-
-        # if model_args["model_folder"] in self.model_cache:
-        #     neural = self.model_cache[model_args["model_folder"]]
-        #     logger.info("Model loaded from cache")
-        # else:
-        #     neural = NeuralForecast.load(model_args["model_folder"])
-        #     logger.info("Model loaded from cache")
-        #     self.model_cache[model_args["model_folder"]] = neural
-        #     logger.info("Model stored in cache")
-
-
         neural = NeuralForecast.load(model_args["model_folder"])
-        logger.info("Model Loaded SUCCESS")
         forecast_df = neural.predict()
-        logger.info("Predicted SUCCESS")
-        # if model_args["hierarchy"] and HierarchicalReconciliation is not None:
-        #     training_df = dill.loads(self.model_storage.file_get("training_df"))
-        #     hier_df = dill.loads(self.model_storage.file_get("hier_df"))
-        #     hier_dict = dill.loads(self.model_storage.file_get("hier_dict"))
-        #     reconciled_df = reconcile_forecasts(training_df, forecast_df, hier_df, hier_dict)
-        #     results_df = reconciled_df[reconciled_df.index.isin(groups_to_keep)]
-        # else:
-        #     results_df = forecast_df[forecast_df.index.isin(groups_to_keep)].rename({
-        #         "y": model_args["target"],  # auto mode
-        #         "NHITS": model_args["target"],  # non-auto mode
-        #     }, axis=1)
-        results_df = forecast_df[forecast_df.index.isin(groups_to_keep)].rename({
+        results_df = forecast_df[forecast_df.index.isin(groups_to_keep)].rename(
+            {
                 "y": model_args["target"],  # auto mode
-                "LSTM": model_args["target"],  # non-auto mode                
+                "LSTM": model_args["target"],  # non-auto mode
                 "GRU": model_args["target"],
                 "RNN": model_args["target"],
                 "DilatedRNN": model_args["target"],
                 "DeepAR": model_args["target"],
-
                 "TCN": model_args["target"],
                 "TimesNet": model_args["target"],
-
                 "MLP": model_args["target"],
                 "NBEATS": model_args["target"],
                 "NBEATSx": model_args["target"],
                 "NHITS": model_args["target"],
-
                 "TFT": model_args["target"],
                 "VanillaTransformer": model_args["target"],
                 "Informer": model_args["target"],
                 "Autoformer": model_args["target"],
                 "FEDFormer": model_args["target"],
                 "PatchTST": model_args["target"],
-
                 "AutoLSTM": model_args["target"],  # non-auto mode
-            }, axis=1)
-        
-        logger.info("returning df in original format")
+            },
+            axis=1,
+        )
 
         return get_results_from_nixtla_df(results_df, model_args)
 
@@ -537,19 +535,34 @@ class NgxForecastHandler(BaseMLEngine):
         model_args = self.model_storage.json_get("model_args")
 
         if attribute == "model":
-            return pd.DataFrame({k: [model_args[k]] for k in ["model_name", "frequency", "hierarchy"]})
+            return pd.DataFrame(
+                {k: [model_args[k]] for k in ["model_name", "frequency", "hierarchy"]}
+            )
 
         elif attribute == "features":
             return pd.DataFrame(
-                {"ds": [model_args["order_by"]], "y": model_args["target"], "unique_id": [model_args["group_by"]], "exog_vars": [model_args["exog_vars"]]}
+                {
+                    "ds": [model_args["order_by"]],
+                    "y": model_args["target"],
+                    "unique_id": [model_args["group_by"]],
+                    "exog_vars": [model_args["exog_vars"]],
+                }
             )
 
-        elif attribute == 'info':
+        elif attribute == "info":
             outputs = model_args["target"]
-            inputs = [model_args["target"], model_args["order_by"], model_args["group_by"]] + model_args["exog_vars"]
-            accuracies = [(model, acc) for model, acc in model_args.get("accuracies", {}).items()]
-            return pd.DataFrame({"accuracies": [accuracies], "outputs": outputs, "inputs": [inputs]})
+            inputs = [
+                model_args["target"],
+                model_args["order_by"],
+                model_args["group_by"],
+            ] + model_args["exog_vars"]
+            accuracies = [
+                (model, acc) for model, acc in model_args.get("accuracies", {}).items()
+            ]
+            return pd.DataFrame(
+                {"accuracies": [accuracies], "outputs": outputs, "inputs": [inputs]}
+            )
 
         else:
-            tables = ['info', 'features', 'model']
-            return pd.DataFrame(tables, columns=['tables'])
+            tables = ["info", "features", "model"]
+            return pd.DataFrame(tables, columns=["tables"])
