@@ -4,6 +4,7 @@ import pandas as pd
 from mindsdb.utilities import log
 from mindsdb.integrations.libs.base import BaseMLEngine
 
+import numpy as np
 from mlxtend.preprocessing import TransactionEncoder
 from mlxtend.frequent_patterns import fpgrowth
 
@@ -13,7 +14,7 @@ logger = log.getLogger(__name__)
 
 
 class NgxFpgrowthHandler(BaseMLEngine):
-    name = "ngxclustering"
+    name = "ngxfpgrowth"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -35,6 +36,7 @@ class NgxFpgrowthHandler(BaseMLEngine):
             raise Exception("PyCaret engine requires a some data to initialize!")
 
         using["min_support"] = args.get("min_support", 0.00005)
+        using["min_len"] = args.get("min_len", 2)
         using["max_len"] = args.get("max_len", 15)
         using["target_col"] = target
 
@@ -70,10 +72,17 @@ class NgxFpgrowthHandler(BaseMLEngine):
         saved_args = self.model_storage.json_get("saved_args")
         with open(saved_args["model_path"], "rb") as f:
             model = pickle.load(f)
+
+        model["length"] = model["itemsets"].apply(lambda x: len(x)).astype(np.integer)
+
         model["itemsets"] = (
             model["itemsets"].apply(lambda x: ";".join(list(x))).astype(str)
         )
-        return model.sort_values(by="support", ascending=False)
+        model = model.rename({"itemsets": saved_args["target_col"]}, axis=1)
+
+        return model[model["length"] >= saved_args["min_len"]].sort_values(
+            by="support", ascending=False
+        )
 
     def describe(self, attribute=None):
         model_args = self.model_storage.json_get("model_args")
