@@ -73,6 +73,7 @@ class NgxFpgrowthHandler(BaseMLEngine):
         model["itemsets"] = (
             model["itemsets"].apply(lambda x: ";".join(list(x))).astype(str)
         )
+        model = model.rename({"itemsets": saved_args["target_col"]})
         return model.sort_values(by="support", ascending=False)
 
     def describe(self, attribute=None):
