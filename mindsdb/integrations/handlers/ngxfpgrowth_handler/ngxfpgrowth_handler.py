@@ -13,7 +13,7 @@ logger = log.getLogger(__name__)
 
 
 class NgxFpgrowthHandler(BaseMLEngine):
-    name = "ngxclustering"
+    name = "ngxfpgrowth"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
