@@ -4,9 +4,12 @@ import pandas as pd
 from mindsdb.utilities import log
 from mindsdb.integrations.libs.base import BaseMLEngine
 
-import numpy as np
-from mlxtend.preprocessing import TransactionEncoder
-from mlxtend.frequent_patterns import fpgrowth
+import polars as pl
+
+# from mlxtend.preprocessing import TransactionEncoder
+# from mlxtend.frequent_patterns import fpgrowth
+from .transactionencoder import TransactionEncoder
+from .fpgrowth import fpgrowth
 
 import pickle
 
@@ -40,19 +43,18 @@ class NgxFpgrowthHandler(BaseMLEngine):
         using["max_len"] = args.get("max_len", 15)
         using["target_col"] = target
 
-        itemsets = df[target]
+        itemsets = df[target].to_numpy()
         itemsets = [("".join(i).split(";")) for i in itemsets]
 
         te = TransactionEncoder()
-        te_ary = te.fit_transform(itemsets)
-        df = pd.DataFrame(te_ary, columns=te.columns_)
+        df_onehot = te.fit_transform(itemsets, as_df=True)
 
         model_file_path = os.path.join(
             self.model_storage.fileStorage.folder_path, "model"
         )
 
         model = fpgrowth(
-            df,
+            df_onehot,
             min_support=using["min_support"],
             use_colnames=True,
             max_len=using["max_len"],
@@ -73,16 +75,14 @@ class NgxFpgrowthHandler(BaseMLEngine):
         with open(saved_args["model_path"], "rb") as f:
             model = pickle.load(f)
 
-        model["length"] = model["itemsets"].apply(lambda x: len(x)).astype(np.integer)
-
-        model["itemsets"] = (
-            model["itemsets"].apply(lambda x: ";".join(list(x))).astype(str)
+        to_export = model.with_columns(
+            pl.col("itemsets").alias("length").map_elements(lambda x: len(x))
         )
-        model = model.rename({"itemsets": saved_args["target_col"]}, axis=1)
+        to_export = to_export.filter(pl.col("length") >= saved_args["min_len"])
+        to_export = to_export.with_columns(pl.col("itemsets").map_elements(";".join))
+        to_export = to_export.rename({"itemsets": saved_args["target_col"]}, axis=1)
 
-        return model[model["length"] >= saved_args["min_len"]].sort_values(
-            by="support", ascending=False
-        )
+        return to_export.sort("support", ascending=False).to_pandas()
 
     def describe(self, attribute=None):
         model_args = self.model_storage.json_get("model_args")
