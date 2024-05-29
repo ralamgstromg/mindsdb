@@ -4,12 +4,8 @@ import pandas as pd
 from mindsdb.utilities import log
 from mindsdb.integrations.libs.base import BaseMLEngine
 
-import polars as pl
-
-# from mlxtend.preprocessing import TransactionEncoder
-# from mlxtend.frequent_patterns import fpgrowth
-from .transactionencoder import TransactionEncoder
-from .fpgrowth import fpgrowth
+from mlxtend.preprocessing import TransactionEncoder
+from mlxtend.frequent_patterns import fpgrowth
 
 import pickle
 
@@ -17,7 +13,7 @@ logger = log.getLogger(__name__)
 
 
 class NgxFpgrowthHandler(BaseMLEngine):
-    name = "ngxfpgrowth"
+    name = "ngxclustering"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -39,22 +35,22 @@ class NgxFpgrowthHandler(BaseMLEngine):
             raise Exception("PyCaret engine requires a some data to initialize!")
 
         using["min_support"] = args.get("min_support", 0.00005)
-        using["min_len"] = args.get("min_len", 2)
         using["max_len"] = args.get("max_len", 15)
         using["target_col"] = target
 
-        itemsets = df[target].to_numpy()
+        itemsets = df[target]
         itemsets = [("".join(i).split(";")) for i in itemsets]
 
         te = TransactionEncoder()
-        df_onehot = te.fit_transform(itemsets, as_df=True)
+        te_ary = te.fit_transform(itemsets)
+        df = pd.DataFrame(te_ary, columns=te.columns_)
 
         model_file_path = os.path.join(
             self.model_storage.fileStorage.folder_path, "model"
         )
 
         model = fpgrowth(
-            df_onehot,
+            df,
             min_support=using["min_support"],
             use_colnames=True,
             max_len=using["max_len"],
@@ -74,15 +70,10 @@ class NgxFpgrowthHandler(BaseMLEngine):
         saved_args = self.model_storage.json_get("saved_args")
         with open(saved_args["model_path"], "rb") as f:
             model = pickle.load(f)
-
-        to_export = model.with_columns(
-            pl.col("itemsets").alias("length").map_elements(lambda x: len(x))
+        model["itemsets"] = (
+            model["itemsets"].apply(lambda x: ";".join(list(x))).astype(str)
         )
-        to_export = to_export.filter(pl.col("length") >= saved_args["min_len"])
-        to_export = to_export.with_columns(pl.col("itemsets").map_elements(";".join))
-        to_export = to_export.rename({"itemsets": saved_args["target_col"]}, axis=1)
-
-        return to_export.sort("support", ascending=False).to_pandas()
+        return model.sort_values(by="support", ascending=False)
 
     def describe(self, attribute=None):
         model_args = self.model_storage.json_get("model_args")
