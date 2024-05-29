@@ -37,6 +37,7 @@ class NgxFpgrowthHandler(BaseMLEngine):
 
         using["min_support"] = args.get("min_support", 0.00005)
         using["max_len"] = args.get("max_len", 15)
+        using["min_len"] = args.get("min_len", 2)
         using["target_col"] = target
 
         itemsets = df[target]
