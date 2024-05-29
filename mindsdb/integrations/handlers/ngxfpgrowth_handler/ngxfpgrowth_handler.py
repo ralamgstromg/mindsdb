@@ -1,5 +1,6 @@
 from typing import Optional, Dict
 import os
+import numpy as np
 import pandas as pd
 from mindsdb.utilities import log
 from mindsdb.integrations.libs.base import BaseMLEngine
@@ -70,11 +71,16 @@ class NgxFpgrowthHandler(BaseMLEngine):
         saved_args = self.model_storage.json_get("saved_args")
         with open(saved_args["model_path"], "rb") as f:
             model = pickle.load(f)
+        model["length"] = model["itemsets"].apply(lambda x: len(x)).astype(np.integer)
+
         model["itemsets"] = (
             model["itemsets"].apply(lambda x: ";".join(list(x))).astype(str)
         )
-        model = model.rename({"itemsets": saved_args["target_col"]})
-        return model.sort_values(by="support", ascending=False)
+        model = model.rename({"itemsets": saved_args["target_col"]}, axis=1)
+
+        return model[model["length"] >= saved_args["min_len"]].sort_values(
+            by="support", ascending=False
+        )
 
     def describe(self, attribute=None):
         model_args = self.model_storage.json_get("model_args")
