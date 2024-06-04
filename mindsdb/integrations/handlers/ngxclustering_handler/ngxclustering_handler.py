@@ -39,6 +39,9 @@ class NgxClusteringHandler(BaseMLEngine):
             using["cluster_descriptions"] if "cluster_descriptions" in using else []
         )
 
+        for c in using["omit_cols"]:
+            df[c] = df[c].astype("string")
+
         X_cols = []
         for c in df.columns:
             if c not in using["omit_cols"] + [target]:
@@ -76,9 +79,20 @@ class NgxClusteringHandler(BaseMLEngine):
         with open(saved_args["model_path"], "rb") as f:
             model = pickle.load(f)
 
+        for c in saved_args["omit_cols"]:
+            df[c] = df[c].astype("string")
+
         df[saved_args["target"]] = model.labels_
 
-        table_params = df.groupby(by=[saved_args["target"]]).agg("mean").reset_index()
+        X_cols = []
+        for c in df.columns:
+            if c not in saved_args["omit_cols"]:
+                X_cols.append(c)
+
+        table_params = (
+            df[X_cols].groupby(by=[saved_args["target"]]).agg("mean").reset_index()
+        )
+        table_params[saved_args["omit_cols"]] = df[saved_args["omit_cols"]]
 
         table_params = table_params[
             [saved_args["target"]] + saved_args["orderby_cols"]
