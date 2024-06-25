@@ -1012,6 +1012,7 @@
           "group": "Time Series Models",
           "pages": [
             "integrations/ai-engines/neuralforecast",
+            "integrations/ai-engines/lstmforecast",
             "integrations/ai-engines/statsforecast",
             "integrations/ai-engines/timegpt"
           ]

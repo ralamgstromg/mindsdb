@@ -155,5 +155,6 @@ exclude =
   mindsdb/integrations/handlers/aurora_handler/*
   mindsdb/integrations/handlers/surrealdb_handler/*
   mindsdb/integrations/handlers/neuralforecast_handler/*
+  mindsdb/integrations/handlers/lstmforecast_handler/*
   mindsdb/integrations/handlers/rag_handler/*
 max-complexity = 18
