@@ -41,7 +41,7 @@ langchain==0.2.9
 langchain-core==0.2.24
 langchain-community==0.2.9
 langchain-openai==0.1.6
-langchain-text_splitters==0.0.1
+langchain-text_splitters==0.2.2
 langfuse==2.35.0
 lark
 prometheus-client==0.20.0
