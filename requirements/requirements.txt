@@ -26,7 +26,7 @@ requests == 2.32.3
 pydateinfer==0.3.0
 dataprep_ml==24.5.1.2
 dill == 0.3.6
-numpy<=1.23.0
+numpy
 pytz
 botocore
 boto3
