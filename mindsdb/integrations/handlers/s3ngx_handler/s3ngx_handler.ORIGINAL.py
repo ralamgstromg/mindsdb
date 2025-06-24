@@ -20,62 +20,55 @@ from mindsdb.integrations.libs.response import (
     RESPONSE_TYPE
 )
 
-from mindsdb.integrations.libs.api_handler import APIResource, APIHandler
+from mindsdb.integrations.libs.base import DatabaseHandler, BaseHandler
 from mindsdb.integrations.utilities.sql_utils import FilterCondition, FilterOperator
 
 logger = log.getLogger(__name__)
 
 
-class ListFilesTable(APIResource):
+# class ListFilesTable(BaseHandler):
 
-    def list(self,
-             targets: List[str] = None,
-             conditions: List[FilterCondition] = None,
-             limit: int = None,
-             *args, **kwargs) -> pd.DataFrame:
+#     def list(self,
+#              targets: List[str] = None,
+#              conditions: List[FilterCondition] = None,
+#              limit: int = None,
+#              *args, **kwargs) -> pd.DataFrame:
 
-        buckets = None
-        extensions = None
-        names = None
-        for condition in conditions:
-            if condition.column == 'bucket':
-                if condition.op == FilterOperator.IN:
-                    buckets = condition.value
-                elif condition.op == FilterOperator.EQUAL:
-                    buckets = [condition.value]
-            elif condition.column == 'extension':
-                if condition.op == FilterOperator.IN:
-                    extensions = condition.value
-                elif condition.op == FilterOperator.EQUAL:
-                    extensions = [condition.value]
-            elif condition.column == 'name':
-                if condition.op == FilterOperator.IN:
-                    names = condition.value
-                elif condition.op == FilterOperator.EQUAL:
-                    names = [condition.value]
-                elif condition.op == FilterOperator.LIKE:
-                    names = [condition.value.replace('%', '')]
+#         buckets = None
+#         if conditions is None:
+#             conditions = []
 
-        data = []
-        for obj in self.handler.get_objects(limit=limit, buckets=buckets, extensions=extensions, names=names):
-            path = obj['Key']
-            path = path.replace('`', '')
-            item = {
-                'path': path,
-                'bucket': obj['Bucket'],
-                'name': path[path.rfind('/') + 1:],
-                'extension': path[path.rfind('.') + 1:]
-            }
+#         for condition in conditions:
+#             if condition.column == 'bucket':
+#                 if condition.op == FilterOperator.IN:
+#                     buckets = condition.value
+#                 elif condition.op == FilterOperator.EQUAL:
+#                     buckets = [condition.value]
+#                 condition.applied = True
 
-            data.append(item)
+#         logger.info(f'Listing files with conditions: {conditions}, limit: {limit}, buckets: {buckets}')
+#         logger.info(self)
 
-        return pd.DataFrame(data=data, columns=self.get_columns())
+#         data = []
+#         for obj in self.handler.get_objects(limit=limit, buckets=buckets):
+#             path = obj['Key']
+#             path = path.replace('`', '')
+#             item = {
+#                 'path': path,
+#                 'bucket': obj['Bucket'],
+#                 'name': path[path.rfind('/') + 1:],
+#                 'extension': path[path.rfind('.') + 1:]
+#             }
 
-    def get_columns(self) -> List[str]:
-        return ["path", "name", "extension", "bucket", "content"]
+#             data.append(item)
+
+#         return pd.DataFrame(data=data, columns=self.get_columns())
+
+    # def get_columns(self) -> List[str]:
+    #     return ["path", "name", "extension", "bucket", "content"]
 
 
-class FileTable(APIResource):
+class FileTable(BaseHandler):
 
     def list(self, targets: List[str] = None, table_name=None, *args, **kwargs) -> pd.DataFrame:
         return self.handler.read_as_table(table_name)
@@ -85,7 +78,7 @@ class FileTable(APIResource):
         return self.handler.add_data_to_table(table_name, df)
 
 
-class S3NgxHandler(APIHandler):
+class S3NgxHandler(DatabaseHandler):
     """
     This handler handles connection and execution of the SQL statements on AWS S3.
     """
@@ -115,7 +108,7 @@ class S3NgxHandler(APIHandler):
 
         self.resource = None
 
-        self._files_table = ListFilesTable(self)
+        #self._files_table = ListFilesTable(self)
 
     def __del__(self):
         if self.is_connected is True:
@@ -373,8 +366,38 @@ class S3NgxHandler(APIHandler):
             table_name = query.from_table.parts[-1]
 
             if table_name == 'files':
-                table = self._files_table
-                df = table.select(query)
+                buckets = None
+                print(query.where.conditions)
+                conditions = query.where.conditions if query.where else None
+                # logger.info(f'Conditions: {conditions}')
+                if conditions is None:
+                    conditions = []
+
+                for condition in conditions:
+                    if condition.column == 'bucket':
+                        if condition.op == FilterOperator.IN:
+                            buckets = condition.value
+                        elif condition.op == FilterOperator.EQUAL:
+                            buckets = [condition.value]
+                        condition.applied = True
+
+                #logger.info(f'Listing files with conditions: {conditions}, limit: {query.limit}, buckets: {buckets}')
+                #logger.info(self)
+
+                data = []
+                for obj in self.get_objects(limit=query.limit, buckets=buckets):
+                    path = obj['Key']
+                    path = path.replace('`', '')
+                    item = {
+                        'path': path,
+                        'bucket': obj['Bucket'],
+                        'name': path[path.rfind('/') + 1:],
+                        'extension': path[path.rfind('.') + 1:]
+                    }
+
+                    data.append(item)
+
+                df = pd.DataFrame(data=data, columns=self._get_columns())
 
                 # add content
                 has_content = False
@@ -420,7 +443,7 @@ class S3NgxHandler(APIHandler):
         query_ast = parse_sql(query)
         return self.query(query_ast)
 
-    def get_objects(self, limit=None, buckets=None, extensions=None, names=None, path=None) -> List[dict]:
+    def get_objects(self, limit=None, buckets=None) -> List[dict]:
         client = self.connect()
         if self.bucket is not None:
             scan_buckets = [self.bucket]
@@ -435,14 +458,8 @@ class S3NgxHandler(APIHandler):
             resp = self.resource.Bucket(bucket).objects.all()
             if resp is not None:
                 for obj in resp:
-                    if extensions is not None and obj.key.split('.')[-1] not in extensions:
-                        continue
-                    if names is not None and obj.key.split('/')[-1] not in names:
-                        continue
-                    if path is not None and obj.key not in path:
-                        continue
                     objects.append({"Key":f'{bucket}/{obj.key}', "Bucket": bucket})
-                    if limit is not None and len(objects) >= limit:
+                    if limit is not None and len(objects) >= limit.value:
                         break
 
         return objects
