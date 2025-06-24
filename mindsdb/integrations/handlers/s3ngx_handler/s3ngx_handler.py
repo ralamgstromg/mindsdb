@@ -32,32 +32,10 @@ class ListFilesTable(APIResource):
              targets: List[str] = None,
              conditions: List[FilterCondition] = None,
              limit: int = None,
-             *args, **kwargs) -> pd.DataFrame:
-
-        buckets = None
-        extensions = None
-        names = None
-        for condition in conditions:
-            if condition.column == 'bucket':
-                if condition.op == FilterOperator.IN:
-                    buckets = condition.value
-                elif condition.op == FilterOperator.EQUAL:
-                    buckets = [condition.value]
-            elif condition.column == 'extension':
-                if condition.op == FilterOperator.IN:
-                    extensions = condition.value
-                elif condition.op == FilterOperator.EQUAL:
-                    extensions = [condition.value]
-            elif condition.column == 'name':
-                if condition.op == FilterOperator.IN:
-                    names = condition.value
-                elif condition.op == FilterOperator.EQUAL:
-                    names = [condition.value]
-                elif condition.op == FilterOperator.LIKE:
-                    names = [condition.value.replace('%', '')]
+             *args, **kwargs) -> pd.DataFrame:        
 
         data = []
-        for obj in self.handler.get_objects(limit=limit, buckets=buckets, extensions=extensions, names=names):
+        for obj in self.handler.get_objects(limit=limit, conditions=conditions):
             path = obj['Key']
             path = path.replace('`', '')
             item = {
@@ -91,7 +69,6 @@ class S3NgxHandler(APIHandler):
     """
 
     name = 's3ngx'
-    # TODO: Can other file formats be supported?
     supported_file_formats = ['csv', 'tsv', 'json', 'parquet']
 
     def __init__(self, name: Text, connection_data: Optional[Dict], **kwargs):
@@ -420,8 +397,17 @@ class S3NgxHandler(APIHandler):
         query_ast = parse_sql(query)
         return self.query(query_ast)
 
-    def get_objects(self, limit=None, buckets=None, extensions=None, names=None, path=None) -> List[dict]:
+    def get_objects(self, limit=None, conditions=None) -> List[dict]:
         client = self.connect()
+
+        buckets = None
+        for condition in conditions:
+            if condition.column == 'bucket':
+                if condition.op == FilterOperator.IN:
+                    buckets = condition.value
+                elif condition.op == FilterOperator.EQUAL:
+                    buckets = [condition.value]            
+
         if self.bucket is not None:
             scan_buckets = [self.bucket]
         else:
@@ -434,16 +420,44 @@ class S3NgxHandler(APIHandler):
 
             resp = self.resource.Bucket(bucket).objects.all()
             if resp is not None:
-                for obj in resp:
-                    if extensions is not None and obj.key.split('.')[-1] not in extensions:
-                        continue
-                    if names is not None and obj.key.split('/')[-1] not in names:
-                        continue
-                    if path is not None and obj.key not in path:
-                        continue
-                    objects.append({"Key":f'{bucket}/{obj.key}', "Bucket": bucket})
-                    if limit is not None and len(objects) >= limit:
-                        break
+                for obj in resp: 
+                    include = True                   
+                    for condition in conditions:
+                        if condition.column == 'name':
+                            if condition.op == FilterOperator.EQUAL:
+                                if obj.key.split('/')[-1] != condition.value:
+                                    include = False
+                            elif condition.op == FilterOperator.LIKE:
+                                if condition.value.replace("%", "") not in obj.key.split('/')[-1]:
+                                    include = False
+                            elif condition.op == FilterOperator.IN:
+                                if obj.key.split('/')[-1] not in condition.value:
+                                    include = False
+                        elif condition.column == 'path':
+                            if condition.op == FilterOperator.EQUAL:
+                                if obj.key != condition.value:
+                                    include = False
+                            elif condition.op == FilterOperator.LIKE:
+                                if condition.value.replace("%", "") not in obj.key:
+                                    include = False
+                            elif condition.op == FilterOperator.IN:
+                                if obj.key not in condition.value:
+                                    include = False
+                        elif condition.column == 'extension':
+                            if condition.op == FilterOperator.EQUAL:
+                                if obj.key.split('.')[-1] != condition.value:
+                                    include = False
+                            elif condition.op == FilterOperator.LIKE:
+                                if condition.value.replace("%", "") not in obj.key.split('.')[-1]:
+                                    include = False
+                            elif condition.op == FilterOperator.IN:
+                                if obj.key.split('.')[-1] not in condition.value:
+                                    include = False
+
+                    if include or not conditions:
+                        objects.append({"Key":f'{bucket}/{obj.key}', "Bucket": bucket})
+                        if limit is not None and len(objects) >= limit:
+                            break
 
         return objects
 
