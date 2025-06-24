@@ -5,7 +5,10 @@ import boto3
 import duckdb
 from duckdb import HTTPException
 from mindsdb_sql_parser import parse_sql
-import pandas as pd
+
+#import pandas as pd
+import polars as pd
+
 from typing import Text, Dict, Optional
 from botocore.exceptions import ClientError
 from botocore.client import Config
@@ -60,6 +63,7 @@ class FileTable(APIResource):
 
     def add(self, data, table_name=None):
         df = pd.DataFrame(data)
+        print(df)
         return self.handler.add_data_to_table(table_name, df)
 
 
@@ -263,9 +267,11 @@ class S3NgxHandler(APIHandler):
 
         with self._connect_duckdb(bucket) as connection:
 
-            cursor = connection.execute(f"SELECT * FROM 's3://{bucket}/{key}'")
+            #cursor = connection.execute(f"SELECT * FROM 's3://{bucket}/{key}'").pl()
 
-            return cursor.fetchdf()
+            #return cursor.fetchdf()
+            data = connection.execute(f"SELECT * FROM 's3://{bucket}/{key}'").pl()
+            return data
 
     def _read_as_content(self, key) -> None:
         """
@@ -290,22 +296,48 @@ class S3NgxHandler(APIHandler):
         # Check if the file exists in the S3 bucket.
         bucket, key = self._get_bucket(key)
 
+        exists = False
         try:
             client = self.connect()
             client.head_object(Bucket=bucket, Key=key)
-        except ClientError as e:
-            logger.error(f'Error querying the file {key} in the bucket {bucket}, {e}!')
-            raise e
+            exists = True
+        except Exception as e:
+            exists = False
 
         with self._connect_duckdb(bucket) as connection:
             # copy
-            connection.execute(f"CREATE TABLE tmp_table AS SELECT * FROM 's3://{bucket}/{key}'")
+            if exists:
+                connection.execute(f"CREATE TABLE tmp_table AS SELECT * FROM 's3://{bucket}/{key}'")
+                # insert
+                connection.execute("INSERT INTO tmp_table BY NAME SELECT * FROM df")
+                # upload
+                connection.execute(f"COPY tmp_table TO 's3://{bucket}/{key}' (FORMAT PARQUET);")
+            else:
+                # create table
+                #print(f's3://{bucket}/{key}')
+                #print(df.dtypes)
+                connection.execute(f"COPY df TO 's3://{bucket}/{key}' (FORMAT PARQUET, OVERWRITE_OR_IGNORE true);")
 
-            # insert
-            connection.execute("INSERT INTO tmp_table BY NAME SELECT * FROM df")
+    def _create_table(self, key, df) -> None:
+        """
+        Create a table in the S3 bucket.
+        """
+        # Check if the file exists in the S3 bucket.
+        bucket, key = self._get_bucket(key)
 
-            # upload
-            connection.execute(f"COPY tmp_table TO 's3://{bucket}/{key}'")
+        client = self.connect()
+        exists = False
+        try:
+            client.head_object(Bucket=bucket, Key=key)
+            exists = True
+        except Exception as e:
+            with self._connect_duckdb(bucket) as connection:
+                connection.execute(f"COPY df TO 's3://{bucket}/{key}'")
+
+        if exists:
+            logger.error(f'Table {key} already exists in the bucket {bucket}')
+            raise ValueError(f'Table {key} already exists in the bucket {bucket}')
+
 
     def _get_columns(self) -> List[str]:
         return ["path", "name", "extension", "bucket", "content"]
@@ -344,6 +376,28 @@ class S3NgxHandler(APIHandler):
             response = Response(RESPONSE_TYPE.OK)
 
         elif isinstance(query, CreateTable):
+            table = query.name.parts[-1]
+            df = pd.DataFrame(columns=[col.name for col in query.columns]) #, dtype={col.name: col.type for col in query.columns})
+            for col in query.columns:
+                if col.type in ('string', 'text', 'varchar', 'char'):
+                    df[col.name] = pd.Series(dtype='object')
+                elif col.type in ('bigint'):
+                    df[col.name] = pd.Series(dtype='int64')
+                elif col.type in ('integer', 'int', 'smallint', 'tinyint'):
+                    df[col.name] = pd.Series(dtype='int32')
+                elif col.type in ('float', 'decimal', 'double'):
+                    df[col.name] = pd.Series(dtype='float64')
+                elif col.type == 'boolean':
+                    df[col.name] = pd.Series(dtype='bool')
+                elif col.type == 'date':
+                    df[col.name] = pd.Series(dtype='datetime64[ns]')
+                elif col.type == 'timestamp':
+                    df[col.name] = pd.Series(dtype='datetime64[ns]')
+                else:
+                    logger.error(f'Unsupported data type {col.type} for column {col.name}')
+                    raise ValueError(f'Unsupported data type {col.type} for column {col.name}')
+                
+            self._create_table(table, df)            
             response = Response(RESPONSE_TYPE.OK)
 
         elif isinstance(query, Select):
@@ -376,6 +430,7 @@ class S3NgxHandler(APIHandler):
             )
         elif isinstance(query, Insert):
             table_name = query.table.parts[-1]
+            print("table_name", table_name)
             table = FileTable(self, table_name=table_name)
             table.insert(query)
             response = Response(RESPONSE_TYPE.OK)
