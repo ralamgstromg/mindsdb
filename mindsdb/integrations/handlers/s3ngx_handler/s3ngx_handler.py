@@ -61,7 +61,9 @@ class FileTable(APIResource):
     def list(self, targets: List[str] = None, table_name=None, *args, **kwargs) -> pd.DataFrame:
         return self.handler.read_as_table(table_name)
 
-    def add(self, data, table_name=None):
+    def add(self, data, table_name=None):        
+        # df = pd.DataFrame(data)
+        print(data)
         df = pd.DataFrame(data)
         print(df)
         return self.handler.add_data_to_table(table_name, df)
@@ -311,7 +313,7 @@ class S3NgxHandler(APIHandler):
                 # insert
                 connection.execute("INSERT INTO tmp_table BY NAME SELECT * FROM df")
                 # upload
-                connection.execute(f"COPY tmp_table TO 's3://{bucket}/{key}' (FORMAT PARQUET);")
+                connection.execute(f"COPY tmp_table TO 's3://{bucket}/{key}' (FORMAT PARQUET, OVERWRITE_OR_IGNORE true);")
             else:
                 # create table
                 #print(f's3://{bucket}/{key}')
@@ -430,7 +432,6 @@ class S3NgxHandler(APIHandler):
             )
         elif isinstance(query, Insert):
             table_name = query.table.parts[-1]
-            print("table_name", table_name)
             table = FileTable(self, table_name=table_name)
             table.insert(query)
             response = Response(RESPONSE_TYPE.OK)
