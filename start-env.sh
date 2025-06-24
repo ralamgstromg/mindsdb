@@ -8,7 +8,7 @@ python -m mindsdb --api http,mysql,mongodb,postgres,mcp --config mindsdb_config.
 # pip install .[handler_name]
 
 export MINDSDB_USERNAME=root
-export MINDSDB_PASSWORD=EticosLtda2025*
+export MINDSDB_PASSWORD=
 
 
 unset MINDSDB_USERNAME

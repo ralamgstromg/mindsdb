@@ -248,8 +248,8 @@ class S3NgxHandler(APIHandler):
         return response
 
     def _get_bucket(self, key):
-        if self.bucket is not None:
-            return self.bucket, key
+        # if self.bucket is not None:
+        #     return self.bucket, key
 
         # get bucket from first part of the key
         ar = key.split('/')
@@ -333,9 +333,9 @@ class S3NgxHandler(APIHandler):
                         RESPONSE_TYPE.ERROR,
                         error_message=f"Can't delete table from database '{table_identifier.parts[0]}'",
                     )
-                table_name = table_identifier.parts[-1]
+                table_name = table_identifier.parts[-1].replace(f"{self.bucket}/", "")
                 try:
-                    self.connection.delete_object(Bucket=self.bucket, Key=table_name)
+                    self.connection.delete_object(Bucket=self.bucket, Key=table_name)                    
                 except Exception as e:
                     return Response(
                         RESPONSE_TYPE.ERROR,
@@ -435,13 +435,13 @@ class S3NgxHandler(APIHandler):
                                     include = False
                         elif condition.column == 'path':
                             if condition.op == FilterOperator.EQUAL:
-                                if obj.key != condition.value:
+                                if f'{bucket}/{obj.key}' != condition.value:
                                     include = False
                             elif condition.op == FilterOperator.LIKE:
-                                if condition.value.replace("%", "") not in obj.key:
+                                if condition.value.replace("%", "") not in f'{bucket}/{obj.key}':
                                     include = False
                             elif condition.op == FilterOperator.IN:
-                                if obj.key not in condition.value:
+                                if f'{bucket}/{obj.key}' not in condition.value:
                                     include = False
                         elif condition.column == 'extension':
                             if condition.op == FilterOperator.EQUAL:
