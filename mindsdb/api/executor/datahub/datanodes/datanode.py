@@ -1,4 +1,5 @@
-from pandas import DataFrame
+#from pandas import DataFrame
+from polars import DataFrame
 
 from mindsdb.api.executor.datahub.classes.response import DataHubResponse
 

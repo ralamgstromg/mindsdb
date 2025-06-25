@@ -5,7 +5,8 @@ import json
 from flask import request
 from flask_restx import Resource
 from sqlalchemy.exc import NoResultFound
-import pandas as pd
+#import pandas as pd
+import polars as pd
 
 from mindsdb.api.http.namespaces.configs.projects import ns_conf
 from mindsdb.api.http.utils import http_error

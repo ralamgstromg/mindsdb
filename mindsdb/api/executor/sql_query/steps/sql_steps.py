@@ -1,4 +1,5 @@
-import pandas as pd
+#import pandas as pd
+import polars as pd
 
 from mindsdb.api.executor.planner.steps import (
     LimitOffsetStep,

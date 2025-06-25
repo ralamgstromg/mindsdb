@@ -1,6 +1,7 @@
 import json
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from mindsdb_sql_parser.ast import BinaryOperation, Constant, Select
 from mindsdb_sql_parser.ast.base import ASTNode
 
@@ -101,7 +102,7 @@ class ModelsTable(MdbTable):
             # if target_table is not None and target_table != project_name:
             #     continue
 
-        df = pd.DataFrame(data, columns=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns)
         return df
 
 
@@ -114,7 +115,7 @@ class DatabasesTable(MdbTable):
         project = inf_schema.database_controller.get_list(with_secrets=session.show_secrets)
         data = [[x["name"], x["type"], x["engine"], to_json(x.get("connection_data"))] for x in project]
 
-        df = pd.DataFrame(data, columns=cls.columns)
+        df = pd.DataFrame(data, shcema=cls.columns)
         return df
 
 
@@ -131,7 +132,7 @@ class MLEnginesTable(MdbTable):
         for _key, val in ml_integrations.items():
             data.append([val["name"], val.get("engine"), to_json(val.get("connection_data"))])
 
-        df = pd.DataFrame(data, columns=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns)
         return df
 
 
@@ -172,7 +173,7 @@ class HandlersTable(MdbTable):
                 ]
             )
 
-        df = pd.DataFrame(data, columns=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns)
         return df
 
 
@@ -212,7 +213,7 @@ class JobsTable(MdbTable):
         # to list of lists
         data = [[row[k] for k in columns_lower] for row in data]
 
-        return pd.DataFrame(data, columns=columns)
+        return pd.DataFrame(data, schema=columns)
 
 
 class TriggersTable(MdbTable):
@@ -270,7 +271,7 @@ class TriggersTable(MdbTable):
         # to list of lists
         data = [[row.get(k) for k in columns_lower] for row in data]
 
-        return pd.DataFrame(data, columns=columns)
+        return pd.DataFrame(data, schema=columns)
 
 
 class ChatbotsTable(MdbTable):
@@ -313,7 +314,7 @@ class ChatbotsTable(MdbTable):
             row["params"] = to_json(row["params"])
             data.append([row[k] for k in columns_lower])
 
-        return pd.DataFrame(data, columns=columns)
+        return pd.DataFrame(data, schema=columns)
 
 
 class KBTable(MdbTable):
@@ -377,7 +378,7 @@ class KBTable(MdbTable):
                 )
             )
 
-        return pd.DataFrame(data, columns=cls.columns)
+        return pd.DataFrame(data, schema=cls.columns)
 
 
 class SkillsTable(MdbTable):
@@ -397,7 +398,7 @@ class SkillsTable(MdbTable):
 
         # NAME, PROJECT, TYPE, PARAMS
         data = [(s.name, project_names[s.project_id], s.type, s.params) for s in all_skills]
-        return pd.DataFrame(data, columns=cls.columns)
+        return pd.DataFrame(data, schema=cls.columns)
 
 
 class AgentsTable(MdbTable):
@@ -425,7 +426,7 @@ class AgentsTable(MdbTable):
             )
             for a in all_agents
         ]
-        return pd.DataFrame(data, columns=cls.columns)
+        return pd.DataFrame(data, schema=cls.columns)
 
 
 class ViewsTable(MdbTable):
@@ -443,7 +444,7 @@ class ViewsTable(MdbTable):
         # to list of lists
         data = [[row[k] for k in columns_lower] for row in data]
 
-        return pd.DataFrame(data, columns=cls.columns)
+        return pd.DataFrame(data, schema=cls.columns)
 
 
 class QueriesTable(MdbTable):
@@ -475,4 +476,4 @@ class QueriesTable(MdbTable):
 
         data = [[row[k] for k in columns_lower] for row in data]
 
-        return pd.DataFrame(data, columns=cls.columns)
+        return pd.DataFrame(data, schema=cls.columns)

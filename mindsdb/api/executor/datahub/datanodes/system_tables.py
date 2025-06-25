@@ -1,7 +1,8 @@
 from typing import Optional, List, Literal
 from dataclasses import dataclass, fields
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from mindsdb_sql_parser.ast.base import ASTNode
 
 from mindsdb.utilities import log
@@ -60,7 +61,7 @@ class SchemataTable(Table):
         databases_meta = inf_schema.session.database_controller.get_list()
         data = [["def", x["name"], "utf8mb4", "utf8mb4_0900_ai_ci", None] for x in databases_meta]
 
-        df = pd.DataFrame(data, columns=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns)
         return df
 
 
@@ -143,7 +144,7 @@ class TablesTable(Table):
                 row.TABLE_SCHEMA = project_name
                 data.append(row.to_list())
 
-        df = pd.DataFrame(data, columns=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns)
         return df
 
 
@@ -308,7 +309,7 @@ class ColumnsTable(Table):
                         ColumnsTableRow.from_is_columns_row(table_schema=db_name, table_name=table_name, row=row)
                     )
 
-        return pd.DataFrame(result, columns=cls.columns)
+        return pd.DataFrame(result, schema=cls.columns)
 
 
 class EventsTable(Table):
@@ -415,7 +416,7 @@ class EnginesTable(Table):
             ]
         ]
 
-        df = pd.DataFrame(data, columns=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns)
         return df
 
 
@@ -478,7 +479,7 @@ class CharacterSetsTable(Table):
             ["utf8mb4", "UTF-8 Unicode", "utf8mb4_general_ci", 4],
         ]
 
-        df = pd.DataFrame(data, columns=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns)
         return df
 
 
@@ -502,7 +503,7 @@ class CollationsTable(Table):
             ["latin1_swedish_ci", "latin1", 8, "Yes", "Yes", 1, "PAD SPACE"],
         ]
 
-        df = pd.DataFrame(data, columns=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns)
         return df
 
 
@@ -548,7 +549,7 @@ class MetaTablesTable(Table):
             }
             data.append(item)
 
-        df = pd.DataFrame(data, columns=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns)
         return df
 
 
@@ -592,7 +593,7 @@ class MetaColumnsTable(Table):
                 }
                 data.append(item)
 
-        df = pd.DataFrame(data, columns=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns)
         return df
 
 
@@ -645,7 +646,7 @@ class MetaColumnStatisticsTable(Table):
 
                 data.append(item)
 
-        df = pd.DataFrame(data, columns=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns)
         return df
 
 
@@ -708,7 +709,7 @@ class MetaTableConstraintsTable(Table):
                 }
                 data.append(item)
 
-        df = pd.DataFrame(data, columns=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns)
         return df
 
 
@@ -796,7 +797,7 @@ class MetaColumnUsageTable(Table):
                 }
                 data.append(item)
 
-        df = pd.DataFrame(data, columns=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns)
         return df
 
 
@@ -814,5 +815,5 @@ class MetaHandlerInfoTable(Table):
             handler_info = data_catalog_reader.get_handler_info()
             data.append({"HANDLER_INFO": str(handler_info), "TABLE_SCHEMA": database})
 
-        df = pd.DataFrame(data, columns=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns)
         return df

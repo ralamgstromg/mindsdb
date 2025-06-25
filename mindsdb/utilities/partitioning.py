@@ -1,6 +1,7 @@
 import os
 from typing import Iterable, Callable
-import pandas as pd
+# import pandas as pd
+import polars as pd
 
 from mindsdb.utilities.config import Config
 from mindsdb.utilities.context_executor import execute_in_threads
@@ -30,7 +31,8 @@ def split_data_frame(df: pd.DataFrame, partition_size: int) -> Iterable[pd.DataF
     chunk = 0
     while chunk * partition_size < len(df):
         # create results with partition
-        df1 = df.iloc[chunk * partition_size: (chunk + 1) * partition_size]
+        #df1 = df.iloc[chunk * partition_size: (chunk + 1) * partition_size]
+        df1 = df[chunk * partition_size: (chunk + 1) * partition_size]
         chunk += 1
         yield df1
 

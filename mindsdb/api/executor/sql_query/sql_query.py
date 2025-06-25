@@ -12,7 +12,8 @@ import inspect
 from textwrap import dedent
 from typing import Union, Dict
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from mindsdb_sql_parser import parse_sql, ASTNode
 
 from mindsdb.api.executor.planner.steps import (

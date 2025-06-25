@@ -1,11 +1,13 @@
 import time
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from flask import request
 from flask_restx import Resource
 from mindsdb_sql_parser import parse_sql
 from mindsdb_sql_parser.ast import Constant
-from pandas.core.frame import DataFrame
+#from pandas.core.frame import DataFrame
+from polars import DataFrame
 
 from mindsdb.api.http.namespaces.configs.analysis import ns_conf
 from mindsdb.api.executor.utilities.sql import get_query_tables
@@ -112,7 +114,7 @@ class DataAnalysis(Resource):
 
         timestamp = time.time()
         try:
-            analysis = analyze_df(DataFrame(data, columns=column_names))
+            analysis = analyze_df(DataFrame(data, schema=column_names))
             return {"analysis": analysis, "timestamp": time.time()}
         except ImportError:
             return {

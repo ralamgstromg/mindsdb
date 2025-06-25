@@ -1,7 +1,8 @@
 import datetime as dt
 import re
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 
 from mindsdb_sql_parser.ast import (
     BinaryOperation,

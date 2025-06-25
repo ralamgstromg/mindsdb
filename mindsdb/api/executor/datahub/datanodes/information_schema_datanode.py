@@ -1,6 +1,7 @@
 from dataclasses import astuple
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from mindsdb_sql_parser.ast.base import ASTNode
 
 from mindsdb.api.executor.datahub.datanodes.datanode import DataNode

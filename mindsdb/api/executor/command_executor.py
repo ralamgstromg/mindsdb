@@ -4,7 +4,8 @@ from textwrap import dedent
 from typing import Optional
 from functools import reduce
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from mindsdb_sql_parser import parse_sql
 from mindsdb_sql_parser.ast.mindsdb import AlterDatabase
 from mindsdb_sql_parser.ast import (
@@ -323,7 +324,12 @@ class ExecuteCommands:
                     elif var_name not in data:
                         data[var_name] = var_data[0]
 
-                df = pd.DataFrame(data.items(), columns=["Variable_name", "Value"])
+                print(data.items())
+                # df = pd.DataFrame(data.items(), schema=["Variable_name", "Value"])
+                df = pd.DataFrame({
+                    "Variable_name": list(data.keys()),
+                    "Value": list(data.values())
+                }, strict=False)
                 df2 = query_df(df, new_statement)
 
                 return ExecuteAnswer(data=ResultSet.from_df(df2, table_name="session_variables"))

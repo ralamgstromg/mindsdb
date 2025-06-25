@@ -1,4 +1,5 @@
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from mindsdb_sql_parser.ast import Constant, Identifier, Insert, OrderBy, TableColumn
 from mindsdb_sql_parser.ast.mindsdb import (
     CreateJob,

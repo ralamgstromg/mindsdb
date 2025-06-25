@@ -1,4 +1,6 @@
-import pandas as pd
+#import pandas as pd
+import polars as pd
+
 from typing import List
 
 from mindsdb_sql_parser import ASTNode

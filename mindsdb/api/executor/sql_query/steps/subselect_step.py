@@ -1,6 +1,7 @@
 from collections import defaultdict
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 
 from mindsdb_sql_parser.ast import Identifier, Select, Star, Constant, Parameter, Function, Variable, BinaryOperation
 

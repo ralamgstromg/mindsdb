@@ -1,6 +1,7 @@
 import copy
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 
 from mindsdb_sql_parser import ast
 from mindsdb_sql_parser.ast import (
