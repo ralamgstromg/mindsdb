@@ -3,8 +3,10 @@ import inspect
 from dataclasses import astuple
 from typing import Iterable, List
 
-import numpy as np
-import pandas as pd
+#import pandas
+#import numpy as np
+#import pandas as pd
+import polars as pd
 from sqlalchemy.types import Integer, Float
 
 from mindsdb_sql_parser.ast.base import ASTNode
@@ -227,7 +229,8 @@ class IntegrationDataNode(DataNode):
 
             num_rows = 0
             if result.data_frame is not None:
-                num_rows = len(result.data_frame.index)
+                #num_rows = len(result.data_frame.index)
+                num_rows = len(result.data_frame)
             response_size_with_labels = metrics.INTEGRATION_HANDLER_RESPONSE_SIZE.labels(
                 get_class_name(self.integration_handler), result.type
             )
@@ -248,17 +251,22 @@ class IntegrationDataNode(DataNode):
         # region clearing df from NaN values
         # recursion error appears in pandas 1.5.3 https://github.com/pandas-dev/pandas/pull/45749
         if isinstance(df, pd.Series):
-            df = df.to_frame()
+            df = pd.DataFrame(df)
 
-        try:
-            # replace python's Nan, np.NaN, np.nan and pd.NA to None
-            # TODO keep all NAN to the end of processing, bacause replacing also changes dtypes
-            df.replace([np.NaN, pd.NA, pd.NaT], None, inplace=True)
-        except Exception as e:
-            logger.error(f"Issue with clearing DF from NaN values: {e}")
+        # try:
+        #     # replace python's Nan, np.NaN, np.nan and pd.NA to None
+        #     # TODO keep all NAN to the end of processing, bacause replacing also changes dtypes
+        #     df.replace([np.NaN, pandas.NA, pandas.NaT, pd.Null], None, inplace=True)
+        # except Exception as e:
+        #     logger.error(f"Issue with clearing DF from NaN values: {e}")
         # endregion
 
-        columns_info = [{"name": k, "type": v} for k, v in df.dtypes.items()]
+        #columns_info = [{"name": k, "type": v} for k, v in df.dtypes.items()]
+        #print(df.schema.items())
+        columns_info = [{"name": k, "type": v} for k, v in df.schema.items()]
+
+        #print(columns_info)
+        #print(df)
 
         return DataHubResponse(
             data_frame=df, columns=columns_info, affected_rows=result.affected_rows, mysql_types=result.mysql_types

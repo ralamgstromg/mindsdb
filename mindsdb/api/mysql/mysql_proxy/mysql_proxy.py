@@ -24,6 +24,8 @@ from functools import partial
 from typing import List
 from dataclasses import dataclass
 
+import polars as pd
+
 from mindsdb.api.mysql.mysql_proxy.data_types.mysql_datum import Datum
 import mindsdb.utilities.hooks as hooks
 import mindsdb.utilities.profiler as profiler
@@ -336,9 +338,11 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
             packages = []
 
             if len(answer.result_set) > 1000:
-                # for big responses leverage pandas map function to convert data to packages
+                print("[SEND_TABLE_PACKETS] result_set is too big, using send_table_packets")
                 self.send_table_packets(result_set=answer.result_set)
             else:
+                print("[GET_TABLE_PACKETS] result_set is small, using get_table_packets")
+                print(answer.result_set)
                 packages += self.get_table_packets(result_set=answer.result_set)
 
             if answer.status is not None:
@@ -373,11 +377,11 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
             if column.get('size') is None:
                 length = 1
                 for row in data:
-                    if isinstance(row, dict):
+                    if isinstance(row, dict):                    
                         length = max(len(str(row[column_alias])), length)
                     else:
-                        length = max(len(str(row[i])), length)
-                column['size'] = 1
+                        length = max(len(row.cast(pd.String)), length)                        
+                column['size'] = length
 
             packets.append(
                 self.packet(
@@ -396,22 +400,29 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
         return packets
 
     def get_table_packets(self, result_set: ResultSet, status=0):
+        print("get_table_packets called")
+        print(result_set)
         data_frame, columns_dict = dump_result_set_to_mysql(result_set)
-        data = data_frame.to_dict('split')['data']
+        #data = data_frame.to_dict('split')['data']
+        # print(data_frame)
+        #print(columns_dict)
 
         # TODO remove columns order
         packets = [self.packet(ColumnCountPacket, count=len(columns_dict))]
-        packets.extend(self._get_column_defenition_packets(columns_dict, data))
+        packets.extend(self._get_column_defenition_packets(columns_dict, data_frame))
 
         if self.client_capabilities.DEPRECATE_EOF is False:
             packets.append(self.packet(EofPacket, status=status))
 
-        packets += [self.packet(ResultsetRowPacket, data=x) for x in data]
+        packets += [self.packet(ResultsetRowPacket, data=x) for x in data_frame]
         return packets
 
     def send_table_packets(self, result_set: ResultSet, status: int = 0):
         df, columns_dicts = dump_result_set_to_mysql(result_set, infer_column_size=True)
         # text protocol, convert all to string and serialize as packages
+
+        print(type(df))
+        print(df)
 
         def apply_f(v):
             if v is None:
@@ -429,13 +440,45 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
             packets.append(self.packet(EofPacket, status=status))
         self.send_package_group(packets)
 
+        # chunk_size = 100
+        # for start in range(0, len(df), chunk_size):
+        #     string = b"".join([
+        #         self.packet(body=body, length=len(body)).accum()
+        #         #for body in df[start:start + chunk_size].applymap(apply_f).values.sum(axis=1)
+        #         for body in df[start:start + chunk_size].applymap(apply_f).values.sum(axis=1)
+        #     ])
+        #     self.socket.sendall(string)
+
+        # processed_df = df.with_columns([
+        #     pd.col(col).map_elements(
+        #         lambda v: NULL_VALUE if v is None else (Datum.serialize_str(str(v)) if not isinstance(v, bytes) else v),
+        #         return_dtype=pd.Binary
+        #     ).alias(col) for col in df.columns
+        # ])
+
+        processed_df = df.with_columns([
+            pd.when(pd.col(col).is_null())
+            .then(pd.lit(NULL_VALUE))
+            .otherwise(
+                pd.col(col).map_elements(
+                    lambda x: Datum.serialize_str(str(x)) if not isinstance(x, bytes) else x,
+                    return_dtype=pd.Binary
+                )
+            ).alias(col) for col in df.columns
+        ]
+        )
+
         chunk_size = 100
-        for start in range(0, len(df), chunk_size):
-            string = b"".join([
+        for i in range(0, processed_df.height, chunk_size):
+            chunk = processed_df.slice(i, chunk_size)
+            byte_arrays_for_chunk = chunk.to_numpy()
+            concatenated_rows_bytes = [b"".join(row) for row in byte_arrays_for_chunk]
+            string_to_send = b"".join([
                 self.packet(body=body, length=len(body)).accum()
-                for body in df[start:start + chunk_size].applymap(apply_f).values.sum(axis=1)
+                for body in concatenated_rows_bytes
             ])
-            self.socket.sendall(string)
+            self.socket.sendall(string_to_send)
+            
 
     def decode_utf(self, text):
         try:

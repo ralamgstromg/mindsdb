@@ -12,7 +12,8 @@
 import datetime as dt
 import struct
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 
 from mindsdb.api.mysql.mysql_proxy.data_types.mysql_datum import Datum
 from mindsdb.api.mysql.mysql_proxy.data_types.mysql_packet import Packet
@@ -148,7 +149,7 @@ class BinaryResultsetRowPacket(Packet):
             if date_value is None:
                 raise ValueError(f"Invalid date format: {val}")
             date_type = "datetime"
-        elif isinstance(val, pd.Timestamp):
+        elif isinstance(val, pd.Datetime):
             date_value = val
             date_type = "datetime"
 

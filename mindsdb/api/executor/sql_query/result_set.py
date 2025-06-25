@@ -4,8 +4,9 @@ from typing import Any
 from dataclasses import dataclass, field, MISSING
 
 import numpy as np
-import pandas as pd
-from pandas.api import types as pd_types
+#import pandas as pd
+import polars as pd
+# from pandas.api import types as pd_types
 import sqlalchemy.types as sqlalchemy_types
 
 from mindsdb_sql_parser.ast import TableColumn
@@ -32,21 +33,38 @@ def get_mysql_data_type_from_series(series: pd.Series, do_infer: bool = False) -
     Returns:
         MYSQL_DATA_TYPE: The corresponding MySQL data type enum value
     """
-    dtype = series.dtype
-    if pd_types.is_object_dtype(dtype) and do_infer is True:
-        dtype = series.infer_objects().dtype
+    # dtype = series.dtype
+    # if pd_types.is_object_dtype(dtype) and do_infer is True:
+    #     dtype = series.infer_objects().dtype
 
-    if pd_types.is_object_dtype(dtype):
+    # if pd_types.is_object_dtype(dtype):
+    #     return MYSQL_DATA_TYPE.TEXT
+    # if pd_types.is_datetime64_dtype(dtype):
+    #     return MYSQL_DATA_TYPE.DATETIME
+    # if pd_types.is_string_dtype(dtype):
+    #     return MYSQL_DATA_TYPE.TEXT
+    # if pd_types.is_bool_dtype(dtype):
+    #     return MYSQL_DATA_TYPE.BOOL
+    # if pd_types.is_integer_dtype(dtype):
+    #     return MYSQL_DATA_TYPE.INT
+    # if pd_types.is_numeric_dtype(dtype):
+    #     return MYSQL_DATA_TYPE.FLOAT
+    # return MYSQL_DATA_TYPE.TEXT
+    dtype = series.dtype
+    # if dtype == pd.Object and do_infer is True:
+    #         dtype = series.infer_objects().dtype
+
+    if dtype in (pd.Object, pd.String):
         return MYSQL_DATA_TYPE.TEXT
-    if pd_types.is_datetime64_dtype(dtype):
+    if dtype in (pd.Date, pd.Datetime):
         return MYSQL_DATA_TYPE.DATETIME
-    if pd_types.is_string_dtype(dtype):
+    if dtype == pd.String:
         return MYSQL_DATA_TYPE.TEXT
-    if pd_types.is_bool_dtype(dtype):
+    if dtype == pd.Boolean:
         return MYSQL_DATA_TYPE.BOOL
-    if pd_types.is_integer_dtype(dtype):
+    if dtype in (pd.Int8, pd.Int16, pd.Int32, pd.Int64):
         return MYSQL_DATA_TYPE.INT
-    if pd_types.is_numeric_dtype(dtype):
+    if dtype in (pd.Float32, pd.Float64):
         return MYSQL_DATA_TYPE.FLOAT
     return MYSQL_DATA_TYPE.TEXT
 
@@ -89,10 +107,12 @@ def rename_df_columns(df: pd.DataFrame, names: list | None = None) -> None:
         df (pd.DataFrame): dataframe
         names (Optional[List]): columns names to set
     """
+    print(names)
     if names is not None:
         df.columns = names
-    else:
-        df.columns = list(range(len(df.columns)))
+    # else:
+        #df.columns = list(range(len(df.columns)))
+        #df.columns = [str(i) for i in range(len(df.columns))]
 
 
 class ResultSet:
@@ -303,8 +323,11 @@ class ResultSet:
     # --- records ---
 
     def get_raw_df(self):
+        #print(self._columns)
         if self._df is None:
+            #print(self._columns)
             names = range(len(self._columns))
+            #print(names)
             return pd.DataFrame([], columns=names)
         return self._df
 
@@ -394,12 +417,14 @@ class ResultSet:
             for i, column in enumerate(self.columns):
                 if column.type == MYSQL_DATA_TYPE.VECTOR:
                     df[i] = df[i].apply(_dump_vector)
-            df.replace({np.nan: None}, inplace=True)
-            return df.to_records(index=False).tolist()
+            #df.replace({np.nan: None}, inplace=True)
+            #return df.to_records(index=False).tolist()
+            return df.rows()
 
         # slower but keep timestamp type
-        df = self._df.replace({np.nan: None})  # TODO rework
-        return df.to_dict("split")["data"]
+        #df = self._df.replace({np.nan: None})  # TODO rework
+        #return df.to_dict("split")["data"]
+        return df.to_dicts("split")["data"]
 
     def get_column_values(self, col_idx):
         # get by column index

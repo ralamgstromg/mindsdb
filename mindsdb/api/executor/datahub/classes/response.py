@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
 from typing import List, Dict
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 
 from mindsdb.api.mysql.mysql_proxy.libs.constants.mysql import MYSQL_DATA_TYPE
 
