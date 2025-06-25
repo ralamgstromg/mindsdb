@@ -1,7 +1,8 @@
 import pickle
 
 from walrus import Database
-from pandas import DataFrame
+#from pandas import DataFrame
+from polars import DataFrame
 
 from mindsdb.utilities.context import context as ctx
 from mindsdb.utilities.config import Config

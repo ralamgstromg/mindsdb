@@ -4,12 +4,8 @@ from typing import Any
 from array import array
 
 import numpy as np
-#from numpy import dtype as np_dtype
-#import pandas as pd
-#from pandas.api import types as pd_types
+import pandas
 import polars as pd
-#from polars import DataType as pd_types
-#from polars import types as pd_types
 
 from mindsdb.api.executor.sql_query.result_set import ResultSet, get_mysql_data_type_from_series, Column
 from mindsdb.api.mysql.mysql_proxy.utilities.lightwood_dtype import dtype as lightwood_dtype
@@ -38,6 +34,7 @@ def column_to_mysql_column_dict(column: Column, database_name: str | None = None
         dict[str, str | int]: Dictionary with mysql column properties.
     """
     # region infer type. Should not happen, but what if it is dtype of lightwood type?
+    # print(column, type(column))
     if isinstance(column.type, str):
         try:
             column.type = MYSQL_DATA_TYPE(column.type)
@@ -52,19 +49,21 @@ def column_to_mysql_column_dict(column: Column, database_name: str | None = None
                 column.type = MYSQL_DATA_TYPE.INT
             else:
                 column.type = MYSQL_DATA_TYPE.TEXT
-    # elif isinstance(column.type, np_dtype):
-    #     #if pd_types.is_integer_dtype(column.type):
-    #     if pd_types.is_integer(column.type):
-    #         column.type = MYSQL_DATA_TYPE.INT
-    #     #elif pd_types.is_numeric_dtype(column.type):
-    #     elif pd_types.is_float(column.type):
-    #         column.type = MYSQL_DATA_TYPE.FLOAT
-    #     #elif pd_types.is_datetime64_any_dtype(column.type):
-    #     elif pd_types.is_temporal(column.type):
-    #         column.type = MYSQL_DATA_TYPE.DATETIME
-    #     else:
-    #         column.type = MYSQL_DATA_TYPE.TEXT
-    # endregion
+    elif isinstance(column.type, pd.DataType):
+        #if pd_types.is_integer_dtype(column.type):
+        if column.type in (pd.Int64, pd.Int32, pd.Int16, pd.Int8):
+            column.type = MYSQL_DATA_TYPE.INT
+        #elif pd_types.is_numeric_dtype(column.type):
+        elif column.type in (pd.Float32, pd.Float64, np.float32, np.float64):
+            column.type = MYSQL_DATA_TYPE.FLOAT
+        #elif pd_types.is_datetime64_any_dtype(column.type):
+        elif column.type in (pd.Datetime, pd.Date, datetime.date, datetime.datetime):
+            column.type = MYSQL_DATA_TYPE.DATETIME
+        else:
+            column.type = MYSQL_DATA_TYPE.TEXT
+    # elif isinstance(column.type, MYSQL_DATA_TYPE):
+    #     print("elif isinstance(column.type, MYSQL_DATA_TYPE):", column.type, type(column.type))
+    
 
     if isinstance(column.type, MYSQL_DATA_TYPE) is False:
         logger.warning(f"Unexpected column type: {column.type}. Use TEXT as fallback.")
@@ -87,6 +86,7 @@ def column_to_mysql_column_dict(column: Column, database_name: str | None = None
         "type": type_properties.code,
         "charset": charset,
     }
+    #print(result)
     return result
 
 
@@ -157,11 +157,11 @@ def _dump_date(var: datetime.date | str | None) -> str | None:
     Returns:
         str | None: The string representation of the date value or None if the value is None
     """
-    if isinstance(var, (datetime.date, pd.Timestamp)):  # it is also True for datetime.datetime
+    if isinstance(var, (datetime.date, pd.Date)):  # it is also True for datetime.datetime
         return var.strftime("%Y-%m-%d")
     elif isinstance(var, str):
         return var
-    elif pd.isna(var):
+    elif var is None:
         return None
     logger.warning(f"Unexpected value type for DATE: {type(var)}, {var}")
     return _dump_str(var)
@@ -181,13 +181,13 @@ def _dump_datetime(var: datetime.datetime | str | None) -> str | None:
         if hasattr(var, "tzinfo") and var.tzinfo is not None:
             return var.astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         return var.strftime("%Y-%m-%d %H:%M:%S")
-    elif isinstance(var, pd.Timestamp):
+    elif isinstance(var, pd.Datetime):
         if var.tzinfo is not None:
             return var.tz_convert("UTC").strftime("%Y-%m-%d %H:%M:%S")
         return var.strftime("%Y-%m-%d %H:%M:%S")
     elif isinstance(var, str):
         return var
-    elif pd.isna(var):
+    elif var is None:
         return None
     logger.warning(f"Unexpected value type for DATETIME: {type(var)}, {var}")
     return _dump_str(var)
@@ -260,10 +260,8 @@ def _handle_series_as_date(series: pd.Series) -> pd.Series:
     #if pd_types.is_datetime64_any_dtype(series.dtype):
     #if series.dtype == "date" or pd_types.is_temporal(series.dtype):
     #if pd_types.is_temporal(series):
-    if series.dtype in (pd.Date, pd.Datetime, datetime.date, datetime.datetime, pd.Object):
-        return series.cast(pd.String).str.to_date(format="%Y-%m-%d")
-    elif series.dtype in ('datetime[μs]', 'datetime[ns]'):
-        return series.cast(pd.String).str.to_date(format="%Y-%m-%d")
+    if series.dtype in (pd.Date, datetime.date, pd.Object):
+        return series            
     #elif pd_types.is_object_dtype(series.dtype):
     #elif pd_types.is_object(series.dtype):
     # if series.dtype == pd.Object:
@@ -284,10 +282,12 @@ def _handle_series_as_datetime(series: pd.Series) -> pd.Series:
     """
     #if pd_types.is_datetime64_any_dtype(series.dtype):
     #if pd_types.is_temporal(series.dtype):
-    if series.dtype == pd.Datetime:
-        return series.str.to_datetime(format="%Y-%m-%d %H:%M:%S")
+    #if series.dtype == pd.Datetime:
+    #print(series.dtype, series.head(5))
+    if series.dtype in ('datetime64[ns]', 'datetime64[μs]', pd.Datetime, datetime.datetime):
+        return series
     #elif pd_types.is_object_dtype(series.dtype):
-    elif pd_types.is_object(series.dtype):
+    elif series.dtype in (pd.Object, pd.String):
         #return series.apply(_dump_datetime)
         return series.str.to_datetime(format="%Y-%m-%d %H:%M:%S")
     logger.info(f"Unexpected dtype: {series.dtype} for column with type DATETIME")
@@ -306,14 +306,10 @@ def _handle_series_as_time(series: pd.Series) -> pd.Series:
         pd.Series: The series with the time values as strings
     """
     #if pd_types.is_timedelta64_ns_dtype(series.dtype):
-    if pd_types.is_temporal(series.dtype):
-        base_time = pd.Timestamp("2000-01-01")
-        series = (base_time + series).dt.strftime("%H:%M:%S")
-    # elif pd_types.is_datetime64_dtype(series.dtype):
-    elif pd_types.is_temporal(series.dtype):
-        series = series.dt.strftime("%H:%M:%S")
-    #elif pd_types.is_object_dtype(series.dtype):
-    elif pd_types.is_object(series.dtype):
+    if series.dtype in ('timedelta64[ns]', 'timedelta64[μs]', pd.Time, pd.Datetime, datetime.timedelta):
+        return series
+
+    if series.dtype in (pd.Object, pd.String):
         series = series.apply(_dump_time)
     else:
         logger.info(f"Unexpected dtype: {series.dtype} for column with type TIME")
@@ -375,14 +371,19 @@ def dump_result_set_to_mysql(
     """
     df = result_set.get_raw_df()
 
-    print("Dumping result set to MySQL format", type(df), df.shape)
+    #print("Dumping result set to MySQL format", type(df), df.shape)
+    #print(df)
+    #print(result_set.columns)
     
     for i, column in enumerate(result_set.columns):
-        series = df.select(column.name).to_series()
+        series = df[column.name]
+        #print(series)
         if isinstance(column.type, MYSQL_DATA_TYPE) is False:
             column.type = get_mysql_data_type_from_series(series)
 
         column_type: MYSQL_DATA_TYPE = column.type
+
+        # print(column_type, series.dtype)
 
         match column_type:
             case MYSQL_DATA_TYPE.BOOL | MYSQL_DATA_TYPE.BOOLEAN:

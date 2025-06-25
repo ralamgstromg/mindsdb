@@ -337,19 +337,26 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
         if answer.type in (RESPONSE_TYPE.TABLE, RESPONSE_TYPE.COLUMNS_TABLE):
             packages = []
 
-            if len(answer.result_set) > 1000:
-                print("[SEND_TABLE_PACKETS] result_set is too big, using send_table_packets")
-                self.send_table_packets(result_set=answer.result_set)
-            else:
-                print("[GET_TABLE_PACKETS] result_set is small, using get_table_packets")
-                print(answer.result_set)
-                packages += self.get_table_packets(result_set=answer.result_set)
-
-            if answer.status is not None:
-                packages.append(self.last_packet(status=answer.status))
-            else:
-                packages.append(self.last_packet())
+            print("[SEND_TABLE_PACKETS] result_set is too big, using send_table_packets")
+            #print(answer.result_set)
+            self.send_table_packets(result_set=answer.result_set)
+            packages.append(self.last_packet())
             self.send_package_group(packages)
+
+            # if len(answer.result_set) > 1000:
+            #     print("[SEND_TABLE_PACKETS] result_set is too big, using send_table_packets")
+            #     print(answer.result_set)
+            #     self.send_table_packets(result_set=answer.result_set)
+            # else:
+            #     print("[GET_TABLE_PACKETS] result_set is small, using get_table_packets")
+            #     print(answer.result_set)
+            #     packages += self.get_table_packets(result_set=answer.result_set)
+
+            # if answer.status is not None:
+            #     packages.append(self.last_packet(status=answer.status))
+            # else:
+            #     packages.append(self.last_packet())
+            # self.send_package_group(packages)
         elif answer.type == RESPONSE_TYPE.OK:
             self.packet(OkPacket, state_track=answer.state_track, affected_rows=answer.affected_rows).send()
         elif answer.type == RESPONSE_TYPE.ERROR:
@@ -400,8 +407,8 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
         return packets
 
     def get_table_packets(self, result_set: ResultSet, status=0):
-        print("get_table_packets called")
-        print(result_set)
+        # print("get_table_packets called")
+        # print(result_set)
         data_frame, columns_dict = dump_result_set_to_mysql(result_set)
         #data = data_frame.to_dict('split')['data']
         # print(data_frame)
@@ -421,15 +428,15 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
         df, columns_dicts = dump_result_set_to_mysql(result_set, infer_column_size=True)
         # text protocol, convert all to string and serialize as packages
 
-        print(type(df))
-        print(df)
+        # print(type(df))
+        # print(df)
 
-        def apply_f(v):
-            if v is None:
-                return NULL_VALUE
-            if not isinstance(v, str):
-                v = str(v)
-            return Datum.serialize_str(v)
+        # def apply_f(v):
+        #     if v is None:
+        #         return NULL_VALUE
+        #     if not isinstance(v, str):
+        #         v = str(v)
+        #     return Datum.serialize_str(v)
 
         # columns packages
         packets = [self.packet(ColumnCountPacket, count=len(columns_dicts))]

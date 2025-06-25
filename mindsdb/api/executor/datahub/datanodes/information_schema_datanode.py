@@ -234,7 +234,10 @@ class InformationSchemaDataNode(DataNode):
             dataframe = self._get_empty_table(tbl)
         data = query_df(dataframe, query, session=self.session)
 
-        columns_info = [{"name": k, "type": v} for k, v in data.dtypes.items()]
+        print(data)
+        print(data.schema)
+
+        columns_info = [{"name": k, "type": v} for k, v in data.schema.items()]
 
         return DataHubResponse(data_frame=data, columns=columns_info, affected_rows=0)
 
@@ -242,5 +245,5 @@ class InformationSchemaDataNode(DataNode):
         columns = table.columns
         data = []
 
-        df = pd.DataFrame(data, columns=columns)
+        df = pd.DataFrame(data, schema=columns)
         return df

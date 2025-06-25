@@ -107,7 +107,7 @@ def rename_df_columns(df: pd.DataFrame, names: list | None = None) -> None:
         df (pd.DataFrame): dataframe
         names (Optional[List]): columns names to set
     """
-    print(names)
+    #print(names)
     if names is not None:
         df.columns = names
     # else:
@@ -322,13 +322,11 @@ class ResultSet:
 
     # --- records ---
 
-    def get_raw_df(self):
-        #print(self._columns)
+    def get_raw_df(self):        
         if self._df is None:
-            #print(self._columns)
-            names = range(len(self._columns))
-            #print(names)
-            return pd.DataFrame([], columns=names)
+            #names = range(len(self._columns))
+            print("[COLUMNS]", self._columns)
+            return pd.DataFrame({x.name:[] for x in self._columns})
         return self._df
 
     def add_raw_df(self, df):

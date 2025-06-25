@@ -115,7 +115,7 @@ class DatabasesTable(MdbTable):
         project = inf_schema.database_controller.get_list(with_secrets=session.show_secrets)
         data = [[x["name"], x["type"], x["engine"], to_json(x.get("connection_data"))] for x in project]
 
-        df = pd.DataFrame(data, shcema=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns)
         return df
 
 

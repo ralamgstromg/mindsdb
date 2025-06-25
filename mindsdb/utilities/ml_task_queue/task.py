@@ -1,7 +1,8 @@
 from collections.abc import Callable
 
 import redis
-from pandas import DataFrame
+#from pandas import DataFrame
+from polars import DataFrame
 
 from mindsdb.utilities.ml_task_queue.utils import RedisKey, from_bytes
 from mindsdb.utilities.ml_task_queue.const import ML_TASK_STATUS

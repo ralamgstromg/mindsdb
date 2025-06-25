@@ -9,7 +9,8 @@ from collections.abc import Callable
 
 import psutil
 from walrus import Database
-from pandas import DataFrame
+#from pandas import DataFrame
+from polars import DataFrame
 from redis.exceptions import ConnectionError as RedisConnectionError
 
 from mindsdb.utilities.config import Config

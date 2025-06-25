@@ -324,7 +324,6 @@ class ExecuteCommands:
                     elif var_name not in data:
                         data[var_name] = var_data[0]
 
-                print(data.items())
                 # df = pd.DataFrame(data.items(), schema=["Variable_name", "Value"])
                 df = pd.DataFrame({
                     "Variable_name": list(data.keys()),
@@ -804,7 +803,8 @@ class ExecuteCommands:
             sqlquery = SQLQuery(statement.data, session=self.session, database=database_name)
         except Exception as e:
             raise Exception(f'Nested query failed to execute with error: "{e}", please check and try again.')
-        df = sqlquery.fetched_data.to_df()
+        #df = sqlquery.fetched_data.to_df()
+        df = sqlquery.fetched_data.pl()
         df.columns = [str(t.alias) if hasattr(t, "alias") else str(t.parts[-1]) for t in statement.data.targets]
 
         for col in ["actual", "prediction"]:
