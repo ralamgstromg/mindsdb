@@ -1,4 +1,5 @@
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from typing import Text, List
 from mindsdb_sql_parser import ast
 from abc import ABC, abstractmethod

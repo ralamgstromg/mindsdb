@@ -1,6 +1,7 @@
 from pathlib import Path
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 
 DATASETS_BASE_PATH = Path(__file__).parent
 

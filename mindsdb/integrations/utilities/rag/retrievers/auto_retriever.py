@@ -4,7 +4,8 @@ import json
 
 from langchain.retrievers.self_query.base import SelfQueryRetriever
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 
 from mindsdb.integrations.utilities.rag.retrievers.base import BaseRetriever
 

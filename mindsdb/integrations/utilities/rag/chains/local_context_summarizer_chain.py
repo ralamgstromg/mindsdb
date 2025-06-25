@@ -11,7 +11,8 @@ from langchain_core.callbacks import dispatch_custom_event
 from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate
-from pandas import DataFrame
+#from pandas import DataFrame
+from polars import DataFrame
 
 from mindsdb.integrations.libs.vectordatabase_handler import VectorStoreHandler
 from mindsdb.integrations.utilities.rag.settings import SummarizationConfig

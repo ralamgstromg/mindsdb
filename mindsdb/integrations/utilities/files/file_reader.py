@@ -8,7 +8,8 @@ import codecs
 from typing import List, Generator
 
 import filetype
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from charset_normalizer import from_bytes
 
 from mindsdb.utilities import log
@@ -317,7 +318,7 @@ class FileReader(FormatDetector):
     def read_csv(cls, file_obj: BytesIO, delimiter: str | None = None, **kwargs) -> pd.DataFrame:
         file_obj = decode(file_obj)
         dialect = cls._get_csv_dialect(file_obj, delimiter=delimiter)
-        return pd.read_csv(file_obj, sep=dialect.delimiter, index_col=False)
+        return pd.read_csv(file_obj, separator=dialect.delimiter)
 
     @staticmethod
     def read_txt(file_obj: BytesIO, name: str | None = None, **kwargs) -> pd.DataFrame:
@@ -384,15 +385,16 @@ class FileReader(FormatDetector):
         only_names: bool = False,
         **kwargs,
     ) -> Generator[tuple[str, pd.DataFrame | None], None, None]:
-        with pd.ExcelFile(file_obj) as xls:
-            if page_name is not None:
-                # return specific page
-                yield page_name, pd.read_excel(xls, sheet_name=page_name)
+        yield page_name, pd.read_excel(file_obj, sheet_name=page_name)
+        # with pd.ExcelFile(file_obj) as xls:
+        #     if page_name is not None:
+        #         # return specific page
+        #         yield page_name, pd.read_excel(xls, sheet_name=page_name)
 
-            for page_name in xls.sheet_names:
-                if only_names:
-                    # extract only pages names
-                    df = None
-                else:
-                    df = pd.read_excel(xls, sheet_name=page_name)
-                yield page_name, df
+        #     for page_name in xls.sheet_names:
+        #         if only_names:
+        #             # extract only pages names
+        #             df = None
+        #         else:
+        #             df = pd.read_excel(xls, sheet_name=page_name)
+        #         yield page_name, df

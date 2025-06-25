@@ -1,6 +1,7 @@
 from typing import List
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 
@@ -41,7 +42,8 @@ def documents_to_df(content_column_name: str,
     df[content_column_name] = [doc.page_content for doc in documents]
 
     if 'date' in df.columns:
-        df['date'] = pd.to_datetime(df['date'], errors='coerce')
+        #df['date'] = pd.to_datetime(df['date'], errors='coerce')
+        df['date'] = df['date'].str.to_datetime(errors='coerce')
 
     # Reordering the columns to have the content column first.
     df = df[[content_column_name] + [col for col in df.columns if col != content_column_name]]

@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Any
-import pandas as pd
+#import pandas as pd
+import polars as pd
 
 from mindsdb.api.executor.utilities.sql import query_df
 from mindsdb_sql_parser import ast
@@ -164,7 +165,7 @@ def project_dataframe(df, targets, table_columns):
             raise NotImplementedError
 
     if len(df) == 0:
-        df = pd.DataFrame([], columns=columns)
+        df = pd.DataFrame([], schema=columns)
     else:
         # add absent columns
         for col in set(columns) & set(df.columns) ^ set(columns):

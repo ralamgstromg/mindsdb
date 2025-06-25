@@ -1,5 +1,6 @@
 import numpy as np
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from pandas.tseries.frequencies import to_offset
 from sklearn.metrics import r2_score
 
@@ -36,7 +37,7 @@ def transform_to_nixtla_df(df, settings_dict, exog_vars=[]):
 
     # Resample every group
     freq = settings_dict['frequency']
-    resampled_df = pd.DataFrame(columns=nixtla_df.columns)
+    resampled_df = pd.DataFrame(schema=nixtla_df.columns)
     if settings_dict["group_by"] and settings_dict["group_by"] != ['__group_by']:
         for group, groupdf in nixtla_df.groupby(by=settings_dict["group_by"]):
             groupdf.index = pd.to_datetime(groupdf.pop(settings_dict["order_by"]))
@@ -66,7 +67,7 @@ def transform_to_nixtla_df(df, settings_dict, exog_vars=[]):
         nixtla_df["unique_id"] = '1'
 
     columns_to_keep = ["unique_id", "ds", "y"] + exog_vars
-    nixtla_df["ds"] = pd.to_datetime(nixtla_df["ds"])
+    nixtla_df["ds"] = nixtla_df["ds"].str.to_datetime()
     return nixtla_df[columns_to_keep]
 
 

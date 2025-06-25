@@ -1,4 +1,5 @@
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from langchain.storage import InMemoryByteStore
 from langchain_core.runnables import RunnableSerializable
 from mindsdb.integrations.utilities.rag.pipelines.rag import LangChainRAGPipeline

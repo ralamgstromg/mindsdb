@@ -1,6 +1,7 @@
 from typing import Text, List, Dict, Tuple
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from mindsdb_sql_parser import ast
 
 from mindsdb.integrations.utilities.sql_utils import sort_dataframe
@@ -116,7 +117,7 @@ class SELECTQueryExecutor(BaseQueryExecutor):
         Execute the select clause of the query.
         """
         if len(self.df) == 0:
-            self.df = pd.DataFrame([], columns=self.selected_columns)
+            self.df = pd.DataFrame([], schema=self.selected_columns)
         else:
             self.df = self.df[self.selected_columns]
 
