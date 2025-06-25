@@ -3,7 +3,8 @@ import asyncio
 from typing import Dict, List, Any, Iterator, ClassVar
 from contextlib import AsyncExitStack
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
@@ -47,7 +48,7 @@ class MCPQueryTool(BaseTool):
             # Process the results
             if isinstance(result.content, dict) and "data" in result.content and "column_names" in result.content:
                 # Create a DataFrame from the results
-                df = pd.DataFrame(result.content["data"], columns=result.content["column_names"])
+                df = pd.DataFrame(result.content["data"], schema=result.content["column_names"])
                 return df.to_string()
 
             # Return raw result for other types

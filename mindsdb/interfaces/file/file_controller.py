@@ -3,7 +3,8 @@ import os
 import shutil
 from pathlib import Path
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 
 from mindsdb.interfaces.storage import db
 from mindsdb.interfaces.storage.fs import FsStore
@@ -132,7 +133,7 @@ class FileController:
             pages_files[0] = df
         else:
             # file has several pages, create a new one with info
-            df = pd.DataFrame(tables.keys(), columns=["Tables"])
+            df = pd.DataFrame(tables.keys(), schema=["Tables"])
             pages_files[0] = df
             for i, page_name in enumerate(tables.keys(), 1):
                 pages_files[i] = tables[page_name]
@@ -205,7 +206,8 @@ class FileController:
                 raise KeyError(f"Page not found: {page_name}")
 
         path = Path(self.dir).joinpath(file_dir).joinpath(f"{num}.feather")
-        return pd.read_feather(path)
+        #return pd.read_feather(path)
+        return pd.read_ipc(path)
 
     def set_file_data(self, name: str, df: pd.DataFrame, page_name: str = None):
         """

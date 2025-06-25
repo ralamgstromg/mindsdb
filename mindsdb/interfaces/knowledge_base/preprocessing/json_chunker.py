@@ -1,6 +1,7 @@
 from typing import List, Dict, Any, Optional
 import json
-import pandas as pd
+#import pandas as pd
+import polars as pd
 import ast
 
 from mindsdb.interfaces.knowledge_base.preprocessing.models import (

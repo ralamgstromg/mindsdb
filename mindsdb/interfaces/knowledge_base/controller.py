@@ -4,7 +4,9 @@ from typing import Dict, List, Optional
 import json
 import decimal
 
-import pandas as pd
+#import pandas as pd
+import pandas
+import polars as pd
 import numpy as np
 
 from mindsdb_sql_parser.ast import BinaryOperation, Constant, Identifier, Select, Update, Delete, Star
@@ -115,7 +117,8 @@ def safe_pandas_is_datetime(value: str) -> bool:
     Check if the value can be parsed as a datetime.
     """
     try:
-        result = pd.api.types.is_datetime64_any_dtype(value)
+        #result = pd.api.types.is_datetime64_any_dtype(value)
+        result = pandas.api.types.is_datetime64_any_dtype(value)
         return result
     except ValueError:
         return False
@@ -463,7 +466,8 @@ class KnowledgeBaseTable:
         metadata: Dict[str, str] = None,
         distance_function=DistanceFunction.COSINE_DISTANCE,
     ) -> pd.DataFrame:
-        query_df = pd.DataFrame.from_records([{TableField.CONTENT.value: query}])
+        #query_df = pd.DataFrame.from_records([{TableField.CONTENT.value: query}])
+        query_df = pd.DataFrame([{TableField.CONTENT.value: query}])
         embeddings_df = self._df_to_embeddings(query_df)
         if embeddings_df.empty:
             return pd.DataFrame([])
@@ -558,7 +562,8 @@ class KnowledgeBaseTable:
 
         # add embeddings and send to vector db
         df_emb = self._df_to_embeddings(df)
-        df = pd.concat([df, df_emb], axis=1)
+        #df = pd.concat([df, df_emb], axis=1)
+        df = pd.concat([df, df_emb])
         db_handler = self.get_vector_db()
 
         if params is not None and params.get("kb_no_upsert", False):
@@ -648,13 +653,13 @@ class KnowledgeBaseTable:
                     value = row[col]
                     value_type = type(value)
                     # Convert numpy/pandas types to Python native types
-                    if safe_pandas_is_datetime(value) or isinstance(value, pd.Timestamp):
+                    if safe_pandas_is_datetime(value) or isinstance(value, pd.Datetime):
                         value = str(value)
-                    elif pd.api.types.is_integer_dtype(value_type):
+                    elif pandas.api.types.is_integer_dtype(value_type):
                         value = int(value)
-                    elif pd.api.types.is_float_dtype(value_type) or isinstance(value, decimal.Decimal):
+                    elif pandas.api.types.is_float_dtype(value_type) or isinstance(value, decimal.Decimal):
                         value = float(value)
-                    elif pd.api.types.is_bool_dtype(value_type):
+                    elif pandas.api.types.is_bool_dtype(value_type):
                         value = bool(value)
                     elif isinstance(value, dict):
                         metadata.update(value)
@@ -709,7 +714,7 @@ class KnowledgeBaseTable:
         """
 
         if df.empty:
-            return pd.DataFrame([], columns=[TableField.EMBEDDINGS.value])
+            return pd.DataFrame([], schema=[TableField.EMBEDDINGS.value])
 
         model_id = self._kb.embedding_model_id
 
@@ -720,7 +725,7 @@ class KnowledgeBaseTable:
             embedding_params.update(self._kb.params["embedding_model"])
             results = self.call_litellm_embedding(self.session, embedding_params, messages)
             results = [[val] for val in results]
-            return pd.DataFrame(results, columns=[TableField.EMBEDDINGS.value])
+            return pd.DataFrame(results, schema=[TableField.EMBEDDINGS.value])
 
         # get the input columns
         model_rec = db.session.query(db.Predictor).filter_by(id=model_id).first()
@@ -755,7 +760,7 @@ class KnowledgeBaseTable:
         :param content: input string
         :return: embeddings
         """
-        df = pd.DataFrame([[content]], columns=[TableField.CONTENT.value])
+        df = pd.DataFrame([[content]], schema=[TableField.CONTENT.value])
         res = self._df_to_embeddings(df)
         return res[TableField.EMBEDDINGS.value][0]
 
@@ -860,17 +865,19 @@ class KnowledgeBaseTable:
         Returns:
             Converted value in appropriate Python type
         """
-        if pd.isna(value):
+        #if pd.isna(value):
+        if value is None:
             return None
 
         # Handle pandas/numpy types
-        if pd.api.types.is_datetime64_any_dtype(value) or isinstance(value, pd.Timestamp):
+        #if pd.api.types.is_datetime64_any_dtype(value) or isinstance(value, pd.Timestamp):
+        if pandas.api.types.is_datetime64_any_dtype(value) or isinstance(value, pd.Datetime):
             return str(value)
-        elif pd.api.types.is_integer_dtype(type(value)):
+        elif pandas.api.types.is_integer_dtype(type(value)):
             return int(value)
-        elif pd.api.types.is_float_dtype(type(value)):
+        elif pandas.api.types.is_float_dtype(type(value)):
             return float(value)
-        elif pd.api.types.is_bool_dtype(type(value)):
+        elif pandas.api.types.is_bool_dtype(type(value)):
             return bool(value)
 
         # Handle basic Python types

@@ -5,7 +5,8 @@ import traceback
 from io import StringIO
 from typing import Iterable, List, Optional, Any
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from mindsdb_sql_parser import parse_sql
 from mindsdb_sql_parser.ast import Select, Show, Describe, Explain, Identifier
 
@@ -566,7 +567,7 @@ class SQLAgent:
 
             data = ret.to_lists()
             if len(data) > limit_rows:
-                df = pd.DataFrame(data, columns=[col.name for col in ret.columns])
+                df = pd.DataFrame(data, schema=[col.name for col in ret.columns])
 
                 res += f"Result has {len(data)} rows. Description of data:\n"
                 res += str(df.describe(include="all")) + "\n\n"

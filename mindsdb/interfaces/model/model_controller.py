@@ -3,7 +3,8 @@ import datetime as dt
 from copy import deepcopy
 from multiprocessing.pool import ThreadPool
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from dateutil.parser import parse as parse_datetime
 
 from sqlalchemy import func
@@ -432,7 +433,7 @@ class ModelController():
             str(table_meta['training_options']), table_meta['label']
         ]
 
-        return pd.DataFrame([record], columns=columns)
+        return pd.DataFrame([record], schema=columns)
 
     def set_model_active_version(self, project_name, model_name, version):
 

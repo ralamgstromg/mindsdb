@@ -9,7 +9,8 @@ from typing import (
     Optional,
 )
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )

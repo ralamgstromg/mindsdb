@@ -3,7 +3,8 @@ from copy import deepcopy
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from mindsdb_sql_parser import parse_sql
 from mindsdb_sql_parser.ast import Select, Identifier, Star, BinaryOperation, Constant, Join, Function
 from mindsdb_sql_parser.utils import JoinType
@@ -250,7 +251,8 @@ class LogDBController:
             "postgres"
         render = SqlalchemyRender(render_engine)
         query_str = render.get_string(query, with_failback=False)
-        df = pd.read_sql_query(query_str, db.engine)
+        #df = pd.read_sql_query(query_str, db.engine)
+        df = pd.read_database(query_str, db.engine)
 
         # region cast columns values to proper types
         for column_name, column_type in log_table.types_map.items():

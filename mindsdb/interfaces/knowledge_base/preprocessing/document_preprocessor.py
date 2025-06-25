@@ -1,5 +1,6 @@
 from typing import List, Dict, Optional, Any
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import asyncio
 

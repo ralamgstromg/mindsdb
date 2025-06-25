@@ -1,6 +1,7 @@
 from typing import List, Union
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 
 from mindsdb.integrations.libs.response import RESPONSE_TYPE
 from mindsdb.interfaces.data_catalog.base_data_catalog import BaseDataCatalog
@@ -95,7 +96,8 @@ class DataCatalogLoader(BaseDataCatalog):
             for row in df.to_dict(orient="records"):
                 # Convert the distinct_values_count to an integer if it is not NaN, otherwise set it to None.
                 val = row.get("row_count")
-                row_count = int(val) if pd.notna(val) else None
+                #row_count = int(val) if pd.notna(val) else None
+                row_count = int(val) if val is not None else None
 
                 record = db.MetaTables(
                     integration_id=self.integration_id,
@@ -203,7 +205,8 @@ class DataCatalogLoader(BaseDataCatalog):
 
                 # Convert the distinct_values_count to an integer if it is not NaN, otherwise set it to None.
                 val = row.get("distinct_values_count")
-                distinct_values_count = int(val) if pd.notna(val) else None
+                #distinct_values_count = int(val) if pd.notna(val) else None
+                distinct_values_count = int(val) if val is not None else None
 
                 # Convert the most_common_frequencies to a list of strings.
                 most_common_frequencies = [str(val) for val in row.get("most_common_frequencies") or []]

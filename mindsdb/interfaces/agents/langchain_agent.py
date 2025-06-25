@@ -6,7 +6,8 @@ import queue
 import re
 import threading
 import numpy as np
-import pandas as pd
+#import pandas as pd
+import polars as pd
 
 from langchain.agents import AgentExecutor
 from langchain.agents.initialize import initialize_agent

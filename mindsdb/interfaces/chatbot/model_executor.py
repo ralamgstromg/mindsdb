@@ -1,6 +1,7 @@
 from typing import List
 import datetime as dt
-import pandas as pd
+#import pandas as pd
+import polars as pd
 
 from mindsdb.interfaces.storage import db
 

@@ -5,7 +5,8 @@ import copy
 from langchain_core.tools import BaseTool
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy import null
-import pandas as pd
+#import pandas as pd
+import polars as pd
 
 from mindsdb.interfaces.storage import db
 from mindsdb.interfaces.storage.db import Predictor

@@ -3,7 +3,8 @@ import pickle
 import datetime as dt
 
 from sqlalchemy.orm.attributes import flag_modified
-import pandas as pd
+#import pandas as pd
+import polars as pd
 
 from mindsdb_sql_parser import Select, Star, OrderBy
 

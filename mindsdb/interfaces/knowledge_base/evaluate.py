@@ -3,7 +3,8 @@ import math
 import time
 from typing import List
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 import datetime as dt
 
 from mindsdb.api.executor.sql_query.result_set import ResultSet
