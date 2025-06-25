@@ -46,6 +46,6 @@ class UnionStepCall(BaseStepCall):
             'table_a': table_a,
             'table_b': table_b
         })
-        resp_df.replace({np.nan: None}, inplace=True)
+        #resp_df.replace({np.nan: None}, inplace=True)
 
         return ResultSet.from_df_cols(df=resp_df, columns_dict=names)

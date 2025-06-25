@@ -64,17 +64,21 @@ def query_df_with_type_infer_fallback(query_str: str, dataframes: dict, user_fun
         pandas.columns
     """
 
+    print("USER_FUNCTIONS", type(user_functions))
+
     with duckdb.connect(database=":memory:") as con:
         if user_functions:
-            user_functions.register(con)
+            user_functions.register(con) 
 
         for name, value in dataframes.items():
+            print("[LOG]", name, value)
             con.register(name, value)
 
         exception = None
         for sample_size in [1000, 10000, 1000000]:
             try:
                 con.execute(f"set global pandas_analyze_sample={sample_size};")
+                #print("[QUERY_STR]", query_str)
                 result_df = con.execute(query_str).pl()
             except InvalidInputException as e:
                 exception = e
