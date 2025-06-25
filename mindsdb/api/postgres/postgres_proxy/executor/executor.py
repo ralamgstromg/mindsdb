@@ -4,7 +4,8 @@ from mindsdb_sql_parser import parse_sql
 from mindsdb.api.executor.planner import utils as planner_utils
 
 from numpy import dtype as np_dtype
-from pandas.api import types as pd_types
+#from pandas.api import types as pd_types
+import polars as pd
 
 from mindsdb.api.executor.sql_query import SQLQuery
 from mindsdb.api.executor.sql_query.result_set import Column
@@ -124,11 +125,14 @@ class Executor:
                 column_type = POSTGRES_TYPES.INT
             # pandas checks
             elif isinstance(field_type, np_dtype):
-                if pd_types.is_integer_dtype(field_type):
+                #if pd_types.is_integer_dtype(field_type):
+                if field_type in (pd.Int64, pd.Int32, pd.Int16, pd.Int8):
                     column_type = POSTGRES_TYPES.LONG
-                elif pd_types.is_numeric_dtype(field_type):
+                #elif pd_types.is_numeric_dtype(field_type):
+                elif field_type in (pd.Float64, pd.Float32, pd.Float16):
                     column_type = POSTGRES_TYPES.DOUBLE
-                elif pd_types.is_datetime64_any_dtype(field_type):
+                #elif pd_types.is_datetime64_any_dtype(field_type):
+                elif field_type in (pd.Datetime, pd.Date, pd.Time):
                     column_type = POSTGRES_TYPES.DATETIME
             # lightwood checks
             elif field_type == dtype.date:

@@ -5,7 +5,8 @@ import textwrap
 from _ast import AnnAssign, AugAssign
 from typing import Any, Dict, List, Optional
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from mindsdb_sql_parser.ast.base import ASTNode
 from mindsdb.utilities import log
 
@@ -209,7 +210,8 @@ class MetaDatabaseHandler(DatabaseHandler):
                 logger.warning("No column statistics could be retrieved for the specified tables.")
                 return HandlerResponse(RESPONSE_TYPE.ERROR, error_message="No column statistics could be retrieved.")
             return HandlerResponse(
-                RESPONSE_TYPE.TABLE, pd.concat(results, ignore_index=True) if results else pd.DataFrame()
+                #RESPONSE_TYPE.TABLE, pd.concat(results, ignore_index=True) if results else pd.DataFrame()
+                RESPONSE_TYPE.TABLE, pd.concat(results) if results else pd.DataFrame()
             )
 
         else:

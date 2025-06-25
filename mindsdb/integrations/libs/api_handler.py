@@ -1,7 +1,8 @@
 from typing import Any, List, Optional
 import ast as py_ast
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from mindsdb_sql_parser.ast import ASTNode, Select, Insert, Update, Delete, Star
 from mindsdb_sql_parser.ast.select.identifier import Identifier
 
@@ -492,7 +493,7 @@ class APIHandler(BaseHandler):
 
         result = self._get_table(Identifier(table_name)).get_columns()
 
-        df = pd.DataFrame(result, columns=["Field"])
+        df = pd.DataFrame(result, schema=["Field"])
         df["Type"] = "str"
 
         return Response(RESPONSE_TYPE.TABLE, df)
@@ -505,7 +506,7 @@ class APIHandler(BaseHandler):
         """
         result = list(self._tables.keys())
 
-        df = pd.DataFrame(result, columns=["table_name"])
+        df = pd.DataFrame(result, schema=["table_name"])
         df["table_type"] = "BASE TABLE"
 
         return Response(RESPONSE_TYPE.TABLE, df)
@@ -550,7 +551,8 @@ class MetaAPIHandler(APIHandler):
                 try:
                     if hasattr(table_class, "meta_get_tables"):
                         table_metadata = table_class.meta_get_tables(table_name, **kwargs)
-                        df = pd.concat([df, pd.DataFrame([table_metadata])], ignore_index=True)
+                        #df = pd.concat([df, pd.DataFrame([table_metadata])], ignore_index=True)
+                        df = pd.concat([df, pd.DataFrame([table_metadata])])
                 except Exception as e:
                     logger.error(f"Error retrieving metadata for table {table_name}: {e}")
 
@@ -572,7 +574,8 @@ class MetaAPIHandler(APIHandler):
                 try:
                     if hasattr(table_class, "meta_get_columns"):
                         column_metadata = table_class.meta_get_columns(table_name, **kwargs)
-                        df = pd.concat([df, pd.DataFrame(column_metadata)], ignore_index=True)
+                        #df = pd.concat([df, pd.DataFrame(column_metadata)], ignore_index=True)
+                        df = pd.concat([df, pd.DataFrame(column_metadata)])
                 except Exception as e:
                     logger.error(f"Error retrieving column metadata for table {table_name}: {e}")
 
@@ -594,7 +597,8 @@ class MetaAPIHandler(APIHandler):
                 try:
                     if hasattr(table_class, "meta_get_column_statistics"):
                         column_statistics = table_class.meta_get_column_statistics(table_name, **kwargs)
-                        df = pd.concat([df, pd.DataFrame(column_statistics)], ignore_index=True)
+                        #df = pd.concat([df, pd.DataFrame(column_statistics)], ignore_index=True)
+                        df = pd.concat([df, pd.DataFrame(column_statistics)])
                 except Exception as e:
                     logger.error(f"Error retrieving column statistics for table {table_name}: {e}")
 
@@ -616,7 +620,8 @@ class MetaAPIHandler(APIHandler):
                 try:
                     if hasattr(table_class, "meta_get_primary_keys"):
                         primary_key_metadata = table_class.meta_get_primary_keys(table_name, **kwargs)
-                        df = pd.concat([df, pd.DataFrame(primary_key_metadata)], ignore_index=True)
+                        #df = pd.concat([df, pd.DataFrame(primary_key_metadata)], ignore_index=True)
+                        df = pd.concat([df, pd.DataFrame(primary_key_metadata)])
                 except Exception as e:
                     logger.error(f"Error retrieving primary keys for table {table_name}: {e}")
 
@@ -641,7 +646,8 @@ class MetaAPIHandler(APIHandler):
                         foreign_key_metadata = table_class.meta_get_foreign_keys(
                             table_name, all_tables=table_names if table_names else all_tables, **kwargs
                         )
-                        df = pd.concat([df, pd.DataFrame(foreign_key_metadata)], ignore_index=True)
+                        #df = pd.concat([df, pd.DataFrame(foreign_key_metadata)], ignore_index=True)
+                        df = pd.concat([df, pd.DataFrame(foreign_key_metadata)])
                 except Exception as e:
                     logger.error(f"Error retrieving foreign keys for table {table_name}: {e}")
 

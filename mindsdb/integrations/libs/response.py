@@ -2,7 +2,7 @@ from typing import Callable
 from dataclasses import dataclass, fields
 
 import numpy
-import pandas
+#import pandas
 import polars
 
 from mindsdb.utilities import log
@@ -42,7 +42,7 @@ INF_SCHEMA_COLUMNS_NAMES_SET = set(f.name for f in fields(INF_SCHEMA_COLUMNS_NAM
 
 class HandlerResponse:
     def __init__(
-            self, resp_type: RESPONSE_TYPE, data_frame: pandas.DataFrame = None, query: ASTNode = 0,
+            self, resp_type: RESPONSE_TYPE, data_frame: polars.DataFrame = None, query: ASTNode = 0,
             error_code: int = 0, error_message: str | None = None, affected_rows: int | None = None,
             mysql_types: list[MYSQL_DATA_TYPE] | None = None
     ) -> None:
@@ -105,7 +105,7 @@ class HandlerResponse:
                 INF_SCHEMA_COLUMNS_NAMES.COLLATION_NAME: "string",
             }
         )
-        self.data_frame.replace([numpy.NaN, pandas.NA], None, inplace=True)
+        #self.data_frame.replace([numpy.NaN, polars.Null], None, inplace=True)
 
         self.resp_type = RESPONSE_TYPE.COLUMNS_TABLE
 
@@ -204,7 +204,7 @@ class HandlerResponseNgx:
                 INF_SCHEMA_COLUMNS_NAMES.COLLATION_NAME: "string",
             }
         )
-        self.data_frame.replace([numpy.NaN, pandas.NA, polars.Null], None, inplace=True)
+        #self.data_frame.replace([numpy.NaN, pandas.NA, polars.Null], None, inplace=True)
 
         self.resp_type = RESPONSE_TYPE.COLUMNS_TABLE
 

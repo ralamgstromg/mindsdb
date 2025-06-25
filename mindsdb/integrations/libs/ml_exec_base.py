@@ -22,7 +22,8 @@ import datetime as dt
 from types import ModuleType
 from typing import Optional, Union
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from sqlalchemy import func, null
 from sqlalchemy.sql.functions import coalesce
 

@@ -1,6 +1,7 @@
 import importlib
 
-from pandas import DataFrame
+#from pandas import DataFrame
+from polars import DataFrame
 
 import mindsdb.interfaces.storage.db as db
 from mindsdb.interfaces.storage.model_fs import ModelStorage, HandlerStorage

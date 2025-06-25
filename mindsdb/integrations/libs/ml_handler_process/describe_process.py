@@ -3,7 +3,8 @@ from textwrap import dedent
 from types import ModuleType
 from typing import Optional, Union
 
-from pandas import DataFrame
+#from pandas import DataFrame
+from polars import DataFrame
 
 import mindsdb.interfaces.storage.db as db
 from mindsdb.utilities.config import Config
@@ -57,14 +58,14 @@ def describe_process(integration_id: int, attribute: Optional[Union[str, list]],
 
     model_record = db.Predictor.query.get(model_id)
     if model_record is None:
-        return DataFrame(['The model does not exist'], columns=['error'])
+        return DataFrame(['The model does not exist'], schema=['error'])
 
     if isinstance(attribute, str) and attribute.lower() == 'import_error':
-        return DataFrame([get_module_import_error_str(module)], columns=['error'])
+        return DataFrame([get_module_import_error_str(module)], schema=['error'])
 
     if attribute is not None:
         if module.import_error is not None:
-            return DataFrame([get_module_import_error_str(module)], columns=['error'])
+            return DataFrame([get_module_import_error_str(module)], schema=['error'])
 
         try:
             ml_handler = module.Handler(
@@ -84,7 +85,7 @@ def describe_process(integration_id: int, attribute: Optional[Union[str, list]],
 
         attrs_df = DataFrame()
         if module.import_error is not None:
-            attrs_df = DataFrame(['import_error'], columns=['error'])
+            attrs_df = DataFrame(['import_error'], schema=['error'])
             model_error = model_info['ERROR'][0] or '-'
             model_info['ERROR'][0] = 'ML engine error:\n\n'
             model_info['ERROR'][0] += get_module_import_error_str(module)

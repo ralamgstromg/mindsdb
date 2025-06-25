@@ -3,7 +3,8 @@ import threading
 from typing import Optional, Callable
 from concurrent.futures import ProcessPoolExecutor, Future
 
-from pandas import DataFrame
+#from pandas import DataFrame
+from polars import DataFrame
 
 import mindsdb.interfaces.storage.db as db
 from mindsdb.utilities.config import Config

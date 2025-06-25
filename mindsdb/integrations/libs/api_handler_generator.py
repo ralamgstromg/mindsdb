@@ -10,7 +10,8 @@ except ImportError:
     from yaml import Loader
 
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 import requests
 from requests.auth import HTTPBasicAuth
 
@@ -580,4 +581,4 @@ class RestApiTable(APIResource):
                 # response is value
                 item[columns[0]] = self.repr_value(record)
 
-        return pd.DataFrame(data, columns=columns)
+        return pd.DataFrame(data, schema=columns)

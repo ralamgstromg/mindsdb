@@ -3,7 +3,8 @@ import hashlib
 from enum import Enum
 from typing import Dict, List, Optional
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from mindsdb_sql_parser.ast import (
     BinaryOperation,
     Constant,
@@ -299,8 +300,11 @@ class VectorStoreHandler(BaseHandler):
             df[id_col] = df[content_col].apply(gen_hash)
         else:
             # generate for empty
+            # for i in range(len(df)):
+            #     if pd.isna(df.loc[i, id_col]):
+            #         df.loc[i, id_col] = gen_hash(df.loc[i, content_col])
             for i in range(len(df)):
-                if pd.isna(df.loc[i, id_col]):
+                if df[i, id_col].is_null():
                     df.loc[i, id_col] = gen_hash(df.loc[i, content_col])
 
         # remove duplicated ids
