@@ -1,2 +1,2 @@
 -r mindsdb/integrations/handlers/mysql_handler/requirements.txt
-polars
+polars >= 1.31.0

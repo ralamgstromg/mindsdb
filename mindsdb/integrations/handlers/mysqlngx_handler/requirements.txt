@@ -1,2 +1,2 @@
 mysql-connector-python==9.1.0
-polars
+polars >= 1.31.0
