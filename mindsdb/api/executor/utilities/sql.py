@@ -3,7 +3,7 @@ from typing import List
 
 import duckdb
 from duckdb import InvalidInputException
-import numpy as np
+#import numpy as np
 
 from mindsdb_sql_parser import parse_sql
 from mindsdb.utilities.render.sqlalchemy_render import SqlalchemyRender
@@ -64,7 +64,7 @@ def query_df_with_type_infer_fallback(query_str: str, dataframes: dict, user_fun
         pandas.columns
     """
 
-    print("USER_FUNCTIONS", type(user_functions))
+    #print("USER_FUNCTIONS", user_functions)
 
     with duckdb.connect(database=":memory:") as con:
         if user_functions:
@@ -120,6 +120,8 @@ def query_df(df, query, session=None):
     else:
         user_functions = None
 
+    #print("[LOG] query_df", user_functions)
+
     def adapt_query(node, is_table, **kwargs):
         if is_table:
             return
@@ -128,7 +130,7 @@ def query_df(df, query, session=None):
                 node.parts = [node.parts[-1]]
                 return node
         if isinstance(node, Function):
-            fnc_name = node.op.lower()
+            fnc_name = node.op.lower()            
             if fnc_name == "database" and len(node.args) == 0:
                 if session is not None:
                     cur_db = session.database
@@ -143,6 +145,8 @@ def query_df(df, query, session=None):
             elif fnc_name == "json_extract":
                 json_columns.add(node.args[0].parts[-1])
             else:
+                # print(fnc_name)
+                # print(user_functions)
                 if user_functions is not None:
                     user_functions.check_function(node)
 
@@ -178,7 +182,13 @@ def query_df(df, query, session=None):
             if "CONNECTION_DATA" in df.columns:
                 df = df.astype({"CONNECTION_DATA": "string"})
 
+    # print("[LOG] query_df", query_str)
+    # print("df", df)
+
     result_df, description = query_df_with_type_infer_fallback(query_str, {"df": df}, user_functions=user_functions)
+
+    #print("result_df", result_df)
+
     #result_df.replace({np.nan: None}, inplace=True)
     result_df.columns = [x[0] for x in description]
     return result_df

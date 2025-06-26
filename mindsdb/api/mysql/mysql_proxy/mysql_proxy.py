@@ -337,7 +337,7 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
         if answer.type in (RESPONSE_TYPE.TABLE, RESPONSE_TYPE.COLUMNS_TABLE):
             packages = []
 
-            print("[SEND_TABLE_PACKETS] result_set is too big, using send_table_packets")
+            #print("[SEND_TABLE_PACKETS] result_set is too big, using send_table_packets")
             #print(answer.result_set)
             self.send_table_packets(result_set=answer.result_set)
             packages.append(self.last_packet())

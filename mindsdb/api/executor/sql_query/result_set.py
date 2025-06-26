@@ -325,7 +325,7 @@ class ResultSet:
     def get_raw_df(self):        
         if self._df is None:
             #names = range(len(self._columns))
-            print("[COLUMNS]", self._columns)
+            #print("[COLUMNS]", self._columns)
             return pd.DataFrame({x.name:[] for x in self._columns})
         return self._df
 

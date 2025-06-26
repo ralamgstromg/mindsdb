@@ -100,9 +100,9 @@ def _dump_bool(var: Any) -> int | None:
     Returns:
         int | None: 1 or 0 or None
     """
-    if pd.isna(var):
+    if var is None:
         return None
-    return "1" if var else "0"
+    return 1 if var else 0
 
 
 def _dump_str(var: Any) -> str | None:
@@ -246,6 +246,17 @@ def _dump_vector(value: Any) -> bytes | None:
     logger.error(err_msg)
     raise ValueError(err_msg)
 
+def _handle_series_as_bool(series: pd.Series) -> pd.Series:
+    """Convert values in a series to a boolean representation.
+    Args:
+        series (pd.Series): The series to handle
+
+    Returns:
+        pd.Series: The series with the date values as strings
+    """
+    if series.dtype in (pd.Boolean, bool, int, pd.Int64, pd.Int32, pd.Int16, pd.Int8):
+        return series.cast(pd.Boolean)
+
 
 def _handle_series_as_date(series: pd.Series) -> pd.Series:
     """Convert values in a series to a string representation of a date.
@@ -387,7 +398,7 @@ def dump_result_set_to_mysql(
 
         match column_type:
             case MYSQL_DATA_TYPE.BOOL | MYSQL_DATA_TYPE.BOOLEAN:
-                series = series.apply(_dump_bool)
+                series = _handle_series_as_bool(series)
             case MYSQL_DATA_TYPE.DATE:
                 series = _handle_series_as_date(series)
             case MYSQL_DATA_TYPE.DATETIME:

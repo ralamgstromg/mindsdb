@@ -63,9 +63,9 @@ class FileTable(APIResource):
 
     def add(self, data, table_name=None):        
         # df = pd.DataFrame(data)
-        print(data)
+        #print(data)
         df = pd.DataFrame(data)
-        print(df)
+        #print(df)
         return self.handler.add_data_to_table(table_name, df)
 
 

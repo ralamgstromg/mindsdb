@@ -234,8 +234,8 @@ class InformationSchemaDataNode(DataNode):
             dataframe = self._get_empty_table(tbl)
         data = query_df(dataframe, query, session=self.session)
 
-        print(data)
-        print(data.schema)
+        # print(data)
+        # print(data.schema)
 
         columns_info = [{"name": k, "type": v} for k, v in data.schema.items()]
 

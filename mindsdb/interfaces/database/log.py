@@ -84,7 +84,20 @@ class LLMLogTable(LogTable):
         "SUCCESS",
     ]
 
-    types_map = {"SUCCESS": "boolean", "START_TIME": "datetime64[ns]", "END_TIME": "datetime64[ns]"}
+    #types_map = {"SUCCESS": "boolean", "START_TIME": "datetime64[ns]", "END_TIME": "datetime64[ns]"}
+    #types_map = {"SUCCESS": pd.Boolean, "START_TIME": pd.Datetime, "END_TIME": pd.Datetime}
+    schemas_map = {
+        "api_key": pd.String,
+        "model_name": pd.String,
+        "input": pd.String,
+        "output": pd.String,
+        "start_time": pd.Datetime,
+        "end_time": pd.Datetime,
+        "prompt_tokens": pd.Int32,
+        "completion_tokens": pd.Int32,
+        "total_tokens": pd.Int32,
+        "success": pd.Boolean,
+    }
 
     @staticmethod
     def _get_base_subquery() -> Select:
@@ -126,7 +139,16 @@ class JobsHistoryTable(LogTable):
     name = "jobs_history"
 
     columns = ["NAME", "PROJECT", "RUN_START", "RUN_END", "ERROR", "QUERY"]
-    types_map = {"RUN_START": "datetime64[ns]", "RUN_END": "datetime64[ns]"}
+    #types_map = {"RUN_START": "datetime64[ns]", "RUN_END": "datetime64[ns]"}
+    #types_map = {"RUN_START": pd.Datetime, "RUN_END": pd.Datetime}
+    schemas_map = {
+        "name": pd.String,
+        "project": pd.String,
+        "run_start": pd.Datetime,
+        "run_end": pd.Datetime,
+        "error": pd.String,
+        "query": pd.String,
+    }
 
     @staticmethod
     def _get_base_subquery() -> Select:
@@ -252,15 +274,15 @@ class LogDBController:
         render = SqlalchemyRender(render_engine)
         query_str = render.get_string(query, with_failback=False)
         #df = pd.read_sql_query(query_str, db.engine)
-        df = pd.read_database(query_str, db.engine)
+        df = pd.read_database(query_str, db.engine)        
 
-        # region cast columns values to proper types
-        for column_name, column_type in log_table.types_map.items():
-            for df_column_name in df.columns:
-                if df_column_name.lower() == column_name.lower() and df[df_column_name].dtype != column_type:
-                    df[df_column_name] = df[df_column_name].astype(column_type)
-        # endregion
+        df = df.with_columns([
+            pd.col(column_name).cast(column_type).alias(column_name)
+            for column_name, column_type in log_table.schemas_map.items()
+        ])
 
-        columns_info = [{"name": k, "type": v} for k, v in df.dtypes.items()]
+        print(df)
+
+        columns_info = [{"name": k, "type": v} for k, v in df.schema.items()]
 
         return DataHubResponse(data_frame=df, columns=columns_info)

@@ -110,6 +110,7 @@ class BYOMFunctionsController:
         return self.byom_handlers[engine].function_call(method_name, args)
 
     def create_function_set(self):
+        #print(self)
         return DuckDBFunctions(self)
 
 
@@ -129,6 +130,9 @@ class FunctionController(BYOMFunctionsController):
 
         elif node.op.lower() == 'to_markdown':
             return self.to_markdown_call_function(node)
+        
+        elif node.op.lower() == 'date_format':
+            return self.date_format_call_function(node)
 
     def llm_call_function(self, node):
         name = node.op.lower()
@@ -185,6 +189,30 @@ class FunctionController(BYOMFunctionsController):
         }
         self.callbacks[name] = meta
         return meta
+    
+    def date_format_call_function(self, node):
+        """
+        This function is used to format date strings.
+        It is a placeholder for future implementation.
+        """
+        name = node.op.lower()
+
+        if name in self.callbacks:
+            return self.callbacks[name]
+
+        def callback(date_string, format_string):
+            # Placeholder for actual date formatting logic
+            #$return f"Formatted {date_string} with {format_string}"
+            return date_string
+
+        meta = {
+            'name': name,
+            'callback': callback,
+            'input_types': ['str', 'str'],
+            'output_type': 'str'
+        }
+        self.callbacks[name] = meta
+        return meta
 
     def _parse_chat_model_params(self, param_prefix: str = 'LLM_FUNCTION_'):
         """
@@ -217,6 +245,7 @@ class DuckDBFunctions:
     def check_function(self, node):
 
         meta = self.controller.check_function(node)
+        #print(self.controller, meta)
         if meta is None:
             return
 
