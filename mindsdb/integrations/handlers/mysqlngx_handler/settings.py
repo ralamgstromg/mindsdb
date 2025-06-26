@@ -46,3 +46,4 @@ class ConnectionConfig(BaseModel):
     class Config:
         str_min_length = 1
         str_strip_whitespace = True
+        protected_namespaces = ()

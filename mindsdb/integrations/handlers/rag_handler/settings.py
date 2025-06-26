@@ -213,7 +213,7 @@ class LLMParameters(BaseModel):
     stop: Optional[List[str]] = None
 
     class Config:
-        extra = Extra.forbid
+        extra = "forbid"
         arbitrary_types_allowed = True
         use_enum_values = True
         protected_namespaces = ()
@@ -310,9 +310,10 @@ class RAGBaseParameters(BaseModel):
     )
 
     class Config:
-        extra = Extra.forbid
+        extra = "forbid"
         arbitrary_types_allowed = True
         use_enum_values = True
+        protected_namespaces = ()
 
     @field_validator("prompt_template")
     def prompt_format_must_be_valid(cls, v):

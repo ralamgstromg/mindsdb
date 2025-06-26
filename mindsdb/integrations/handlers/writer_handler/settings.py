@@ -37,8 +37,9 @@ class WriterLLMParameters(BaseModel):
     verbose: bool = False
 
     class Config:
-        extra = Extra.forbid
+        extra = "forbid"
         arbitrary_types_allowed = True
+        protected_namespaces = ()
 
 
 class WriterHandlerParameters(RAGBaseParameters):
@@ -54,9 +55,10 @@ class WriterHandlerParameters(RAGBaseParameters):
     evaluate_dataset: Union[List[dict], str] = "squad_v2_val_100_sample"
 
     class Config:
-        extra = Extra.forbid
+        extra = "forbid"
         arbitrary_types_allowed = True
         use_enum_values = True
+        protected_namespaces = ()
 
     @field_validator("generation_evaluation_metrics")
     def generation_evaluation_metrics_must_be_supported(cls, v):

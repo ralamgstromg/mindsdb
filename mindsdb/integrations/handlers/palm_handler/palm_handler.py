@@ -45,7 +45,8 @@ class PalmHandlerArgs(BaseModel):
 
     class Config:
         # for all args that are not expected, raise an error
-        extra = Extra.forbid
+        extra = "forbid"
+        protected_namespaces = ()
 
 
 class PalmHandler(BaseMLEngine):

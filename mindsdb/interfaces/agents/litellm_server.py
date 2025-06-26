@@ -40,6 +40,9 @@ class ChatMessage(BaseModel):
     role: str
     content: str
 
+    class Config:
+        protected_namespaces = ()
+
 
 class ChatCompletionRequest(BaseModel):
     model: str
@@ -48,12 +51,18 @@ class ChatCompletionRequest(BaseModel):
     temperature: Optional[float] = None
     max_tokens: Optional[int] = None
 
+    class Config:
+        protected_namespaces = ()
+
 
 class ChatCompletionChoice(BaseModel):
     index: int = 0
     message: Optional[Dict[str, str]] = None
     delta: Optional[Dict[str, str]] = None
     finish_reason: Optional[str] = "stop"
+
+    class Config:
+        protected_namespaces = ()
 
 
 class ChatCompletionResponse(BaseModel):
@@ -64,9 +73,15 @@ class ChatCompletionResponse(BaseModel):
     choices: List[ChatCompletionChoice]
     usage: Dict[str, int] = Field(default_factory=lambda: {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0})
 
+    class Config:
+        protected_namespaces = ()
+
 
 class DirectSQLRequest(BaseModel):
     query: str
+
+    class Config:
+        protected_namespaces = ()
 
 
 @app.post("/v1/chat/completions")

@@ -21,7 +21,8 @@ class BasePreprocessingConfig(BaseModel):
     chunk_size: int = Field(default=DEFAULT_CHUNK_SIZE, description="Size of document chunks")
     chunk_overlap: int = Field(default=DEFAULT_CHUNK_OVERLAP, description="Overlap between chunks")
 
-    model_config: dict = {"protected_namespaces": ()}
+    class Config:
+        protected_namespaces = ()
 
 
 class ContextualConfig(BasePreprocessingConfig):
@@ -38,6 +39,9 @@ class ContextualConfig(BasePreprocessingConfig):
         default=False,
         description="Whether to return chunks as summarizations"
     )
+    
+    class Config:
+        protected_namespaces = ()
 
 
 class TextChunkingConfig(BaseModel):
@@ -131,7 +135,8 @@ class PreprocessingConfig(BaseModel):
         description="Configuration for JSON chunking preprocessing"
     )
 
-    model_config: dict = {"protected_namespaces": ()}
+    class Config:
+        protected_namespaces = ()
 
     @model_validator(mode='after')
     def validate_config_presence(self) -> 'PreprocessingConfig':
@@ -155,7 +160,8 @@ class Document(BaseModel):
     embeddings: Optional[List[float]] = Field(default=None, description="Vector embeddings of the content")
     metadata: Optional[Dict[str, Any]] = Field(default=None, description="Additional document metadata")
 
-    model_config: dict = {"protected_namespaces": ()}
+    class Config:
+        protected_namespaces = ()
 
     @model_validator(mode='after')
     def validate_metadata(self) -> 'Document':

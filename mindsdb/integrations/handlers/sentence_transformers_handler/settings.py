@@ -9,4 +9,5 @@ class Parameters(BaseModel):
     use_gpu: bool = False
 
     class Config:
-        extra = Extra.forbid
+        extra = "forbid"
+        protected_namespaces = ()

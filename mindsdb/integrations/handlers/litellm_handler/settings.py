@@ -34,6 +34,7 @@ class CompletionParameters(BaseModel):
     api_key: str  # API key for authentication.
 
     class Config:
-        extra = Extra.forbid
+        extra = "forbid"
         arbitrary_types_allowed = True
         use_enum_values = True
+        protected_namespaces = ()

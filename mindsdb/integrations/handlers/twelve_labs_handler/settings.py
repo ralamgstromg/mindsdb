@@ -81,6 +81,7 @@ class TwelveLabsHandlerModel(BaseModel):
 
     class Config:
         extra = "forbid"
+        protected_namespaces = ()
 
     @model_validator(mode="before")
     @classmethod

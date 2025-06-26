@@ -6,7 +6,9 @@ from pydantic import BaseModel, ConfigDict, Field
 class BaseLLMConfig(BaseModel):
     # Remove 'model_' prefix from protected namespaces since Langchain constructor
     # kwargs share the same prefix.
-    model_config = ConfigDict(protected_namespaces=())
+    #model_config = ConfigDict(protected_namespaces=())
+    class Config:
+        protected_namespaces = ()
 
 
 # See https://api.python.langchain.com/en/latest/chat_models/langchain_community.chat_models.openai.ChatOpenAI.html#langchain_community.chat_models.openai.ChatOpenAI

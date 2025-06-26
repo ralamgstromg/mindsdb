@@ -34,6 +34,7 @@ class EmailSearchOptions(BaseModel):
 
         }
         extra = "forbid"
+        protected_namespaces = ()
 
 
 class EmailConnectionDetails(BaseModel):
@@ -57,3 +58,4 @@ class EmailConnectionDetails(BaseModel):
             }
         }
         extra = "forbid"
+        protected_namespaces = ()

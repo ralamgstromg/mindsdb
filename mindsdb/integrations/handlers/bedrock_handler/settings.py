@@ -58,6 +58,7 @@ class AmazonBedrockHandlerEngineConfig(BaseModel):
 
     class Config:
         extra = "forbid"
+        protected_namespaces = ()
 
     @model_validator(mode="before")
     @classmethod
@@ -157,6 +158,7 @@ class AmazonBedrockHandlerModelConfig(BaseModel):
 
     class Config:
         extra = "forbid"
+        protected_namespaces = ()
 
     @model_validator(mode="before")
     @classmethod
