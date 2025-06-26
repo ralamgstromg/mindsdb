@@ -10,9 +10,12 @@ from mindsdb.interfaces.agents.mindsdb_database_agent import extract_essential
 
 class _MindsDBSQLParserToolInput(BaseModel):
     tool_input: str = Field("", description="A SQL query to validate.")
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class MindsDBSQLParserTool(BaseTool):
+    model_config: dict = {"protected_namespaces": ()}
+    
     name: str = "mindsdb_sql_parser_tool"
     description: str = "Parse a SQL query to check it is valid MindsDB SQL."
     args_schema: Type[BaseModel] = _MindsDBSQLParserToolInput

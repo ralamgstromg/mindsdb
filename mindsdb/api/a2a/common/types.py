@@ -21,6 +21,7 @@ class TextPart(BaseModel):
     type: Literal["text"] = "text"
     text: str
     metadata: dict[str, Any] | None = None
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class FileContent(BaseModel):
@@ -28,6 +29,7 @@ class FileContent(BaseModel):
     mimeType: str | None = None
     bytes: str | None = None
     uri: str | None = None
+    model_config: dict = {"protected_namespaces": ()}
 
     @model_validator(mode="after")
     def check_content(self) -> Self:
@@ -44,12 +46,14 @@ class FilePart(BaseModel):
     type: Literal["file"] = "file"
     file: FileContent
     metadata: dict[str, Any] | None = None
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class DataPart(BaseModel):
     type: Literal["data"] = "data"
     data: dict[str, Any]
     metadata: dict[str, Any] | None = None
+    model_config: dict = {"protected_namespaces": ()}
 
 
 Part = Annotated[Union[TextPart, FilePart, DataPart], Field(discriminator="type")]
@@ -59,12 +63,14 @@ class Message(BaseModel):
     role: Literal["user", "agent"]
     parts: List[Part]
     metadata: dict[str, Any] | None = None
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class TaskStatus(BaseModel):
     state: TaskState
-    message: Message | None = None
+    message: Message | None = None    
     timestamp: datetime = Field(default_factory=datetime.now)
+    model_config: dict = {"protected_namespaces": ()}
 
     @field_serializer("timestamp")
     def serialize_dt(self, dt: datetime, _info):
@@ -79,6 +85,7 @@ class Artifact(BaseModel):
     index: int = 0
     append: bool | None = None
     lastChunk: bool | None = None
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class Task(BaseModel):
@@ -88,6 +95,7 @@ class Task(BaseModel):
     artifacts: List[Artifact] | None = None
     history: List[Message] | None = None
     metadata: dict[str, Any] | None = None
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class TaskStatusUpdateEvent(BaseModel):
@@ -95,30 +103,34 @@ class TaskStatusUpdateEvent(BaseModel):
     status: TaskStatus
     final: bool = False
     metadata: dict[str, Any] | None = None
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class TaskArtifactUpdateEvent(BaseModel):
     id: str
     artifact: Artifact
     metadata: dict[str, Any] | None = None
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class AuthenticationInfo(BaseModel):
     model_config = ConfigDict(extra="allow", protected_namespaces=())
 
     schemes: List[str]
-    credentials: str | None = None
+    credentials: str | None = None    
 
 
 class PushNotificationConfig(BaseModel):
     url: str
     token: str | None = None
     authentication: AuthenticationInfo | None = None
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class TaskIdParams(BaseModel):
     id: str
     metadata: dict[str, Any] | None = None
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class TaskQueryParams(TaskIdParams):
@@ -133,11 +145,13 @@ class TaskSendParams(BaseModel):
     pushNotification: PushNotificationConfig | None = None
     historyLength: int | None = None
     metadata: dict[str, Any] | None = None
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class TaskPushNotificationConfig(BaseModel):
     id: str
     pushNotificationConfig: PushNotificationConfig
+    model_config: dict = {"protected_namespaces": ()}
 
 
 # RPC Messages
@@ -146,6 +160,7 @@ class TaskPushNotificationConfig(BaseModel):
 class JSONRPCMessage(BaseModel):
     jsonrpc: Literal["2.0"] = "2.0"
     id: int | str | None = Field(default_factory=lambda: uuid4().hex)
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class JSONRPCRequest(JSONRPCMessage):
@@ -157,11 +172,12 @@ class JSONRPCError(BaseModel):
     code: int
     message: str
     data: Any | None = None
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class JSONRPCResponse(JSONRPCMessage):
     result: Any | None = None
-    error: JSONRPCError | None = None
+    error: JSONRPCError | None = None    
 
 
 class SendTaskRequest(JSONRPCRequest):
@@ -304,17 +320,21 @@ class ContentTypeNotSupportedError(JSONRPCError):
 class AgentProvider(BaseModel):
     organization: str
     url: str | None = None
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class AgentCapabilities(BaseModel):
     streaming: bool = False
     pushNotifications: bool = False
     stateTransitionHistory: bool = False
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class AgentAuthentication(BaseModel):
     schemes: List[str]
     credentials: str | None = None
+
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class AgentSkill(BaseModel):
@@ -325,6 +345,8 @@ class AgentSkill(BaseModel):
     examples: List[str] | None = None
     inputModes: List[str] | None = None
     outputModes: List[str] | None = None
+
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class AgentCard(BaseModel):
@@ -339,6 +361,8 @@ class AgentCard(BaseModel):
     defaultInputModes: List[str] = ["text"]
     defaultOutputModes: List[str] = ["text"]
     skills: List[AgentSkill]
+
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class A2AClientError(Exception):

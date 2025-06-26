@@ -408,6 +408,7 @@ class VectorStoreConfig(BaseModel):
     class Config:
         arbitrary_types_allowed = True
         extra = "forbid"
+        protected_namespaces = ()
 
 
 class RetrieverType(str, Enum):
@@ -453,6 +454,8 @@ class SearchKwargs(BaseModel):
         le=1.0,
     )
 
+    model_config: dict = {"protected_namespaces": ()}
+
     def model_dump(self, *args, **kwargs):
         # Override model_dump to exclude None values by default
         kwargs["exclude_none"] = True
@@ -464,6 +467,7 @@ class LLMExample(BaseModel):
     output: str = Field(
         description="What the LLM should generate for this example's input"
     )
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class ValueSchema(BaseModel):
@@ -500,6 +504,8 @@ class ValueSchema(BaseModel):
         description="Relevance computed during search. Should not be set by the end user.",
         exclude=True,
     )
+
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class MetadataConfig(BaseModel):
@@ -541,6 +547,8 @@ class MetadataConfig(BaseModel):
         description="Metadata field that links an embedded chunk back to source document ID"
     )
 
+    model_config: dict = {"protected_namespaces": ()}
+
 
 class ColumnSchema(BaseModel):
     column: str = Field(description="Name of the column in the database")
@@ -575,6 +583,8 @@ class ColumnSchema(BaseModel):
         description="Relevance computed during search. Should not be set by the end user.",
     )
 
+    model_config: dict = {"protected_namespaces": ()}
+
 
 class TableSchema(BaseModel):
     table: str = Field(description="Name of table in the database")
@@ -608,6 +618,8 @@ class TableSchema(BaseModel):
         description="Relevance computed during search. Should not be set by the end user.",
     )
 
+    model_config: dict = {"protected_namespaces": ()}
+
 
 class DatabaseSchema(BaseModel):
     database: str = Field(description="Name of database in the Database")
@@ -635,6 +647,8 @@ class DatabaseSchema(BaseModel):
         default=None,
         description="Relevance computed during search. Should not be set by the end user.",
     )
+
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class SQLRetrieverConfig(BaseModel):
@@ -700,6 +714,8 @@ class SQLRetrieverConfig(BaseModel):
         description="Optional examples of final generated pgvector queries based on user input.",
     )
 
+    model_config: dict = {"protected_namespaces": ()}
+
 
 class SummarizationConfig(BaseModel):
     llm_config: LLMConfig = Field(
@@ -719,6 +735,8 @@ class SummarizationConfig(BaseModel):
         description="Max number of tokens for summarized documents",
     )
 
+    model_config: dict = {"protected_namespaces": ()}
+
 
 class RerankerConfig(BaseModel):
     model: str = DEFAULT_RERANKING_MODEL
@@ -730,6 +748,8 @@ class RerankerConfig(BaseModel):
     retry_delay: float = 1.0
     early_stop: bool = True  # Whether to enable early stopping
     early_stop_threshold: float = 0.8  # Confidence threshold for early stopping
+
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class MultiHopRetrieverConfig(BaseModel):
@@ -750,6 +770,8 @@ class MultiHopRetrieverConfig(BaseModel):
         default_factory=LLMConfig,
         description="LLM configuration to use for generating follow-up questions",
     )
+
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class RAGPipelineModel(BaseModel):
@@ -866,6 +888,7 @@ class RAGPipelineModel(BaseModel):
     class Config:
         arbitrary_types_allowed = True
         extra = "forbid"
+        protected_namespaces = ()
 
         json_schema_extra = {
             "example": {

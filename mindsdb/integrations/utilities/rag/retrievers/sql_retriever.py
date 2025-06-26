@@ -44,6 +44,8 @@ class MetadataFilter(BaseModel):
     )
     value: Any = Field(description="Value to use to filter database column")
 
+    model_config: dict = {"protected_namespaces": ()}
+
 
 class AblativeMetadataFilter(MetadataFilter):
     """Adds additional fields to support ablation."""
@@ -59,6 +61,8 @@ class MetadataFilters(BaseModel):
     filters: List[MetadataFilter] = Field(
         description="List of PostgreSQL metadata filters to apply for user query"
     )
+
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class SQLRetriever(BaseRetriever):

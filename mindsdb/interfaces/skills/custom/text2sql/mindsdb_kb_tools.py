@@ -29,6 +29,7 @@ def llm_str_strip(s):
 
 class KnowledgeBaseListToolInput(BaseModel):
     tool_input: str = Field("", description="An empty string to list all knowledge bases.")
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class KnowledgeBaseListTool(BaseTool):
@@ -38,6 +39,8 @@ class KnowledgeBaseListTool(BaseTool):
     description: str = "List all knowledge bases in MindsDB."
     args_schema: Type[BaseModel] = KnowledgeBaseListToolInput
     db: Any = None
+
+    model_config: dict = {"protected_namespaces": ()}
 
     def _run(self, tool_input: str) -> str:
         """List all knowledge bases."""
@@ -54,6 +57,8 @@ class KnowledgeBaseInfoToolInput(BaseModel):
         description="A comma-separated list of knowledge base names enclosed between $START$ and $STOP$.",
     )
 
+    model_config: dict = {"protected_namespaces": ()}
+
 
 class KnowledgeBaseInfoTool(BaseTool):
     """Tool for getting information about knowledge bases in MindsDB."""
@@ -62,6 +67,8 @@ class KnowledgeBaseInfoTool(BaseTool):
     description: str = "Get information about knowledge bases in MindsDB."
     args_schema: Type[BaseModel] = KnowledgeBaseInfoToolInput
     db: Any = None
+
+    model_config: dict = {"protected_namespaces": ()}
 
     def _extract_kb_names(self, tool_input: str) -> List[str]:
         """Extract knowledge base names from the tool input."""
@@ -189,6 +196,7 @@ class KnowledgeBaseQueryToolInput(BaseModel):
         ...,
         description="A SQL query for knowledge bases. Can be provided directly or enclosed between $START$ and $STOP$.",
     )
+    model_config: dict = {"protected_namespaces": ()}
 
 
 class KnowledgeBaseQueryTool(BaseTool):
@@ -198,6 +206,8 @@ class KnowledgeBaseQueryTool(BaseTool):
     description: str = "Query knowledge bases in MindsDB."
     args_schema: Type[BaseModel] = KnowledgeBaseQueryToolInput
     db: Any = None
+
+    model_config: dict = {"protected_namespaces": ()}
 
     def _extract_query(self, tool_input: str) -> str:
         """Extract the SQL query from the tool input."""

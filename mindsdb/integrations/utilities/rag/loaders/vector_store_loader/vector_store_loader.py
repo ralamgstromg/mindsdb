@@ -23,6 +23,7 @@ class VectorStoreLoader(BaseModel):
         arbitrary_types_allowed = True
         extra = "forbid"
         validate_assignment = True
+        protected_namespaces = ()
 
     def load(self) -> VectorStore:
         """

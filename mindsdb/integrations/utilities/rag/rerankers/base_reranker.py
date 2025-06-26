@@ -42,6 +42,7 @@ class BaseLLMReranker(BaseModel, ABC):
     class Config:
         arbitrary_types_allowed = True
         extra = "allow"
+        protected_namespaces = ()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

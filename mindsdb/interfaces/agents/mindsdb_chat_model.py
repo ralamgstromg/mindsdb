@@ -74,6 +74,7 @@ class ChatMindsdb(BaseChatModel):
         """Configuration for this pydantic object."""
         arbitrary_types_allowed = True
         allow_reuse = True
+        protected_namespaces = ()
 
     @property
     def _default_params(self) -> Dict[str, Any]:

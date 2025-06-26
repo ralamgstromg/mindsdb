@@ -21,6 +21,8 @@ class BasePreprocessingConfig(BaseModel):
     chunk_size: int = Field(default=DEFAULT_CHUNK_SIZE, description="Size of document chunks")
     chunk_overlap: int = Field(default=DEFAULT_CHUNK_OVERLAP, description="Overlap between chunks")
 
+    model_config: dict = {"protected_namespaces": ()}
+
 
 class ContextualConfig(BasePreprocessingConfig):
     """Configuration specific to contextual preprocessing"""
@@ -57,10 +59,11 @@ class TextChunkingConfig(BaseModel):
     separators: List[str] = Field(
         default=["\n\n", "\n", " ", ""],
         description="List of separators to use for splitting text, in order of priority"
-    )
+    )    
 
     class Config:
         arbitrary_types_allowed = True
+        protected_namespaces = ()
 
 
 class JSONChunkingConfig(BasePreprocessingConfig):
@@ -106,6 +109,7 @@ class JSONChunkingConfig(BasePreprocessingConfig):
 
     class Config:
         arbitrary_types_allowed = True
+        protected_namespaces = ()
 
 
 class PreprocessingConfig(BaseModel):
@@ -126,6 +130,8 @@ class PreprocessingConfig(BaseModel):
         default=None,
         description="Configuration for JSON chunking preprocessing"
     )
+
+    model_config: dict = {"protected_namespaces": ()}
 
     @model_validator(mode='after')
     def validate_config_presence(self) -> 'PreprocessingConfig':
@@ -148,6 +154,8 @@ class Document(BaseModel):
     content: str = Field(description="The document content")
     embeddings: Optional[List[float]] = Field(default=None, description="Vector embeddings of the content")
     metadata: Optional[Dict[str, Any]] = Field(default=None, description="Additional document metadata")
+
+    model_config: dict = {"protected_namespaces": ()}
 
     @model_validator(mode='after')
     def validate_metadata(self) -> 'Document':
