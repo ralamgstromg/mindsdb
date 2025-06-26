@@ -125,6 +125,9 @@ class LangchainEmbeddingHandler(BaseMLEngine):
     Bridge class to connect langchain.embeddings module to mindsDB
     """
 
+    class Config:
+        protected_namespaces = ()
+
     DEFAULT_EMBEDDING_CLASS = "OpenAIEmbeddings"
 
     def __init__(self, model_storage, engine_storage, **kwargs) -> None:

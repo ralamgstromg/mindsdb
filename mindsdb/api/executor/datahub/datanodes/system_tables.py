@@ -45,6 +45,9 @@ class Table:
     visible: bool = False
     kind: str = "table"
 
+    class Config:
+        protected_namespaces = ()
+
 
 class SchemataTable(Table):
     name = "SCHEMATA"

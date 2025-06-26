@@ -18,6 +18,9 @@ class MultiVectorRetriever(BaseRetriever):
     MultiVectorRetriever stores multiple vectors per document.
     """
 
+    class Config:
+        protected_namespaces = ()
+
     def __init__(self, config: RAGPipelineModel):
         self.vectorstore = config.vector_store
         self.parent_store = config.parent_store

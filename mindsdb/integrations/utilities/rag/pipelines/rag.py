@@ -48,6 +48,9 @@ class LangChainRAGPipeline:
         summarization_config (SummarizationConfig): Summarization configuration
     """
 
+    class Config:
+        protected_namespaces = ()
+
     def __init__(
             self,
             retriever_runnable,

@@ -24,6 +24,9 @@ from mindsdb.integrations.libs.response import INF_SCHEMA_COLUMNS_NAMES
 class ProjectDataNode(DataNode):
     type = "project"
 
+    class Config:
+        protected_namespaces = ()
+
     def __init__(self, project, integration_controller, information_schema):
         self.project = project
         self.integration_controller = integration_controller

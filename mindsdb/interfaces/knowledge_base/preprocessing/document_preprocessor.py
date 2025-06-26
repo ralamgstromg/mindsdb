@@ -32,6 +32,9 @@ _DEFAULT_CONTENT_COLUMN_NAME = "content"
 class DocumentPreprocessor:
     """Base class for document preprocessing"""
 
+    class Config:
+        protected_namespaces = ()
+
     RESERVED_METADATA_FIELDS = {
         "content",
         "id",
@@ -133,6 +136,9 @@ class DocumentPreprocessor:
 
 class ContextualPreprocessor(DocumentPreprocessor):
     """Contextual preprocessing implementation that enhances document chunks with context"""
+
+    class Config:
+        protected_namespaces = ()
 
     DEFAULT_CONTEXT_TEMPLATE = """
 <document>
@@ -286,6 +292,9 @@ Please give a short succinct context to situate this chunk within the overall do
 class TextChunkingPreprocessor(DocumentPreprocessor):
     """Default text chunking preprocessor using RecursiveCharacterTextSplitter"""
 
+    class Config:
+        protected_namespaces = ()
+
     def __init__(self, config: Optional[TextChunkingConfig] = None):
         """Initialize with text chunking configuration"""
         super().__init__()
@@ -371,6 +380,9 @@ class TextChunkingPreprocessor(DocumentPreprocessor):
 
 class PreprocessorFactory:
     """Factory for creating preprocessors based on configuration"""
+
+    class Config:
+        protected_namespaces = ()
 
     @staticmethod
     def create_preprocessor(

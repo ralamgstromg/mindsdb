@@ -154,6 +154,10 @@ def _get_show_where(
 
 
 class ExecuteCommands:
+
+    class Config:
+        protected_namespaces = ()
+        
     def __init__(self, session, context=None):
         if context is None:
             context = {}

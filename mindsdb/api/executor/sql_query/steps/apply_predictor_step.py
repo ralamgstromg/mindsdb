@@ -34,6 +34,9 @@ def get_preditor_alias(step, mindsdb_database):
 
 class ApplyPredictorBaseCall(BaseStepCall):
 
+    class Config:
+        protected_namespaces = ()
+
     def apply_predictor(self, project_name, predictor_name, df, version, params):
         # is it an agent?
         agent = self.session.agents_controller.get_agent(predictor_name, project_name)

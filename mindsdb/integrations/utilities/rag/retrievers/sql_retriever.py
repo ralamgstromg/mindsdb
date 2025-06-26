@@ -51,6 +51,9 @@ class MetadataFilter(BaseModel):
 class AblativeMetadataFilter(MetadataFilter):
     """Adds additional fields to support ablation."""
 
+    class Config:
+        protected_namespaces = ()
+
     schema_table: str = Field(description="schema name of the table for this filter")
     schema_column: str = Field(description="schema name of the column for this filter")
     schema_value: str = Field(description="schema name of the value for this filter")
@@ -82,6 +85,9 @@ class SQLRetriever(BaseRetriever):
 
     4. Actually execute the query against our vector database to retrieve documents & return them.
     """
+
+    class Config:
+        protected_namespaces = ()
 
     fallback_retriever: BaseRetriever
     vector_store_handler: VectorStoreHandler

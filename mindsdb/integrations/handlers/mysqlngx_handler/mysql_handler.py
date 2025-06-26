@@ -156,6 +156,9 @@ class MySQLHandler(DatabaseHandler):
 
     name = "mysqlngx"
 
+    class Config:
+        protected_namespaces = ()
+
     def __init__(self, name, **kwargs):
         super().__init__(name)
         self.parser = parse_sql

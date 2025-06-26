@@ -139,6 +139,9 @@ class KnowledgeBaseTable:
     Handlers requests to KB table and modifies data in linked vector db table
     """
 
+    class Config:
+        protected_namespaces = ()
+
     def __init__(self, kb: db.KnowledgeBase, session):
         self._kb = kb
         self._vector_db = None

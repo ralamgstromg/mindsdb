@@ -73,6 +73,9 @@ def create_map_reduce_documents_chain(summarization_config: SummarizationConfig,
 class MapReduceSummarizerChain(Chain):
     '''Chain to summarize the source documents for document chunks & return as context'''
 
+    class Config:
+        protected_namespaces = ()
+
     context_key: str = 'context'
     metadata_key: str = 'metadata'
     doc_id_key: str = 'original_row_id'

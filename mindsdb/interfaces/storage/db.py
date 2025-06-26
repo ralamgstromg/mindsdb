@@ -37,6 +37,9 @@ from mindsdb.utilities.config import config
 class Base:
     __allow_unmapped__ = True    
 
+    class Config:
+        protected_namespaces = ()
+
 
 Base = declarative_base(cls=Base)
 
@@ -329,6 +332,9 @@ class ChatBots(Base):
     created_at = Column(DateTime, default=datetime.datetime.now)
     webhook_token = Column(String)
 
+    class Config:
+        protected_namespaces = ()
+
     def as_dict(self) -> Dict:
         return {
             "id": self.id,
@@ -446,6 +452,9 @@ class Agents(Base):
     updated_at = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     created_at = Column(DateTime, default=datetime.datetime.now)
     deleted_at = Column(DateTime)
+
+    class Config:
+        protected_namespaces = ()
 
     def as_dict(self) -> Dict:
         return {

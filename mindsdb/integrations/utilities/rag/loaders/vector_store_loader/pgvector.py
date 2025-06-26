@@ -37,6 +37,9 @@ class PGVectorMDB(PGVector):
             class EmbeddingStore(Base):
                 """Embedding store."""
 
+                class Config:
+                    protected_namespaces = ()
+
                 __tablename__ = collection_name
 
                 id = sa.Column(sa.Integer, primary_key=True)
