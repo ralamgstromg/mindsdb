@@ -45,13 +45,22 @@ class IntegrationDataNode(DataNode):
 
     def get_tables(self):
         response = self.integration_handler.get_tables()
+        print("[get_tables.response]", response)
         if response.type == RESPONSE_TYPE.TABLE:
-            result_dict = response.data_frame.to_dict(orient="records")
+            print("AQUI")
+            #result_dict = response.data_frame.to_dict(orient="records")
+            print(type(response.data_frame))
+            result_dict = response.data_frame.to_dicts()
+            # print(result_dict)
             result = []
             for row in result_dict:
+                #print(row)
                 result.append(TablesRow.from_dict(row))
+
+            # print(result)
             return result
         else:
+            print("Excepcion")
             raise Exception(f"Can't get tables: {response.error_message}")
 
         result_dict = response.data_frame.to_dict(orient="records")
@@ -78,7 +87,7 @@ class IntegrationDataNode(DataNode):
 
         if response.type != RESPONSE_TYPE.TABLE:
             logger.warning(f"Wrong response type for handler's `get_columns` call: {response.type}")
-            return pd.DataFrame([], columns=astuple(INF_SCHEMA_COLUMNS_NAMES))
+            return pd.DataFrame([], schema=astuple(INF_SCHEMA_COLUMNS_NAMES), orient="row")
 
         # region fallback for old handlers
         df = response.data_frame
@@ -87,7 +96,7 @@ class IntegrationDataNode(DataNode):
             logger.warning(
                 f"Response from the handler's `get_columns` call does not contain required columns: f{df.columns}"
             )
-            return pd.DataFrame([], columns=astuple(INF_SCHEMA_COLUMNS_NAMES))
+            return pd.DataFrame([], schema=astuple(INF_SCHEMA_COLUMNS_NAMES), orient="row")
 
         new_df = df[["FIELD", "TYPE"]]
         new_df.columns = ["COLUMN_NAME", "DATA_TYPE"]
@@ -246,6 +255,8 @@ class IntegrationDataNode(DataNode):
             raise Exception(f"Error in {self.integration_name}: {result.error_message}")
         if result.type == RESPONSE_TYPE.OK:
             return DataHubResponse(affected_rows=result.affected_rows)
+        
+
 
         df = result.data_frame
         # region clearing df from NaN values
@@ -260,7 +271,7 @@ class IntegrationDataNode(DataNode):
         # except Exception as e:
         #     logger.error(f"Issue with clearing DF from NaN values: {e}")
         # endregion
-
+        
         #columns_info = [{"name": k, "type": v} for k, v in df.dtypes.items()]
         #print(df.schema.items())
         columns_info = [{"name": k, "type": v} for k, v in df.schema.items()]

@@ -99,6 +99,7 @@ class InformationSchemaDataNode(DataNode):
         self.persis_datanodes = {"log": self.database_controller.logs_db_controller}
 
         databases = self.database_controller.get_dict()
+        #print(databases)
         if "files" in databases:
             self.persis_datanodes["files"] = IntegrationDataNode(
                 "files",
@@ -108,12 +109,15 @@ class InformationSchemaDataNode(DataNode):
 
         self.tables = {t.name: t for t in self.tables_list}
 
+        #print(self.tables)
+
+
     def __getitem__(self, key):
         return self.get(key)
 
     def get(self, name):
         name_lower = name.lower()
-
+        
         if name_lower == "information_schema":
             return self
 
@@ -132,6 +136,7 @@ class InformationSchemaDataNode(DataNode):
 
         if database_name is None:
             return None
+            
 
         database_meta = existing_databases_meta[database_name]
         if database_meta["type"] == "integration":
@@ -174,11 +179,12 @@ class InformationSchemaDataNode(DataNode):
                           but only 'COLUMN_NAME' column is filled with the actual column names.
                           Other columns are filled with None.
         """
-        table_name = table_name.upper()
+        logger.info(f"information_schema_datanode.py {table_name}" )
+        table_name = table_name.upper()                
         if table_name not in self.tables:
             raise exc.TableNotExistError(f"Table information_schema.{table_name} does not exists")
         table_columns_names = self.tables[table_name].columns
-        df = pd.DataFrame([[table_columns_names]], columns=[INF_SCHEMA_COLUMNS_NAMES.COLUMN_NAME])
+        df = pd.DataFrame([[table_columns_names]], schema=[INF_SCHEMA_COLUMNS_NAMES.COLUMN_NAME], orient="row")
         for column_name in astuple(INF_SCHEMA_COLUMNS_NAMES):
             if column_name == INF_SCHEMA_COLUMNS_NAMES.COLUMN_NAME:
                 continue
@@ -234,16 +240,15 @@ class InformationSchemaDataNode(DataNode):
             dataframe = self._get_empty_table(tbl)
         data = query_df(dataframe, query, session=self.session)
 
-        # print(data)
-        # print(data.schema)
-
         columns_info = [{"name": k, "type": v} for k, v in data.schema.items()]
+
+        # print(columns_info)
+        # print(data)
 
         return DataHubResponse(data_frame=data, columns=columns_info, affected_rows=0)
 
     def _get_empty_table(self, table):
         columns = table.columns
-        data = []
-
-        df = pd.DataFrame(data, schema=columns)
+        data = []        
+        df = pd.DataFrame(data, schema={col: pd.String for col in columns}, orient="row")
         return df

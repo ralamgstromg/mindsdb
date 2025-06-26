@@ -98,7 +98,7 @@ class JoinStepCall(BaseStepCall):
             'table_b': table_b
         })
 
-        resp_df.replace({np.nan: None}, inplace=True)
+        #resp_df.replace({np.nan: None}, inplace=True)
 
         names_a.update(names_b)
         data = ResultSet.from_df_cols(df=resp_df, columns_dict=names_a)

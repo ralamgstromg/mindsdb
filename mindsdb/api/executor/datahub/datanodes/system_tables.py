@@ -64,7 +64,7 @@ class SchemataTable(Table):
         databases_meta = inf_schema.session.database_controller.get_list()
         data = [["def", x["name"], "utf8mb4", "utf8mb4_0900_ai_ci", None] for x in databases_meta]
 
-        df = pd.DataFrame(data, schema=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns, orient="row")
         return df
 
 
@@ -113,7 +113,7 @@ class TablesTable(Table):
             if hasattr(ds, "get_tables_rows"):
                 ds_tables = ds.get_tables_rows()
             else:
-                ds_tables = ds.get_tables()
+                ds_tables = ds.get_tables()            
             if len(ds_tables) == 0:
                 continue
             elif isinstance(ds_tables[0], dict):
@@ -125,12 +125,14 @@ class TablesTable(Table):
                 data.append(row.to_list())
 
         for ds_name in inf_schema.get_integrations_names():
+            #print("[ds_name]", ds_name)
             if databases is not None and ds_name not in databases:
                 continue
 
             try:
                 ds = inf_schema.get(ds_name)
-                ds_tables = ds.get_tables()
+                print("[ds]", ds, type(ds))
+                ds_tables = ds.get_tables()                
                 for row in ds_tables:
                     row.TABLE_SCHEMA = ds_name
                     data.append(row.to_list())
@@ -147,7 +149,7 @@ class TablesTable(Table):
                 row.TABLE_SCHEMA = project_name
                 data.append(row.to_list())
 
-        df = pd.DataFrame(data, schema=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns, orient="row")
         return df
 
 
@@ -291,6 +293,8 @@ class ColumnsTable(Table):
         if databases is None:
             databases = ["information_schema", config.get("default_project"), "files"]
 
+        # print("databases", databases)
+
         result = []
         for db_name in databases:
             tables = {}
@@ -312,7 +316,7 @@ class ColumnsTable(Table):
                         ColumnsTableRow.from_is_columns_row(table_schema=db_name, table_name=table_name, row=row)
                     )
 
-        return pd.DataFrame(result, schema=cls.columns)
+        return pd.DataFrame(result, schema=cls.columns, orient="row")
 
 
 class EventsTable(Table):
@@ -419,7 +423,7 @@ class EnginesTable(Table):
             ]
         ]
 
-        df = pd.DataFrame(data, schema=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns, orient="row")
         return df
 
 
@@ -482,7 +486,7 @@ class CharacterSetsTable(Table):
             ["utf8mb4", "UTF-8 Unicode", "utf8mb4_general_ci", 4],
         ]
 
-        df = pd.DataFrame(data, schema=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns, orient="row")
         return df
 
 
@@ -506,7 +510,7 @@ class CollationsTable(Table):
             ["latin1_swedish_ci", "latin1", 8, "Yes", "Yes", 1, "PAD SPACE"],
         ]
 
-        df = pd.DataFrame(data, schema=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns, orient="row")
         return df
 
 
@@ -552,7 +556,7 @@ class MetaTablesTable(Table):
             }
             data.append(item)
 
-        df = pd.DataFrame(data, schema=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns, orient="row")
         return df
 
 
@@ -596,7 +600,7 @@ class MetaColumnsTable(Table):
                 }
                 data.append(item)
 
-        df = pd.DataFrame(data, schema=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns, orient="row")
         return df
 
 
@@ -649,7 +653,7 @@ class MetaColumnStatisticsTable(Table):
 
                 data.append(item)
 
-        df = pd.DataFrame(data, schema=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns, orient="row")
         return df
 
 
@@ -712,7 +716,7 @@ class MetaTableConstraintsTable(Table):
                 }
                 data.append(item)
 
-        df = pd.DataFrame(data, schema=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns, orient="row")
         return df
 
 
@@ -800,7 +804,7 @@ class MetaColumnUsageTable(Table):
                 }
                 data.append(item)
 
-        df = pd.DataFrame(data, schema=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns, orient="row")
         return df
 
 
@@ -818,5 +822,5 @@ class MetaHandlerInfoTable(Table):
             handler_info = data_catalog_reader.get_handler_info()
             data.append({"HANDLER_INFO": str(handler_info), "TABLE_SCHEMA": database})
 
-        df = pd.DataFrame(data, schema=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns, orient="row")
         return df

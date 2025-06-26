@@ -107,7 +107,6 @@ def rename_df_columns(df: pd.DataFrame, names: list | None = None) -> None:
         df (pd.DataFrame): dataframe
         names (Optional[List]): columns names to set
     """
-    #print(names)
     if names is not None:
         df.columns = names
     # else:
@@ -134,11 +133,12 @@ class ResultSet:
         """
         if columns is None:
             columns = []
-        self._columns = columns
+        self._columns = columns 
 
         if df is None:
             if values is None:
-                df = None
+                #df = None
+                df = pd.DataFrame([], schema={col.name: pd.String for col in self._columns})
             else:
                 df = pd.DataFrame(values)
         self._df = df
@@ -221,13 +221,13 @@ class ResultSet:
     def to_df(self):
         columns_names = self.get_column_names()
         df = self.get_raw_df()
+        print("[type(df)]", type(df))
         rename_df_columns(df, columns_names)
         return df
 
     def to_df_cols(self, prefix: str = "") -> tuple[pd.DataFrame, dict[str, Column]]:
         # returns dataframe and dict of columns
         #   can be restored to ResultSet by from_df_cols method
-
         columns = []
         col_names = {}
         for col in self._columns:
@@ -322,11 +322,10 @@ class ResultSet:
 
     # --- records ---
 
-    def get_raw_df(self):        
-        if self._df is None:
-            #names = range(len(self._columns))
-            #print("[COLUMNS]", self._columns)
-            return pd.DataFrame({x.name:[] for x in self._columns})
+    def get_raw_df(self):     
+        #print(self._df)   
+        # if self._df is None:
+        #     return pd.DataFrame({x.name:[] for x in self._columns})
         return self._df
 
     def add_raw_df(self, df):

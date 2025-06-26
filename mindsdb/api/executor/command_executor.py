@@ -332,7 +332,8 @@ class ExecuteCommands:
                 df = pd.DataFrame({
                     "Variable_name": list(data.keys()),
                     "Value": list(data.values())
-                }, strict=False)
+                }, schema={"Variable_name": pd.String, "Value": pd.String}, strict=False)
+                # print(df)
                 df2 = query_df(df, new_statement)
 
                 return ExecuteAnswer(data=ResultSet.from_df(df2, table_name="session_variables"))
@@ -809,6 +810,7 @@ class ExecuteCommands:
             raise Exception(f'Nested query failed to execute with error: "{e}", please check and try again.')
         #df = sqlquery.fetched_data.to_df()
         df = sqlquery.fetched_data.pl()
+        # print(df)
         df.columns = [str(t.alias) if hasattr(t, "alias") else str(t.parts[-1]) for t in statement.data.targets]
 
         for col in ["actual", "prediction"]:

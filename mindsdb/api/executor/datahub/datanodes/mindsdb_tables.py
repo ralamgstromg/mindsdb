@@ -102,7 +102,7 @@ class ModelsTable(MdbTable):
             # if target_table is not None and target_table != project_name:
             #     continue
 
-        df = pd.DataFrame(data, schema=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns, orient="row")
         return df
 
 

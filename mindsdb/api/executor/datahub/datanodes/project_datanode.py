@@ -70,7 +70,7 @@ class ProjectDataNode(DataNode):
             r[INF_SCHEMA_COLUMNS_NAMES.COLUMN_NAME] = column_name
             data.append(r)
 
-        return pd.DataFrame(data, schema=astuple(INF_SCHEMA_COLUMNS_NAMES))
+        return pd.DataFrame(data, schema=astuple(INF_SCHEMA_COLUMNS_NAMES), orient="row")
 
     def get_table_columns_names(self, table_name: str, schema_name: str | None = None) -> list[str]:
         """Get a list of column names for the specified table.

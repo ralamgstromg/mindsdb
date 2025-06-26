@@ -60,7 +60,8 @@ import re
 import hashlib
 import typing as t
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 import walrus
 
 from mindsdb.utilities.config import Config
@@ -97,13 +98,13 @@ class BaseCache(ABC):
         if max_size is None:
             max_size = self.config["cache"].get("max_size", _CACHE_MAX_SIZE)
         self.max_size = max_size
-        if serializer is None:
-            serializer_module = self.config["cache"].get('serializer')
-            if serializer_module == 'pickle':
-                import pickle as s_module
-            else:
-                import dill as s_module
-            self.serializer = s_module
+        # if serializer is None:
+        #     serializer_module = self.config["cache"].get('serializer')
+        #     if serializer_module == 'pickle':
+        #         import pickle as s_module
+        #     else:
+        #         import dill as s_module
+        #     self.serializer = s_module
 
     # default functions
 
@@ -114,10 +115,12 @@ class BaseCache(ABC):
         return self.get(name)
 
     def serialize(self, value):
-        return self.serializer.dumps(value)
+        #return self.serializer.dumps(value)
+        pass
 
     def deserialize(self, value):
-        return self.serializer.loads(value)
+        #return self.serializer.loads(value)
+        pass
 
 
 class FileCache(BaseCache):
@@ -161,7 +164,8 @@ class FileCache(BaseCache):
 
     def set_df(self, name, df):
         path = self.file_path(name)
-        df.to_pickle(path)
+        #df.to_pickle(path)
+        df.write_parket(path)
         self.clear_old_cache()
 
     def set(self, name, value):
@@ -177,7 +181,8 @@ class FileCache(BaseCache):
         with FileLock(self.path):
             if not os.path.exists(path):
                 return None
-            value = pd.read_pickle(path)
+            #value = pd.read_pickle(path)
+            value = pd.read_parquet(path)
         return value
 
     def get(self, name):

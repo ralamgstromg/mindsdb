@@ -324,7 +324,7 @@ class MySQLHandler(DatabaseHandler):
             SELECT
                 TABLE_SCHEMA AS table_schema,
                 TABLE_NAME AS table_name,
-                TABLE_TYPE AS table_type
+                CASE WHEN TABLE_TYPE = 'VIEW' AND FLAGS = 'IS_TABLE_VALUED_FUNCTION' THEN 'TABLE FUNCTION' ELSE TABLE_TYPE END AS table_type
             FROM
                 information_schema.TABLES
             WHERE

@@ -1,7 +1,8 @@
 from datetime import datetime, date, timedelta
 from decimal import Decimal
 import numpy as np
-import pandas as pd
+#import pandas as pd
+import polars as pd
 import json
 
 from flask.json.provider import DefaultJSONProvider
@@ -23,7 +24,8 @@ class CustomJSONEncoder(json.JSONEncoder):
             return float(obj)
         if isinstance(obj, np.ndarray):
             return obj.tolist()
-        if pd.isnull(obj):
+        #if pd.isnull(obj):
+        if obj is None:
             return None
 
         return str(obj)

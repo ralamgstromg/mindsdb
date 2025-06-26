@@ -1,5 +1,6 @@
 from dataclasses import dataclass, astuple
 from datetime import datetime
+import polars as pd
 
 
 class TABLES_ROW_TYPE:
@@ -7,6 +8,7 @@ class TABLES_ROW_TYPE:
     BASE_TABLE = 'BASE TABLE'
     VIEW = 'VIEW'
     SYSTEM_VIEW = 'SYSTEM VIEW'
+    TABLE_FUNCTION = 'TABLE FUNCTION'
 
 
 TABLES_ROW_TYPE = TABLES_ROW_TYPE()
@@ -46,7 +48,7 @@ class TablesRow:
 
         # table is different column
         if 'TABLE_NAME' not in data and 'NAME' in data:
-            data['TABLE_NAME'] = data['NAME']
+            data['TABLE_NAME'] = data['NAME']        
 
         for key in data:
             if key not in TablesRow.__dataclass_fields__:
