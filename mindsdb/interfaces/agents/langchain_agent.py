@@ -139,6 +139,7 @@ def get_embedding_model_provider(args: Dict) -> str:
 
 def get_chat_model_params(args: Dict) -> Dict:
     model_config = args.copy()
+    model_config['protected_namespaces'] = ()
     # Include API keys.
     model_config["api_keys"] = {p: get_api_key(p, model_config, None, strict=False) for p in SUPPORTED_PROVIDERS}
     llm_config = get_llm_config(args.get("provider", get_llm_provider(args)), model_config)

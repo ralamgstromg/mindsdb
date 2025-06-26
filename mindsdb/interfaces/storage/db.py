@@ -35,7 +35,7 @@ from mindsdb.utilities.config import config
 
 
 class Base:
-    __allow_unmapped__ = True
+    __allow_unmapped__ = True    
 
 
 Base = declarative_base(cls=Base)

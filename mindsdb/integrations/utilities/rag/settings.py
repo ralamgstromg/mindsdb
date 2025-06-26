@@ -375,6 +375,8 @@ class LLMConfig(BaseModel):
     )
     params: Dict[str, Any] = Field(default_factory=dict)
 
+    model_config: dict = { "protected_namespaces": () }
+
 
 class MultiVectorRetrieverMode(Enum):
     """
