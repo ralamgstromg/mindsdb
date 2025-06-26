@@ -185,6 +185,8 @@ def query_df(df, query, session=None):
     # print("[LOG] query_df", query_str)
     # print("df", df)
 
+    # print(df)
+    # print(df.schema)
     result_df, description = query_df_with_type_infer_fallback(query_str, {"df": df}, user_functions=user_functions)
 
     #print("result_df", result_df)

@@ -7,7 +7,6 @@ from uuid import uuid4
 from enum import Enum
 from typing_extensions import Self
 
-
 class TaskState(str, Enum):
     SUBMITTED = "submitted"
     WORKING = "working"
@@ -105,7 +104,7 @@ class TaskArtifactUpdateEvent(BaseModel):
 
 
 class AuthenticationInfo(BaseModel):
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", protected_namespaces=())
 
     schemes: List[str]
     credentials: str | None = None

@@ -281,7 +281,7 @@ class LogDBController:
             for column_name, column_type in log_table.schemas_map.items()
         ])
 
-        print(df)
+        #print(df)
 
         columns_info = [{"name": k, "type": v} for k, v in df.schema.items()]
 

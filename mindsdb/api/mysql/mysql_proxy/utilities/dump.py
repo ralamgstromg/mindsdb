@@ -416,6 +416,8 @@ def dump_result_set_to_mysql(
                 series = _handle_series_as_int(series)
             case MYSQL_DATA_TYPE.VECTOR:
                 series = _handle_series_as_vector(series)
+            case MYSQL_DATA_TYPE.JSON:
+                series = series.struct.json_encode()
             case _:
                 series = series.cast(pd.String)
 

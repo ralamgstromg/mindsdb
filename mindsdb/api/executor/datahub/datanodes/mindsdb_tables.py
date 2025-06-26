@@ -115,7 +115,7 @@ class DatabasesTable(MdbTable):
         project = inf_schema.database_controller.get_list(with_secrets=session.show_secrets)
         data = [[x["name"], x["type"], x["engine"], to_json(x.get("connection_data"))] for x in project]
 
-        df = pd.DataFrame(data, schema=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns, orient="row")
         return df
 
 
@@ -132,7 +132,7 @@ class MLEnginesTable(MdbTable):
         for _key, val in ml_integrations.items():
             data.append([val["name"], val.get("engine"), to_json(val.get("connection_data"))])
 
-        df = pd.DataFrame(data, schema=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns, orient="row")
         return df
 
 
@@ -173,7 +173,7 @@ class HandlersTable(MdbTable):
                 ]
             )
 
-        df = pd.DataFrame(data, schema=cls.columns)
+        df = pd.DataFrame(data, schema=cls.columns, orient="row")
         return df
 
 
@@ -213,7 +213,7 @@ class JobsTable(MdbTable):
         # to list of lists
         data = [[row[k] for k in columns_lower] for row in data]
 
-        return pd.DataFrame(data, schema=columns)
+        return pd.DataFrame(data, schema=columns, orient="row")
 
 
 class TriggersTable(MdbTable):
@@ -271,7 +271,7 @@ class TriggersTable(MdbTable):
         # to list of lists
         data = [[row.get(k) for k in columns_lower] for row in data]
 
-        return pd.DataFrame(data, schema=columns)
+        return pd.DataFrame(data, schema=columns, orient="row")
 
 
 class ChatbotsTable(MdbTable):
@@ -314,7 +314,7 @@ class ChatbotsTable(MdbTable):
             row["params"] = to_json(row["params"])
             data.append([row[k] for k in columns_lower])
 
-        return pd.DataFrame(data, schema=columns)
+        return pd.DataFrame(data, schema=columns, orient="row")
 
 
 class KBTable(MdbTable):
@@ -378,7 +378,7 @@ class KBTable(MdbTable):
                 )
             )
 
-        return pd.DataFrame(data, schema=cls.columns)
+        return pd.DataFrame(data, schema=cls.columns, orient="row")
 
 
 class SkillsTable(MdbTable):
@@ -398,7 +398,7 @@ class SkillsTable(MdbTable):
 
         # NAME, PROJECT, TYPE, PARAMS
         data = [(s.name, project_names[s.project_id], s.type, s.params) for s in all_skills]
-        return pd.DataFrame(data, schema=cls.columns)
+        return pd.DataFrame(data, schema=cls.columns, orient="row")
 
 
 class AgentsTable(MdbTable):
@@ -426,7 +426,7 @@ class AgentsTable(MdbTable):
             )
             for a in all_agents
         ]
-        return pd.DataFrame(data, schema=cls.columns)
+        return pd.DataFrame(data, schema=cls.columns, orient="row")
 
 
 class ViewsTable(MdbTable):
@@ -444,7 +444,7 @@ class ViewsTable(MdbTable):
         # to list of lists
         data = [[row[k] for k in columns_lower] for row in data]
 
-        return pd.DataFrame(data, schema=cls.columns)
+        return pd.DataFrame(data, schema=cls.columns, orient="row")
 
 
 class QueriesTable(MdbTable):
@@ -461,6 +461,10 @@ class QueriesTable(MdbTable):
         "CONTEXT",
         "UPDATED_AT",
     ]
+    struct_cols = [
+        "PARAMETERS",
+        "CONTEXT",
+    ]
 
     @classmethod
     def get_data(cls, **kwargs):
@@ -476,4 +480,11 @@ class QueriesTable(MdbTable):
 
         data = [[row[k] for k in columns_lower] for row in data]
 
-        return pd.DataFrame(data, schema=cls.columns)
+        to_return = pd.DataFrame(data, schema=cls.columns, orient="row")
+        
+        to_return = to_return.with_columns([
+            pd.col(col).struct.json_encode().alias(col)
+            for col in cls.struct_cols            
+        ])
+
+        return to_return
