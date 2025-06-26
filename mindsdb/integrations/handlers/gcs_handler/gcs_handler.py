@@ -181,7 +181,7 @@ class GcsHandler(APIHandler):
 
             cursor = connection.execute(f"SELECT * FROM 'gs://{bucket}/{key}'")
 
-            return cursor.fetchdf()
+            return cursor.pl()
 
     def _read_as_content(self, key) -> None:
         """

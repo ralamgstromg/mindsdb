@@ -52,12 +52,12 @@ class DummyHandler(DatabaseHandler):
             query = query.replace('%s', '?')
             cur = con.executemany(query, params)
             if cur.rowcount >= 0:
-                result_df = cur.fetchdf()
+                result_df = cur.pl()
             else:
                 con.close()
                 return HandlerResponse(RESPONSE_TYPE.OK)
         else:
-            result_df = con.execute(query).fetchdf()
+            result_df = con.execute(query).pl()
         con.close()
         return HandlerResponse(RESPONSE_TYPE.TABLE, result_df)
 

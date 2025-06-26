@@ -107,7 +107,7 @@ class SheetsHandler(DatabaseHandler):
         need_to_close = self.is_connected is False
         connection = self.connect()
         try:
-            result = connection.execute(query).fetchdf()
+            result = connection.execute(query).pl()
             if not result.empty:
                 response = Response(
                     RESPONSE_TYPE.TABLE,

@@ -268,10 +268,6 @@ class S3NgxHandler(APIHandler):
         bucket, key = self._get_bucket(key)
 
         with self._connect_duckdb(bucket) as connection:
-
-            #cursor = connection.execute(f"SELECT * FROM 's3://{bucket}/{key}'").pl()
-
-            #return cursor.fetchdf()
             data = connection.execute(f"SELECT * FROM 's3://{bucket}/{key}'").pl()
             return data
 

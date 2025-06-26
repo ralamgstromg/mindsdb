@@ -163,7 +163,7 @@ class AzureBlobHandler(APIHandler):
 
         with self._connect_duckdb() as connection:
             cursor = connection.execute(f'SELECT * FROM "azure://{self.container_name}/{key}"')
-            return cursor.fetchdf()
+            return cursor.pl()
 
     def _read_as_content(self, key) -> None:
         """
