@@ -71,7 +71,7 @@ def query_df_with_type_infer_fallback(query_str: str, dataframes: dict, user_fun
             user_functions.register(con) 
 
         for name, value in dataframes.items():
-            print("[LOG]", name, value)
+            #print("[LOG]", name, value)
             con.register(name, value)
 
         exception = None

@@ -1,6 +1,7 @@
 from typing import Optional
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 import duckdb
 
 from mindsdb_sql_parser import parse_sql
@@ -54,7 +55,8 @@ class SheetsHandler(DatabaseHandler):
             HandlerStatusResponse
         """
         url = f"https://docs.google.com/spreadsheets/d/{self.connection_data['spreadsheet_id']}/gviz/tq?tqx=out:csv&sheet={self.connection_data['sheet_name']}"
-        self.sheet = pd.read_csv(url, on_bad_lines='skip')
+        #self.sheet = pd.read_csv(url, on_bad_lines='skip')
+        self.sheet = pd.read_csv(url)
         self.connection = duckdb.connect()
         self.connection.register(self.connection_data['sheet_name'], self.sheet)
         self.is_connected = True

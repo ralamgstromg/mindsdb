@@ -119,7 +119,7 @@ class AerospikeHandler(DatabaseHandler):
             if ' where ' in query or ' WHERE ' in query or '*' not in selected_bins:
                 new_query = re.sub(r'FROM [\w\.]+', 'FROM ' + 'data_df', query, 1)
                 new_query = new_query.replace(f'{aero_set}.', '')
-                data_df = duckdb.query(new_query).to_df()
+                data_df = duckdb.query(new_query).pl()
 
             response = Response(
                 RESPONSE_TYPE.TABLE,
