@@ -72,6 +72,7 @@ class GetLeaf(Resource):
             #print(response.data_frame)
             #print(type(response.data_frame))
             #tables = response.data_frame.to_dict(orient='records')
+            #print(type(response.data_frame))
             tables = response.data_frame.to_dicts()
 
             schemas = defaultdict(list)

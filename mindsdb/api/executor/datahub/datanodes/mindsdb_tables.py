@@ -461,10 +461,22 @@ class QueriesTable(MdbTable):
         "CONTEXT",
         "UPDATED_AT",
     ]
-    struct_cols = [
-        "PARAMETERS",
-        "CONTEXT",
-    ]
+    # struct_cols = [
+    #     "PARAMETERS",
+    #     "CONTEXT",
+    # ]
+    cols_dtypes = {
+        "ID": pd.Int64,
+        "STARTED_AT": pd.Datetime,
+        "FINISHED_AT": pd.Datetime,
+        "PROCESSED_ROWS": pd.Int64,
+        "ERROR": pd.String,
+        "SQL": pd.String,
+        "DATABASE": pd.String,
+        "PARAMETERS": pd.String,
+        "CONTEXT": pd.String,
+        "UPDATED_AT": pd.Datetime,
+    }
 
     @classmethod
     def get_data(cls, **kwargs):
@@ -480,11 +492,17 @@ class QueriesTable(MdbTable):
 
         data = [[row[k] for k in columns_lower] for row in data]
 
-        to_return = pd.DataFrame(data, schema=cls.columns, orient="row")
+        # print(data)
+        # print(cls.columns)
+
+        if data == []:
+            to_return = pd.DataFrame([], schema=cls.cols_dtypes, orient="row")
+        else:
+            to_return = pd.DataFrame(data, schema=cls.cols_dtypes, orient="row")
         
-        to_return = to_return.with_columns([
-            pd.col(col).struct.json_encode().alias(col)
-            for col in cls.struct_cols            
-        ])
+        # to_return = to_return.with_columns([
+        #     pd.col(col).struct.json_encode().alias(col)
+        #     for col in cls.struct_cols            
+        # ])
 
         return to_return
