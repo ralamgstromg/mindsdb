@@ -131,7 +131,7 @@ class TablesTable(Table):
 
             try:
                 ds = inf_schema.get(ds_name)
-                print("[ds]", ds, type(ds))
+                #print("[ds]", ds, type(ds))
                 ds_tables = ds.get_tables()                
                 for row in ds_tables:
                     row.TABLE_SCHEMA = ds_name

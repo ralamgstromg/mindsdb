@@ -21,6 +21,8 @@ python -m mindsdb --api mysql,mongodb,postgres,mcp --config mindsdb_config.json
 
 python -m mindsdb --api mysql --config mindsdb_config.json
 
+python -m mindsdb --api mysql,http --config mindsdb_config.json
+
 
 git config --global user.email "you@example.com"
 git config --global user.name "Your Name"

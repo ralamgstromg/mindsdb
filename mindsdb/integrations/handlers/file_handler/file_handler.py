@@ -2,7 +2,8 @@ import os
 import shutil
 import tempfile
 
-import pandas as pd
+#import pandas as pd
+import polars as pd
 from mindsdb_sql_parser import parse_sql
 from mindsdb_sql_parser.ast import CreateTable, DropTables, Insert, Select, Identifier
 from mindsdb_sql_parser.ast.base import ASTNode
@@ -117,7 +118,7 @@ class FileHandler(DatabaseHandler):
                 temp_file_path = os.path.join(temp_dir_path, f"{table_name}.csv")
 
                 # Create an empty file using with the columns in the query
-                df = pd.DataFrame(columns=[col.name for col in query.columns])
+                df = pd.DataFrame([], schema=[col.name for col in query.columns], orient="row")
                 df.to_csv(temp_file_path, index=False)
 
                 self.file_controller.save_file(table_name, temp_file_path, file_name=f"{table_name}.csv")
@@ -158,7 +159,7 @@ class FileHandler(DatabaseHandler):
             df = self.file_controller.get_file_data(table_name, page_name)
 
             # Create a new dataframe with the values from the query
-            new_df = pd.DataFrame(query.values, columns=[col.name for col in query.columns])
+            new_df = pd.DataFrame(query.values, schema=[col.name for col in query.columns], orient="row")
 
             # Concatenate the new dataframe with the existing one
             df = pd.concat([df, new_df], ignore_index=True)
@@ -182,6 +183,7 @@ class FileHandler(DatabaseHandler):
         List all files
         """
         files_meta = self.file_controller.get_files()
+        #print(files_meta)
         data = [
             {
                 "TABLE_NAME": x["name"],
@@ -190,10 +192,13 @@ class FileHandler(DatabaseHandler):
             }
             for x in files_meta
         ]
+        #print(data)
         return Response(RESPONSE_TYPE.TABLE, data_frame=pd.DataFrame(data))
 
     def get_columns(self, table_name) -> Response:
+        #print(table_name)
         file_meta = self.file_controller.get_file_meta(table_name)
+        #print(file_meta)
         result = Response(
             RESPONSE_TYPE.TABLE,
             data_frame=pd.DataFrame(
@@ -206,4 +211,5 @@ class FileHandler(DatabaseHandler):
                 ]
             ),
         )
+        print(result)
         return result

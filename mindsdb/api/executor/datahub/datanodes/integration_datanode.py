@@ -45,11 +45,11 @@ class IntegrationDataNode(DataNode):
 
     def get_tables(self):
         response = self.integration_handler.get_tables()
-        print("[get_tables.response]", response)
+        #print("[get_tables.response]", response)
         if response.type == RESPONSE_TYPE.TABLE:
-            print("AQUI")
+            #print("AQUI")
             #result_dict = response.data_frame.to_dict(orient="records")
-            print(type(response.data_frame))
+            #print(type(response.data_frame))
             result_dict = response.data_frame.to_dicts()
             # print(result_dict)
             result = []

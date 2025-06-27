@@ -6,6 +6,7 @@ from dataclasses import dataclass, field, MISSING
 import numpy as np
 #import pandas as pd
 import polars as pd
+import datetime
 # from pandas.api import types as pd_types
 import sqlalchemy.types as sqlalchemy_types
 
@@ -157,7 +158,8 @@ class ResultSet:
     def __len__(self) -> int:
         if self._df is None:
             return 0
-        return len(self._df)
+        # return len(self._df)
+        return self._df.shape[0]
 
     def __getitem__(self, slice_val):
         # return resultSet with sliced dataframe
@@ -221,7 +223,7 @@ class ResultSet:
     def to_df(self):
         columns_names = self.get_column_names()
         df = self.get_raw_df()
-        print("[type(df)]", type(df))
+        #print("[type(df)]", type(df))
         rename_df_columns(df, columns_names)
         return df
 
@@ -282,7 +284,8 @@ class ResultSet:
         idx = self.get_col_index(col)
         self._columns.pop(idx)
 
-        self._df.drop(idx, axis=1, inplace=True)
+        #self._df.drop(idx, axis=1, inplace=True)
+        self._df = self._df.drop(col)
         rename_df_columns(self._df)
 
     @property
@@ -318,7 +321,8 @@ class ResultSet:
     def set_col_type(self, col_idx, type_name):
         self.columns[col_idx].type = type_name
         if self._df is not None:
-            self._df[col_idx] = self._df[col_idx].astype(type_name)
+            #self._df[col_idx] = self._df[col_idx].astype(type_name)
+            self._df[col_idx] = self._df[col_idx].cast(type_name)
 
     # --- records ---
 
@@ -334,10 +338,10 @@ class ResultSet:
 
         rename_df_columns(df)
 
-        if self._df is None:
+        if self._df is None or self._df.shape[0] == 0:
             self._df = df
         else:
-            self._df = pd.concat([self._df, df], ignore_index=True)
+            self._df = pd.concat([self._df, df])
 
     def add_raw_values(self, values):
         # If some values are None, the DataFrame could have incorrect integer types, since 'NaN' is technically a float, so it will convert ints to floats automatically.
@@ -407,20 +411,17 @@ class ResultSet:
             return []
         # output for APIs. simplify types
         if json_types:
-            df = self.get_raw_df().copy()
-            for name, dtype in df.dtypes.to_dict().items():
-                if pd.api.types.is_datetime64_any_dtype(dtype):
+            df = self.get_raw_df().clone()
+            for name, dtype in df.schema.items():
+                if dtype in [datetime.datetime]:
                     df[name] = df[name].dt.strftime("%Y-%m-%d %H:%M:%S.%f")
+                elif dtype in [datetime.date]:
+                    df[name] = df[name].dt.strftime("%Y-%m-%d")
             for i, column in enumerate(self.columns):
                 if column.type == MYSQL_DATA_TYPE.VECTOR:
                     df[i] = df[i].apply(_dump_vector)
-            #df.replace({np.nan: None}, inplace=True)
-            #return df.to_records(index=False).tolist()
             return df.rows()
 
-        # slower but keep timestamp type
-        #df = self._df.replace({np.nan: None})  # TODO rework
-        #return df.to_dict("split")["data"]
         return df.to_dicts("split")["data"]
 
     def get_column_values(self, col_idx):

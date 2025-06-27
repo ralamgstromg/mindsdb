@@ -33,8 +33,8 @@ class ListFilesTable(APIResource):
 
     def list(self,
              targets: List[str] = None,
-             conditions: List[FilterCondition] = None,
-             limit: int = None,
+             conditions: List[FilterCondition] = [],
+             limit: int = 1000,
              *args, **kwargs) -> pd.DataFrame:        
 
         data = []
@@ -50,7 +50,7 @@ class ListFilesTable(APIResource):
 
             data.append(item)
 
-        return pd.DataFrame(data=data, columns=self.get_columns())
+        return pd.DataFrame(data=data, schema=self.get_columns(), orient="row")
 
     def get_columns(self) -> List[str]:
         return ["path", "name", "extension", "bucket", "content"]
@@ -206,6 +206,8 @@ class S3NgxHandler(APIHandler):
             client.head_bucket(Bucket=self.bucket)
         else:
             client.list_buckets()
+
+        #print("self.bucket", self.bucket)
 
         self.resource = boto3.resource(
             's3',
@@ -375,7 +377,7 @@ class S3NgxHandler(APIHandler):
 
         elif isinstance(query, CreateTable):
             table = query.name.parts[-1]
-            df = pd.DataFrame(columns=[col.name for col in query.columns]) #, dtype={col.name: col.type for col in query.columns})
+            df = pd.DataFrame([], schema=[col.name for col in query.columns]) #, dtype={col.name: col.type for col in query.columns})
             for col in query.columns:
                 if col.type in ('string', 'text', 'varchar', 'char'):
                     df[col.name] = pd.Series(dtype='object')
@@ -449,9 +451,10 @@ class S3NgxHandler(APIHandler):
         query_ast = parse_sql(query)
         return self.query(query_ast)
 
-    def get_objects(self, limit=None, conditions=None) -> List[dict]:
+    def get_objects(self, limit=1000, conditions=[]) -> List[dict]:
         client = self.connect()
-
+        # print("[S3_CONNECTED]")
+        # print("conditions", conditions)
         buckets = None
         for condition in conditions:
             if condition.column == 'bucket':
@@ -460,10 +463,14 @@ class S3NgxHandler(APIHandler):
                 elif condition.op == FilterOperator.EQUAL:
                     buckets = [condition.value]            
 
+        #print("buckets", buckets)
+
         if self.bucket is not None:
             scan_buckets = [self.bucket]
         else:
             scan_buckets = [b['Name'] for b in client.list_buckets()['Buckets']]
+
+        #print("scan_buckets", scan_buckets)
 
         objects = []
         for bucket in scan_buckets:
@@ -538,7 +545,8 @@ class S3NgxHandler(APIHandler):
             RESPONSE_TYPE.TABLE,
             data_frame=pd.DataFrame(
                 supported_names,
-                columns=['table_name']
+                schema=['table_name'],
+                orient="row"
             )
         )
 
