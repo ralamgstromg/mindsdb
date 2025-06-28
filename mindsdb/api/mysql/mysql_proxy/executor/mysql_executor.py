@@ -94,6 +94,7 @@ class Executor:
             # not all statements are parsed by parse_sql
             logger.warning('Failed to parse SQL query')
             logger.debug(f'Query that cannot be parsed: {sql}')
+            print(f'{sql}')
 
             raise ErSqlSyntaxError(
                 f"The SQL statement cannot be parsed - {sql}: {mdb_error}"

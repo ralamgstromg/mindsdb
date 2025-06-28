@@ -254,11 +254,11 @@ class QueryPlanner:
         if node.alias is not None:
             alias = node.alias.copy()
 
-        database = self.default_namespace
+        database = self.default_namespace if self.default_namespace is not None else 'information_schema'
 
         if len(parts) > 1:
             if parts[0].lower() in self.databases:
-                database = parts.pop(0).lower()
+                database = parts.pop(0).lower()        
 
         if database is None:
             raise PlanningException(f"Integration not found for: {node}")

@@ -5,6 +5,8 @@ import numpy
 #import pandas
 import polars
 
+
+
 from mindsdb.utilities import log
 from mindsdb.api.executor.data_types.response_type import RESPONSE_TYPE
 from mindsdb.api.mysql.mysql_proxy.libs.constants.mysql import MYSQL_DATA_TYPE
@@ -176,9 +178,14 @@ class HandlerResponseNgx:
             )
 
         self.data_frame.columns = [name.upper() for name in self.data_frame.columns]
-        self.data_frame[INF_SCHEMA_COLUMNS_NAMES.MYSQL_DATA_TYPE] = self.data_frame[
-            INF_SCHEMA_COLUMNS_NAMES.DATA_TYPE
-        ].apply(map_type_fn)
+
+        self.data_frame= self.data_frame.with_columns([
+            polars.col(INF_SCHEMA_COLUMNS_NAMES.DATA_TYPE).map_elements(map_type_fn, return_dtype=polars.Object).alias(INF_SCHEMA_COLUMNS_NAMES.MYSQL_DATA_TYPE)
+        ])
+        
+        # self.data_frame[INF_SCHEMA_COLUMNS_NAMES.MYSQL_DATA_TYPE] = self.data_frame[
+        #     INF_SCHEMA_COLUMNS_NAMES.DATA_TYPE
+        # ].apply(map_type_fn)
 
         # region validate df
         current_columns_set = set(self.data_frame.columns)
@@ -188,22 +195,41 @@ class HandlerResponseNgx:
             )
         # endregion
 
-        self.data_frame = self.data_frame.astype(
-            {
-                INF_SCHEMA_COLUMNS_NAMES.COLUMN_NAME: "string",
-                INF_SCHEMA_COLUMNS_NAMES.DATA_TYPE: "string",
-                INF_SCHEMA_COLUMNS_NAMES.ORDINAL_POSITION: "Int32",
-                INF_SCHEMA_COLUMNS_NAMES.COLUMN_DEFAULT: "string",
-                INF_SCHEMA_COLUMNS_NAMES.IS_NULLABLE: "string",
-                INF_SCHEMA_COLUMNS_NAMES.CHARACTER_MAXIMUM_LENGTH: "Int32",
-                INF_SCHEMA_COLUMNS_NAMES.CHARACTER_OCTET_LENGTH: "Int32",
-                INF_SCHEMA_COLUMNS_NAMES.NUMERIC_PRECISION: "Int32",
-                INF_SCHEMA_COLUMNS_NAMES.NUMERIC_SCALE: "Int32",
-                INF_SCHEMA_COLUMNS_NAMES.DATETIME_PRECISION: "Int32",
-                INF_SCHEMA_COLUMNS_NAMES.CHARACTER_SET_NAME: "string",
-                INF_SCHEMA_COLUMNS_NAMES.COLLATION_NAME: "string",
-            }
-        )
+        #print(self.data_frame)
+
+        self.data_frame = self.data_frame.with_columns([
+    
+            polars.col(INF_SCHEMA_COLUMNS_NAMES.COLUMN_NAME).cast(polars.String).alias(INF_SCHEMA_COLUMNS_NAMES.COLUMN_NAME),
+            polars.col(INF_SCHEMA_COLUMNS_NAMES.DATA_TYPE).cast(polars.String).alias(INF_SCHEMA_COLUMNS_NAMES.DATA_TYPE),
+            polars.col(INF_SCHEMA_COLUMNS_NAMES.ORDINAL_POSITION).cast(polars.Int32).alias(INF_SCHEMA_COLUMNS_NAMES.ORDINAL_POSITION),
+            polars.col(INF_SCHEMA_COLUMNS_NAMES.COLUMN_DEFAULT).cast(polars.String).alias(INF_SCHEMA_COLUMNS_NAMES.COLUMN_DEFAULT),
+            polars.col(INF_SCHEMA_COLUMNS_NAMES.IS_NULLABLE).cast(polars.String).alias(INF_SCHEMA_COLUMNS_NAMES.IS_NULLABLE),
+            polars.col(INF_SCHEMA_COLUMNS_NAMES.CHARACTER_MAXIMUM_LENGTH).cast(polars.Int32).alias(INF_SCHEMA_COLUMNS_NAMES.CHARACTER_MAXIMUM_LENGTH),
+            polars.col(INF_SCHEMA_COLUMNS_NAMES.CHARACTER_OCTET_LENGTH).cast(polars.Int64).alias(INF_SCHEMA_COLUMNS_NAMES.CHARACTER_OCTET_LENGTH),
+            polars.col(INF_SCHEMA_COLUMNS_NAMES.NUMERIC_PRECISION).cast(polars.Int32).alias(INF_SCHEMA_COLUMNS_NAMES.NUMERIC_PRECISION),
+            polars.col(INF_SCHEMA_COLUMNS_NAMES.NUMERIC_SCALE).cast(polars.Int32).alias(INF_SCHEMA_COLUMNS_NAMES.NUMERIC_SCALE),
+            polars.col(INF_SCHEMA_COLUMNS_NAMES.DATETIME_PRECISION).cast(polars.Int32).alias(INF_SCHEMA_COLUMNS_NAMES.DATETIME_PRECISION),
+            polars.col(INF_SCHEMA_COLUMNS_NAMES.CHARACTER_SET_NAME).cast(polars.String).alias(INF_SCHEMA_COLUMNS_NAMES.CHARACTER_SET_NAME),
+            polars.col(INF_SCHEMA_COLUMNS_NAMES.COLLATION_NAME).cast(polars.String).alias(INF_SCHEMA_COLUMNS_NAMES.COLLATION_NAME),
+
+        ])
+
+        # self.data_frame = self.data_frame.astype(
+        #     {
+        #         INF_SCHEMA_COLUMNS_NAMES.COLUMN_NAME: "string",
+        #         INF_SCHEMA_COLUMNS_NAMES.DATA_TYPE: "string",
+        #         INF_SCHEMA_COLUMNS_NAMES.ORDINAL_POSITION: "Int32",
+        #         INF_SCHEMA_COLUMNS_NAMES.COLUMN_DEFAULT: "string",
+        #         INF_SCHEMA_COLUMNS_NAMES.IS_NULLABLE: "string",
+        #         INF_SCHEMA_COLUMNS_NAMES.CHARACTER_MAXIMUM_LENGTH: "Int32",
+        #         INF_SCHEMA_COLUMNS_NAMES.CHARACTER_OCTET_LENGTH: "Int32",
+        #         INF_SCHEMA_COLUMNS_NAMES.NUMERIC_PRECISION: "Int32",
+        #         INF_SCHEMA_COLUMNS_NAMES.NUMERIC_SCALE: "Int32",
+        #         INF_SCHEMA_COLUMNS_NAMES.DATETIME_PRECISION: "Int32",
+        #         INF_SCHEMA_COLUMNS_NAMES.CHARACTER_SET_NAME: "string",
+        #         INF_SCHEMA_COLUMNS_NAMES.COLLATION_NAME: "string",
+        #     }
+        # )
         #self.data_frame.replace([numpy.NaN, pandas.NA, polars.Null], None, inplace=True)
 
         self.resp_type = RESPONSE_TYPE.COLUMNS_TABLE
@@ -261,3 +287,4 @@ class HandlerStatusResponse:
         return f"{self.__class__.__name__}: success={self.success},\
               error={self.error_message},\
               redirect_url={self.redirect_url}"
+

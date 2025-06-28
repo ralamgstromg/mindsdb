@@ -295,13 +295,16 @@ def _handle_series_as_datetime(series: pd.Series) -> pd.Series:
     #if pd_types.is_temporal(series.dtype):
     #if series.dtype == pd.Datetime:
     #print(series.dtype, series.head(5))
-    if series.dtype in ('datetime64[ns]', 'datetime64[μs]', pd.Datetime, datetime.datetime):
+    if series.dtype in ('datetime64[ns]', 'datetime64[μs]', pd.Datetime, datetime.datetime, pd.Date):
+        # print(series)
+        # print(type(series), series.dtype)
         return series
     #elif pd_types.is_object_dtype(series.dtype):
     elif series.dtype in (pd.Object, pd.String):
         #return series.apply(_dump_datetime)
         return series.str.to_datetime(format="%Y-%m-%d %H:%M:%S")
     logger.info(f"Unexpected dtype: {series.dtype} for column with type DATETIME")
+    #print(series)
     #return series.apply(_dump_str)
     return series.str.to_datetime(format="%Y-%m-%d %H:%M:%S")
 
@@ -385,16 +388,18 @@ def dump_result_set_to_mysql(
     #print("Dumping result set to MySQL format", type(df), df.shape)
     #print(df)
     #print(result_set.columns)
+
+    #print(df)
     
     for i, column in enumerate(result_set.columns):
         series = df[column.name]
         #print(series)
         if isinstance(column.type, MYSQL_DATA_TYPE) is False:
-            column.type = get_mysql_data_type_from_series(series)
+            column.type = get_mysql_data_type_from_series(series)        
 
         column_type: MYSQL_DATA_TYPE = column.type
-
-        # print(column_type, series.dtype)
+    
+        #print(column_type, series.dtype)
 
         match column_type:
             case MYSQL_DATA_TYPE.BOOL | MYSQL_DATA_TYPE.BOOLEAN:
@@ -403,6 +408,7 @@ def dump_result_set_to_mysql(
                 series = _handle_series_as_date(series)
             case MYSQL_DATA_TYPE.DATETIME:
                 series = _handle_series_as_datetime(series)
+                # print(series)
             case MYSQL_DATA_TYPE.TIME:
                 series = _handle_series_as_time(series)
             case (
@@ -411,15 +417,21 @@ def dump_result_set_to_mysql(
                 | MYSQL_DATA_TYPE.SMALLINT
                 | MYSQL_DATA_TYPE.MEDIUMINT
                 | MYSQL_DATA_TYPE.BIGINT
-                | MYSQL_DATA_TYPE.YEAR
             ):
                 series = _handle_series_as_int(series)
             case MYSQL_DATA_TYPE.VECTOR:
                 series = _handle_series_as_vector(series)
             case MYSQL_DATA_TYPE.JSON:
                 series = series.struct.json_encode()
+            
             case _:
                 series = series.cast(pd.String)
+
+        df = df.with_columns([
+            series.alias(column.name)
+        ])
+
+        #print(series)
 
         # inplace modification of dt types raise SettingWithCopyWarning, so do regular replace
         # we may split this operation for dt and other types for optimisation

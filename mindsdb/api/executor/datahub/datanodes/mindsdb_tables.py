@@ -431,7 +431,7 @@ class AgentsTable(MdbTable):
 
 class ViewsTable(MdbTable):
     name = "VIEWS"
-    columns = ["NAME", "PROJECT", "QUERY"]
+    columns = ["NAME", "PROJECT", "QUERY", "TABLE_SCHEMA", "TABLE_NAME", "VIEW_DEFINITION"]
 
     @classmethod
     def get_data(cls, query: ASTNode = None, **kwargs):

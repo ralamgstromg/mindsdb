@@ -153,11 +153,14 @@ class PlanJoinTablesQuery:
         integration = self.planner.default_namespace
         if len(table.parts) > 0:
             if table.parts[0] in self.planner.databases:
+                #print("[TABLE_PARTS]")
                 integration = table.parts.pop(0)
             else:
-                integration = self.planner.default_namespace
+                #print("[ELSE]")
+                integration = self.planner.default_namespace if self.planner.default_namespace else "information_schema"
 
         if integration is None and not hasattr(table, "sub_select"):
+            #print("[resolve_table]")
             raise PlanningException(f"Integration not found for: {table}")
 
         sub_select = getattr(table, "sub_select", None)

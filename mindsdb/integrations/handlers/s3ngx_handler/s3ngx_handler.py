@@ -283,6 +283,8 @@ class S3NgxHandler(APIHandler):
 
         obj = client.get_object(Bucket=bucket, Key=key)
         content = obj['Body'].read()
+
+        print(content)
         return content
 
     def add_data_to_table(self, key, df) -> None:

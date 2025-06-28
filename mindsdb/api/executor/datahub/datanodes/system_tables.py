@@ -211,7 +211,8 @@ class ColumnsTableRow:
     ORIGINAL_TYPE: Optional[str] = None
 
     @classmethod
-    def from_is_columns_row(cls, table_schema: str, table_name: str, row: pd.Series) -> "ColumnsTableRow":
+    def from_is_columns_row(cls, table_schema: str, table_name: str, row: dict) -> "ColumnsTableRow":
+        #row: pd.Series) -> "ColumnsTableRow":
         """Transform row from response of `handler.get_columns(...)` to internal information_schema.columns row.
 
         Args:
@@ -222,7 +223,8 @@ class ColumnsTableRow:
         Returns:
             ColumnsTableRow: A row in the MindsDB's internal INFORMATION_SCHEMA.COLUMNS table.
         """
-        original_type: str = row[INF_SCHEMA_COLUMNS_NAMES.DATA_TYPE] or ""
+        #print(row)
+        original_type: str = row[INF_SCHEMA_COLUMNS_NAMES.DATA_TYPE] if row[INF_SCHEMA_COLUMNS_NAMES.DATA_TYPE] is not None else "" or ""
         data_type: MYSQL_DATA_TYPE | None = row[INF_SCHEMA_COLUMNS_NAMES.MYSQL_DATA_TYPE]
         if isinstance(data_type, MYSQL_DATA_TYPE) is False:
             data_type = infer_mysql_type(original_type)
@@ -311,7 +313,9 @@ class ColumnsTable(Table):
                 tables[table_name] = dn.get_table_columns_df(table_name)
 
             for table_name, table_columns_df in tables.items():
-                for _, row in table_columns_df.iterrows():
+                # print(table_columns_df)
+                # print(type(table_columns_df))
+                for row in table_columns_df.to_dicts():
                     result.append(
                         ColumnsTableRow.from_is_columns_row(table_schema=db_name, table_name=table_name, row=row)
                     )
@@ -444,6 +448,33 @@ class KeyColumnUsageTable(Table):
         "REFERENCED_COLUMN_NAME",
     ]
 
+class ReferentialConstraintsTable(Table):
+    name = "REFERENTIAL_CONSTRAINTS"
+    columns = [
+        "CONSTRAINT_CATALOG",
+        "CONSTRAINT_SCHEMA",
+        "CONSTRAINT_NAME",
+        "UNIQUE_CONSTRAINT_CATALOG",
+        "UNIQUE_CONSTRAINT_SCHEMA",
+        "UNIQUE_CONSTRAINT_NAME",
+        "MATCH_OPTION",
+        "UPDATE_RULE",
+        "DELETE_RULE",
+        "TABLE_NAME",
+        "REFERENCED_TABLE_NAME",
+    ]
+
+class TableConstraintsTable(Table):
+    name = "TABLE_CONSTRAINTS"
+    columns = [
+        "CONSTRAINT_CATALOG",
+        "CONSTRAINT_SCHEMA",
+        "CONSTRAINT_NAME",
+        "TABLE_SCHEMA",
+        "TABLE_NAME",
+        "CONSTRAINT_TYPE",
+    ]
+
 
 class StatisticsTable(Table):
     name = "STATISTICS"
@@ -464,6 +495,7 @@ class StatisticsTable(Table):
         "INDEX_TYPE",
         "COMMENT",
         "INDEX_COMMENT",
+        "INDEX_OPTIONS",
         "IS_VISIBLE",
         "EXPRESSION",
     ]
