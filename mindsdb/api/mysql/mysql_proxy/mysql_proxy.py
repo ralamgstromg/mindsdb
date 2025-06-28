@@ -785,8 +785,12 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
                     # this command is deprecated, but console client still use it.
                     response = SQLAnswer(RESPONSE_TYPE.OK)
                 elif p.type.value == COMMANDS.COM_STMT_RESET:
-                    response = SQLAnswer(RESPONSE_TYPE.OK)
+                    response = SQLAnswer(RESPONSE_TYPE.OK)   
+                elif int(p.type.value) in [103, 101, 112, 47, 116, 110, 109, 39, 44, 95]:
+                    #print(p.type.value)
+                    response = SQLAnswer(RESPONSE_TYPE.OK)                
                 else:
+                    print(p.type.value)
                     logger.warning("Command has no specific handler, return OK msg")
                     logger.debug(str(p))
                     # p.pprintPacket() TODO: Make a version of print packet

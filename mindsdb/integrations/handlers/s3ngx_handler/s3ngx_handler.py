@@ -34,7 +34,7 @@ class ListFilesTable(APIResource):
     def list(self,
              targets: List[str] = None,
              conditions: List[FilterCondition] = [],
-             limit: int = 1000,
+             limit: int = 100,
              *args, **kwargs) -> pd.DataFrame:        
 
         data = []
@@ -453,7 +453,7 @@ class S3NgxHandler(APIHandler):
         query_ast = parse_sql(query)
         return self.query(query_ast)
 
-    def get_objects(self, limit=1000, conditions=[]) -> List[dict]:
+    def get_objects(self, limit=100, conditions=[]) -> List[dict]:
         client = self.connect()
         # print("[S3_CONNECTED]")
         # print("conditions", conditions)
