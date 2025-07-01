@@ -58,7 +58,7 @@ def _map_type(internal_type_name: str | None) -> MYSQL_DATA_TYPE:
         ("double precision",): MYSQL_DATA_TYPE.DOUBLE,
         ("character varying", "varchar"): MYSQL_DATA_TYPE.VARCHAR,
         # NOTE: if return chars-types as mysql's CHAR, then response will be padded with spaces, so return as TEXT
-        ("money", "character", "char", "bpchar", "bpchar", "text"): MYSQL_DATA_TYPE.TEXT,
+        ("character", "char", "bpchar", "bpchar", "text"): MYSQL_DATA_TYPE.TEXT,
         ("timestamp", "timestamp without time zone", "timestamp with time zone"): MYSQL_DATA_TYPE.DATETIME,
         ("date",): MYSQL_DATA_TYPE.DATE,
         ("time", "time without time zone", "time with time zone"): MYSQL_DATA_TYPE.TIME,
