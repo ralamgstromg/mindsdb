@@ -943,7 +943,7 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
         host = config["api"]["mysql"]["host"]
         port = int(config["api"]["mysql"]["port"])
 
-        logger.info(f"Starting MindsDB Mysql proxy server on tcp://{host}:{port}")
+        logger.info(f"Starting MindsDB Mysql proxy server on tcp://{host}:{port}")        
 
         SocketServer.TCPServer.allow_reuse_address = True
         server = SocketServer.ThreadingTCPServer((host, port), MysqlProxy)
@@ -953,7 +953,7 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
         server.connection_id = 0
         server.hook_before_handle = empty_fn
 
-        atexit.register(MysqlProxy.server_close, srv=server)
+        atexit.register(MysqlProxy.server_close, srv=server)        
 
         # Activate the server; this will keep running until you
         # interrupt the program with Ctrl-C

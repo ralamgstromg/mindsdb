@@ -576,7 +576,7 @@ if __name__ == "__main__":
             and trunc_process_data.need_to_run is True
         ]
         for future in asyncio.as_completed(futures):
-            api_name, port, started = await future
+            api_name, port, started = await future            
             if started:
                 logger.info(f"{api_name} API: started on {port}")
             else:
@@ -634,9 +634,9 @@ if __name__ == "__main__":
         )
 
     ioloop = asyncio.new_event_loop()
-    ioloop.run_until_complete(wait_apis_start())
+    ioloop.run_until_complete(wait_apis_start())    
 
-    threading.Thread(target=do_clean_process_marks, name="clean_process_marks").start()
+    threading.Thread(target=do_clean_process_marks, name="clean_process_marks").start()    
 
     ioloop.run_until_complete(gather_apis())
     ioloop.close()

@@ -152,6 +152,7 @@ class IntegrationController:
         self._import_lock = threading.Lock()
         self._load_handler_modules()
         self.handlers_cache = HandlersCache()
+        #print("AQUI")
 
     def _add_integration_record(self, name, engine, connection_args):
         integration_record = db.Integration(
@@ -692,6 +693,8 @@ class IntegrationController:
     def _load_handler_modules(self):
         mindsdb_path = Path(importlib.util.find_spec("mindsdb").origin).parent
         handlers_path = mindsdb_path.joinpath("integrations/handlers")
+
+        #print("handlers_path",handlers_path)
 
         # edge case: running from tests directory, find_spec finds the base folder instead of actual package
         if not os.path.isdir(handlers_path):

@@ -88,7 +88,7 @@ class PushNotificationSenderAuth(PushNotificationAuth):
 
     async def send_push_notification(self, url: str, data: dict[str, Any]):
         jwt_token = self._generate_jwt(data)
-        headers = {"Authorization": f"Bearer {jwt_token}"}
+        headers = {"Authorization": f"Bearer {jwt_token}"}        
         async with httpx.AsyncClient(timeout=10) as client:
             try:
                 response = await client.post(url, json=data, headers=headers)
