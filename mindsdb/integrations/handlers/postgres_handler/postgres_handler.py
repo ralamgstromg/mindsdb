@@ -4,8 +4,11 @@ import time
 import json
 from typing import Optional, Any
 
-import pandas as pd
-from pandas import DataFrame
+# import pandas as pd
+# from pandas import DataFrame
+import polars as pd
+from polars import DataFrame
+
 import psycopg
 from psycopg import Column as PGColumn, Cursor
 from psycopg.postgres import TypeInfo, types as pg_types
@@ -50,6 +53,7 @@ def _map_type(internal_type_name: str | None) -> MYSQL_DATA_TYPE:
         ("integer", "int", "serial"): MYSQL_DATA_TYPE.INT,
         ("bigint", "bigserial"): MYSQL_DATA_TYPE.BIGINT,
         ("real", "float"): MYSQL_DATA_TYPE.FLOAT,
+        ("money",): MYSQL_DATA_TYPE.FLOAT,
         ("numeric", "decimal"): MYSQL_DATA_TYPE.DECIMAL,
         ("double precision",): MYSQL_DATA_TYPE.DOUBLE,
         ("character varying", "varchar"): MYSQL_DATA_TYPE.VARCHAR,
@@ -89,6 +93,9 @@ def _make_table_response(result: list[tuple[Any]], cursor: Cursor) -> Response:
             # NOTE: data returned as numpy array
             mysql_types.append(MYSQL_DATA_TYPE.VECTOR)
             continue
+        elif column.type_display == "money":
+            mysql_types.append(MYSQL_DATA_TYPE.DECIMAL)
+            continue
         pg_type_info: TypeInfo = pg_types.get(column.type_code)
         if pg_type_info is None:
             # postgres may return 'polymorphic type', which are not present in the pg_types
@@ -96,17 +103,17 @@ def _make_table_response(result: list[tuple[Any]], cursor: Cursor) -> Response:
             # SELECT oid, typname, typcategory FROM pg_type WHERE typcategory = 'P' ORDER BY oid;
             if column.type_code in (2277, 5078):
                 # anyarray, anycompatiblearray
-                regtype = "json"
+                regtype = pd.String #"json"
             else:
                 logger.warning(f"Postgres handler: unknown type: {column.type_code}")
                 mysql_types.append(MYSQL_DATA_TYPE.TEXT)
                 continue
         elif pg_type_info.array_oid == column.type_code:
             # it is any array, handle is as json
-            regtype: str = "json"
+            regtype: str = pd.String #"json"
         else:
             regtype: str = pg_type_info.regtype if pg_type_info is not None else None
-        mysql_type = _map_type(regtype)
+        mysql_type = _map_type(regtype)        
         mysql_types.append(mysql_type)
 
     # region cast int and bool to nullable types
@@ -120,12 +127,28 @@ def _make_table_response(result: list[tuple[Any]], cursor: Cursor) -> Response:
             MYSQL_DATA_TYPE.BIGINT,
             MYSQL_DATA_TYPE.TINYINT,
         ):
-            expected_dtype = "Int64"
+            expected_dtype = pd.Int64 #"Int64"
         elif mysql_type in (MYSQL_DATA_TYPE.BOOL, MYSQL_DATA_TYPE.BOOLEAN):
-            expected_dtype = "boolean"
-        serieses.append(pd.Series([row[i] for row in result], dtype=expected_dtype, name=description[i].name))
-    df = pd.concat(serieses, axis=1, copy=False)
-    # endregion
+            expected_dtype = pd.Boolean
+        elif mysql_type in (MYSQL_DATA_TYPE.DECIMAL, MYSQL_DATA_TYPE.DOUBLE, MYSQL_DATA_TYPE.FLOAT,):
+            expected_dtype = pd.Float64
+        elif mysql_type in (MYSQL_DATA_TYPE.DATETIME,):
+            expected_dtype = pd.Datetime
+        elif mysql_type in (MYSQL_DATA_TYPE.DATE,):
+            expected_dtype = pd.Date
+        elif mysql_type in (MYSQL_DATA_TYPE.TIME,):
+            expected_dtype = pd.Time
+        else:
+            expected_dtype = pd.String
+
+        serieses.append(
+            pd.Series(values=[float(row[i].replace("$", "").replace(",", "")) if expected_dtype is pd.Float64 and row[i] is not None and type(row[i]) is str else row[i] for row in result], 
+                      dtype=expected_dtype, name=description[i].name)
+        )
+
+    # df = pd.concat(serieses , axis=1, copy=False)
+    df = pd.DataFrame(serieses)
+
 
     return Response(RESPONSE_TYPE.TABLE, data_frame=df, affected_rows=cursor.rowcount, mysql_types=mysql_types)
 
