@@ -136,7 +136,7 @@ class SqlServerHandler(DatabaseHandler):
         self.dialect = 'mssql'
         self.database = self.connection_args.get('database')
         self.renderer = SqlalchemyRender('mssql')
-        self.uncommitted = self.connection_args.get('uncommitted')
+        self.uncommitted = self.connection_args.get('uncommitted', True)
 
         self.connection = None
         self.is_connected = False
@@ -167,7 +167,9 @@ class SqlServerHandler(DatabaseHandler):
             'host': self.connection_args.get('host'),
             'user': self.connection_args.get('user'),
             'password': self.connection_args.get('password'),
-            'database': self.connection_args.get('database')
+            'database': self.connection_args.get('database'),
+            'timeout': int(self.connection_args.get('timeout', 600)),
+            'login_timeout': int(self.connection_args.get('login_timeout', 60)),
         }
 
         # Optional connection parameters

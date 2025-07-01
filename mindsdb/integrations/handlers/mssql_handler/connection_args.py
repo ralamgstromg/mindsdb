@@ -45,8 +45,19 @@ connection_args = OrderedDict(
         'type': ARG_TYPE.BOOL,
         'description': 'If the transaction is isolated uncommited.',
         'required': False,
-        'label': 'Uncommitted',
-        'default': True
+        'label': 'Uncommitted'
+    },
+    login_timeout={
+        'type': ARG_TYPE.INT,
+        'description': 'Timeout for login',
+        'required': False,
+        'label': 'Login Timeout'
+    },
+    timeout={
+        'type': ARG_TYPE.INT,
+        'description': 'Timeout for query',
+        'required': False,
+        'label': 'Timeout'
     },
 )
 
