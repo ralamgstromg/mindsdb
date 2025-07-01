@@ -1,4 +1,5 @@
-import pandas as pd
+#import pandas as pd
+import polars as pd
 import mysql.connector
 
 from mindsdb_sql_parser import parse_sql
@@ -9,7 +10,7 @@ from mindsdb.utilities import log
 from mindsdb.integrations.libs.base import DatabaseHandler
 from mindsdb.integrations.libs.response import (
     HandlerStatusResponse as StatusResponse,
-    HandlerResponse as Response,
+    HandlerResponseNgx as Response,
     RESPONSE_TYPE,
 )
 from mindsdb.integrations.handlers.mysql_handler.settings import ConnectionConfig
@@ -93,12 +94,56 @@ def _make_table_response(result: list[dict], cursor: mysql.connector.cursor.MySQ
             MYSQL_DATA_TYPE.BIGINT,
             MYSQL_DATA_TYPE.TINYINT,
         ):
-            expected_dtype = "Int64"
+            expected_dtype = pd.Int64
         elif mysql_type in (MYSQL_DATA_TYPE.BOOL, MYSQL_DATA_TYPE.BOOLEAN):
-            expected_dtype = "boolean"
-        serieses.append(pd.Series([row[column_name] for row in result], dtype=expected_dtype, name=description[i][0]))
-    df = pd.concat(serieses, axis=1, copy=False)
-    # endregion
+            expected_dtype = pd.Boolean
+        elif mysql_type in (
+            MYSQL_DATA_TYPE.FLOAT,
+            MYSQL_DATA_TYPE.DOUBLE,
+            MYSQL_DATA_TYPE.DECIMAL,
+        ):
+            expected_dtype = pd.Float64
+        elif mysql_type in (
+            MYSQL_DATA_TYPE.TEXT,
+            MYSQL_DATA_TYPE.VARCHAR,
+            MYSQL_DATA_TYPE.CHAR,
+            MYSQL_DATA_TYPE.TINYTEXT,
+            MYSQL_DATA_TYPE.MEDIUMTEXT,
+            MYSQL_DATA_TYPE.LONGTEXT,
+        ):
+            expected_dtype = pd.String
+        elif mysql_type in (
+            MYSQL_DATA_TYPE.BLOB,
+            MYSQL_DATA_TYPE.TINYBLOB,
+            MYSQL_DATA_TYPE.MEDIUMBLOB,
+            MYSQL_DATA_TYPE.LONGBLOB,
+        ):
+            expected_dtype = pd.String
+        elif mysql_type in (
+            MYSQL_DATA_TYPE.VARBINARY,
+            MYSQL_DATA_TYPE.BINARY,
+        ):
+            expected_dtype = pd.String
+        elif mysql_type in (
+            MYSQL_DATA_TYPE.DATE,
+        ):
+            expected_dtype = pd.Date
+        elif mysql_type in (
+            MYSQL_DATA_TYPE.DATETIME,
+            MYSQL_DATA_TYPE.TIMESTAMP,
+        ):
+            expected_dtype = pd.Datetime
+        elif mysql_type in (
+            MYSQL_DATA_TYPE.TIME,
+        ):
+            expected_dtype = pd.Time
+        else:
+            logger.warning(f"MySQL handler: unknown type {mysql_type}, use TEXT as fallback.")
+            expected_dtype = pd.String
+
+        serieses.append(pd.Series(name=column_name, values=[row[column_name] for row in result], dtype=expected_dtype))
+    df = pd.DataFrame(serieses)
+    # print(df)
 
     response = Response(RESPONSE_TYPE.TABLE, df, affected_rows=cursor.rowcount, mysql_types=mysql_types)
     return response
@@ -110,6 +155,9 @@ class MySQLHandler(DatabaseHandler):
     """
 
     name = "mysql"
+
+    class Config:
+        protected_namespaces = ()
 
     def __init__(self, name, **kwargs):
         super().__init__(name)
@@ -276,7 +324,7 @@ class MySQLHandler(DatabaseHandler):
             SELECT
                 TABLE_SCHEMA AS table_schema,
                 TABLE_NAME AS table_name,
-                TABLE_TYPE AS table_type
+                CASE WHEN TABLE_TYPE = 'VIEW' AND FLAGS = 'IS_TABLE_VALUED_FUNCTION' THEN 'TABLE FUNCTION' ELSE TABLE_TYPE END AS table_type
             FROM
                 information_schema.TABLES
             WHERE
