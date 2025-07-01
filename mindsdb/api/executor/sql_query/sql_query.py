@@ -81,10 +81,14 @@ class SQLQuery:
         self.run_query = None
         self.stop_event = stop_event
 
+        #print(sql)
+
         if isinstance(sql, str):
+            #print("sql is str")
             self.query = parse_sql(sql)
             self.context['query_str'] = sql
         else:
+            #print("sql is ASTNode")
             self.query = sql
             renderer = SqlalchemyRender('mysql')
             try:
@@ -92,9 +96,12 @@ class SQLQuery:
             except Exception:
                 self.context['query_str'] = str(self.query)
 
+        #print(self.context['query_str'])
         self.create_planner()
+        #print("post planner")
 
         if execute:
+            #print("execute")
             self.execute_query()
 
     @classmethod
@@ -235,12 +242,13 @@ class SQLQuery:
             # no need to execute
             return
 
-        try:
+        try:            
             steps = list(self.planner.execute_steps())
         except PlanningException as e:
             raise LogicError(e)
 
         if self.planner.plan.is_resumable:
+            print("resumable")
             # create query
             if self.query_id is not None:
                 self.run_query = query_context_controller.get_query(self.query_id)
@@ -260,30 +268,40 @@ class SQLQuery:
 
             ctx.run_query_id = self.run_query.record.id
 
+        #print("outer resumable")
+
         step_result = None
         process_mark = None
         try:
+            #print("try")
             steps_classes = (x.__class__ for x in steps)
             predict_steps = (ApplyPredictorRowStep, ApplyPredictorStep, ApplyTimeseriesPredictorStep)
             if any(s in predict_steps for s in steps_classes):
                 process_mark = create_process_mark('predict')
             for step in steps:
+                #print(step)
                 with profiler.Context(f'step: {step.__class__.__name__}'):
                     step_result = self.execute_step(step)
+                #print(step_result)
                 self.steps_data[step.step_num] = step_result
         except Exception as e:
             if self.run_query is not None:
                 # set error and place where it stopped
                 self.run_query.on_error(e, step.step_num, self.steps_data)
+            #print(e)
             raise e
         else:
             # mark running query as completed
             if self.run_query is not None:
                 self.run_query.finish()
                 ctx.run_query_id = None
+            #print("else")
         finally:
             if process_mark is not None:
                 delete_process_mark('predict', process_mark)
+            #print("finally")
+
+        #print("try")
 
         # save updated query
         self.query = self.planner.query
@@ -313,6 +331,9 @@ class SQLQuery:
         handler = self.step_handlers.get(cls_name)
         if handler is None:
             raise UnknownError(f"Unknown step: {cls_name}")
+        
+        # print(step)
+        # print(steps_data)
 
         return handler(self, steps_data=steps_data).call(step)
 

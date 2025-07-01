@@ -40,7 +40,14 @@ connection_args = OrderedDict(
         'description': 'The server name of the Microsoft SQL Server. Typically only used with named instances or Azure SQL Database.',
         'required': False,
         'label': 'Server'
-    }
+    },
+    uncommitted={
+        'type': ARG_TYPE.BOOL,
+        'description': 'If the transaction is isolated uncommited.',
+        'required': False,
+        'label': 'Uncommitted',
+        'default': True
+    },
 )
 
 connection_args_example = OrderedDict(

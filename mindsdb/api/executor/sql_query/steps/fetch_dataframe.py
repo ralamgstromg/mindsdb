@@ -102,7 +102,12 @@ class FetchDataframeStepCall(BaseStepCall):
 
             query, context_callback = query_context_controller.handle_db_context_vars(query, dn, self.session)
 
+            # print(query)
+            # print(context_callback)
+            # print(dn)
+
             response: DataHubResponse = dn.query(query=query, session=self.session)
+            #print("aqui")
             df = response.data_frame
 
             if context_callback:

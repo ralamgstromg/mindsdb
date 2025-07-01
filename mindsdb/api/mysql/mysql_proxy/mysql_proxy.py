@@ -553,8 +553,12 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
     @profiler.profile()
     def process_query(self, sql) -> SQLAnswer:
         executor = Executor(session=self.session, sqlserver=self)
+        #print('ANTES')
         executor.query_execute(sql)
+        #print('DESPUES')
         executor_answer = executor.executor_answer
+
+        #print(executor_answer)
 
         if executor_answer.data is None:
             resp = SQLAnswer(
@@ -760,6 +764,7 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
                         query=sql, api="mysql", environment=config.get("environment")
                     )
                     with profiler.Context("mysql_query_processing"):
+                        # print(sql)
                         response = self.process_query(sql)
                 elif p.type.value == COMMANDS.COM_STMT_PREPARE:
                     sql = self.decode_utf(p.sql.value)

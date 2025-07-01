@@ -171,7 +171,7 @@ class ExecuteCommands:
     @profiler.profile()
     def execute_command(self, statement: ASTNode, database_name: str = None) -> ExecuteAnswer:
         sql: str = statement.to_string()
-        sql_lower: str = sql.lower()
+        sql_lower: str = sql.lower()        
 
         if database_name is None:
             database_name = self.session.database
@@ -588,6 +588,7 @@ class ExecuteCommands:
             ret = self.exec_service_function(statement, database_name)
             if ret is not None:
                 return ret
+            # print(statement, database_name)
             query = SQLQuery(statement, session=self.session, database=database_name)
             return self.answer_select(query)
         elif statement_type is Union:

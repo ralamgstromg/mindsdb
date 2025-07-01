@@ -221,14 +221,17 @@ class IntegrationDataNode(DataNode):
 
     @profiler.profile()
     def query(self, query: ASTNode | None = None, native_query: str | None = None, session=None) -> DataHubResponse:
-        try:
+        try:            
             time_before_query = time.perf_counter()
             if query is not None:
+                #print(self.integration_handler)
                 result: HandlerResponse = self.integration_handler.query(query)
             else:
+                #print("ELSE")
                 # try to fetch native query
                 result: HandlerResponse = self.integration_handler.native_query(native_query)
-
+            
+            
             # metrics
             elapsed_seconds = time.perf_counter() - time_before_query
             query_time_with_labels = metrics.INTEGRATION_HANDLER_QUERY_TIME.labels(

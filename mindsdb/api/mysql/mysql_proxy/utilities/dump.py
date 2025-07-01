@@ -291,21 +291,13 @@ def _handle_series_as_datetime(series: pd.Series) -> pd.Series:
     Returns:
         pd.Series: The series with the datetime values as strings
     """
-    #if pd_types.is_datetime64_any_dtype(series.dtype):
-    #if pd_types.is_temporal(series.dtype):
-    #if series.dtype == pd.Datetime:
-    #print(series.dtype, series.head(5))
     if series.dtype in ('datetime64[ns]', 'datetime64[μs]', pd.Datetime, datetime.datetime, pd.Date):
-        # print(series)
-        # print(type(series), series.dtype)
         return series
-    #elif pd_types.is_object_dtype(series.dtype):
     elif series.dtype in (pd.Object, pd.String):
-        #return series.apply(_dump_datetime)
         return series.str.to_datetime(format="%Y-%m-%d %H:%M:%S")
     logger.info(f"Unexpected dtype: {series.dtype} for column with type DATETIME")
-    #print(series)
-    #return series.apply(_dump_str)
+    if series.null_count() == series.shape[0]:
+        return series.cast(pd.Datetime)
     return series.str.to_datetime(format="%Y-%m-%d %H:%M:%S")
 
 

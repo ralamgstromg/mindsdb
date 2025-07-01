@@ -3,8 +3,11 @@ import datetime
 
 import pymssql
 from pymssql import OperationalError
-import pandas as pd
-from pandas.api import types as pd_types
+# import pandas as pd
+# from pandas.api import types as pd_types
+import polars as pd
+# from polars import pandas as pd_types
+
 
 from mindsdb_sql_parser import parse_sql
 from mindsdb_sql_parser.ast.base import ASTNode
@@ -69,50 +72,49 @@ def _make_table_response(result: list[dict[str, Any]], cursor: pymssql.Cursor) -
 
     data_frame = pd.DataFrame(
         result,
-        columns=[x[0] for x in cursor.description]
+        schema=[x[0] for x in cursor.description],
+        infer_schema_length=99999999999999,
+        orient="row"
     )
 
     for column in description:
         column_name = column[0]
         column_type = column[1]
         column_dtype = data_frame[column_name].dtype
+        
         match column_type:
             case pymssql.NUMBER:
-                if pd_types.is_integer_dtype(column_dtype):
-                    mysql_types.append(MYSQL_DATA_TYPE.INT)
-                elif pd_types.is_float_dtype(column_dtype):
+                if column_dtype in [pd.Int8, pd.Int16, pd.Int32, pd.Int64, pd.UInt8, pd.UInt16, pd.UInt32, pd.UInt64]:
+                    mysql_types.append(MYSQL_DATA_TYPE.INT)                    
+                elif column_dtype in [pd.Float32, pd.Float64]:
                     mysql_types.append(MYSQL_DATA_TYPE.FLOAT)
-                elif pd_types.is_bool_dtype(column_dtype):
-                    # it is 'bit' type
+                elif mysql_types in [pd.Boolean]:
                     mysql_types.append(MYSQL_DATA_TYPE.TINYINT)
                 else:
-                    mysql_types.append(MYSQL_DATA_TYPE.DOUBLE)
+                    mysql_types.append(MYSQL_DATA_TYPE.DOUBLE)                
+                if column_dtype == pd.Null:
+                    data_frame = data_frame.with_columns([pd.col(column_name).cast(pd.Int64).alias(column_name)])
             case pymssql.DECIMAL:
                 mysql_types.append(MYSQL_DATA_TYPE.DECIMAL)
+                if column_dtype == pd.Null:
+                    data_frame = data_frame.with_columns([pd.col(column_name).cast(pd.Float64).alias(column_name)])
             case pymssql.STRING:
                 mysql_types.append(MYSQL_DATA_TYPE.TEXT)
+                if column_dtype == pd.Null:
+                    data_frame = data_frame.with_columns([pd.col(column_name).cast(pd.String).alias(column_name)])
             case pymssql.DATETIME:
                 mysql_types.append(MYSQL_DATA_TYPE.DATETIME)
+                if column_dtype == pd.Null:
+                    data_frame = data_frame.with_columns([pd.col(column_name).cast(pd.Datetime).alias(column_name)])
             case pymssql.BINARY:
-                # DATE and TIME types returned as 'BINARY' type, and dataframe type is 'object', so it is not possible
-                # to infer correct mysql type for them
-                if pd_types.is_datetime64_any_dtype(column_dtype):
-                    # pymssql return datetimes as 'binary' type
-                    # if timezone is present, then it is datetime.timezone
-                    series = data_frame[column_name]
-                    if (
-                        series.dt.tz is not None
-                        and isinstance(series.dt.tz, datetime.timezone)
-                        and series.dt.tz != datetime.timezone.utc
-                    ):
-                        series = series.dt.tz_convert('UTC')
-                        data_frame[column_name] = series.dt.tz_localize(None)
-                    mysql_types.append(MYSQL_DATA_TYPE.DATETIME)
-                else:
-                    mysql_types.append(MYSQL_DATA_TYPE.BINARY)
+                mysql_types.append(MYSQL_DATA_TYPE.BINARY)
+                if column_dtype == pd.Null:
+                    data_frame = data_frame.with_columns([pd.col(column_name).cast(pd.Binary).alias(column_name)])
             case _:
                 logger.warning(f"Unknown type: {column_type}, use TEXT as fallback.")
                 mysql_types.append(MYSQL_DATA_TYPE.TEXT)
+                if column_dtype == pd.Null:
+                    data_frame = data_frame.with_columns([pd.col(column_name).cast(pd.String).alias(column_name)])
 
     return Response(
         RESPONSE_TYPE.TABLE,
@@ -134,6 +136,7 @@ class SqlServerHandler(DatabaseHandler):
         self.dialect = 'mssql'
         self.database = self.connection_args.get('database')
         self.renderer = SqlalchemyRender('mssql')
+        self.uncommitted = self.connection_args.get('uncommitted')
 
         self.connection = None
         self.is_connected = False
@@ -176,7 +179,7 @@ class SqlServerHandler(DatabaseHandler):
 
         try:
             self.connection = pymssql.connect(**config)
-            self.is_connected = True
+            self.is_connected = True            
             return self.connection
         except OperationalError as e:
             logger.error(f'Error connecting to Microsoft SQL Server {self.database}, {e}!')
@@ -231,14 +234,15 @@ class SqlServerHandler(DatabaseHandler):
         Returns:
             Response: A response object containing the result of the query or an error message.
         """
-
         need_to_close = self.is_connected is False
 
         connection = self.connect()
-        with connection.cursor(as_dict=True) as cur:
+        with connection.cursor() as cur:
             try:
+                if self.uncommitted is True:
+                    cur.execute("SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED")
                 cur.execute(query)
-                if cur.description:
+                if cur.description:                    
                     result = cur.fetchall()
                     response = _make_table_response(result, cur)
                 else:
@@ -268,7 +272,6 @@ class SqlServerHandler(DatabaseHandler):
         Returns:
             Response: The response from the `native_query` method, containing the result of the SQL query execution.
         """
-
         query_str = self.renderer.get_string(query, with_failback=True)
         logger.debug(f"Executing SQL query: {query_str}")
         return self.native_query(query_str)

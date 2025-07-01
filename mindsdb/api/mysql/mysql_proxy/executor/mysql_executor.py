@@ -88,6 +88,8 @@ class Executor:
         sql_lower = sql.lower()
         self.sql_lower = sql_lower.replace("`", "")
 
+        #print(sql)
+
         try:
             self.query = parse_sql(sql)
         except Exception as mdb_error:
@@ -95,7 +97,7 @@ class Executor:
             logger.warning('Failed to parse SQL query')
             logger.debug(f'Query that cannot be parsed: {sql}')
             #print(f'{sql}')
-            print(sql)
+            #print(sql)
 
             raise ErSqlSyntaxError(
                 f"The SQL statement cannot be parsed - {sql}: {mdb_error}"
@@ -110,7 +112,10 @@ class Executor:
         if self.is_executed:
             return
 
+        #print("antes de ejecutado")
+        #print(self.query)
         executor_answer: ExecuteAnswer = self.command_executor.execute_command(self.query)
+        #print("despues de ejecutado")
         self.executor_answer = executor_answer
 
         self.is_executed = True
