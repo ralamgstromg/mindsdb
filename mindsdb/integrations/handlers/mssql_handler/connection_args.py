@@ -47,18 +47,18 @@ connection_args = OrderedDict(
         'required': False,
         'label': 'Uncommitted'
     },
-    login_timeout={
-        'type': ARG_TYPE.INT,
-        'description': 'Timeout for login',
-        'required': False,
-        'label': 'Login Timeout'
-    },
-    timeout={
-        'type': ARG_TYPE.INT,
-        'description': 'Timeout for query',
-        'required': False,
-        'label': 'Timeout'
-    },
+    # login_timeout={
+    #     'type': ARG_TYPE.INT,
+    #     'description': 'Timeout for login',
+    #     'required': False,
+    #     'label': 'Login Timeout'
+    # },
+    # timeout={
+    #     'type': ARG_TYPE.INT,
+    #     'description': 'Timeout for query',
+    #     'required': False,
+    #     'label': 'Timeout'
+    # },
 )
 
 connection_args_example = OrderedDict(

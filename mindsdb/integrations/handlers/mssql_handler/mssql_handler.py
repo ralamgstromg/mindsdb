@@ -1,15 +1,19 @@
 from typing import Any
 import datetime
 
-import pymssql
-from pymssql import OperationalError
+
+from urllib import parse
+import connectorx as cx
+#import pymssql
+#from pymssql import OperationalError
 # import pandas as pd
 # from pandas.api import types as pd_types
+#from sqlalchemy.ext.asyncio import create_async_engine
 import polars as pd
 # from polars import pandas as pd_types
 
 
-from mindsdb_sql_parser import parse_sql
+#from mindsdb_sql_parser import parse_sql
 from mindsdb_sql_parser.ast.base import ASTNode
 
 from mindsdb.integrations.libs.base import DatabaseHandler
@@ -26,104 +30,7 @@ from mindsdb.api.mysql.mysql_proxy.libs.constants.mysql import MYSQL_DATA_TYPE
 logger = log.getLogger(__name__)
 
 
-def _map_type(mssql_type_text: str) -> MYSQL_DATA_TYPE:
-    """ Map MSSQL text types names to MySQL types as enum.
-
-    Args:
-        mssql_type_text (str): The name of the MSSQL type to map.
-
-    Returns:
-        MYSQL_DATA_TYPE: The MySQL type enum that corresponds to the MSSQL text type name.
-    """
-    internal_type_name = mssql_type_text.lower()
-    types_map = {
-        ('tinyint', 'smallint', 'int', 'bigint'): MYSQL_DATA_TYPE.INT,
-        ('bit',): MYSQL_DATA_TYPE.BOOL,
-        ('money', 'smallmoney', 'float', 'real'): MYSQL_DATA_TYPE.FLOAT,
-        ('decimal', 'numeric'): MYSQL_DATA_TYPE.DECIMAL,
-        ('date',): MYSQL_DATA_TYPE.DATE,
-        ('time',): MYSQL_DATA_TYPE.TIME,
-        ('datetime2', 'datetimeoffset', 'datetime', 'smalldatetime'): MYSQL_DATA_TYPE.DATETIME,
-        ('varchar', 'nvarchar'): MYSQL_DATA_TYPE.VARCHAR,
-        ('char', 'text', 'nchar', 'ntext'): MYSQL_DATA_TYPE.TEXT,
-        ('binary', 'varbinary', 'image'): MYSQL_DATA_TYPE.BINARY
-    }
-
-    for db_types_list, mysql_data_type in types_map.items():
-        if internal_type_name in db_types_list:
-            return mysql_data_type
-
-    logger.debug(f"MSSQL handler type mapping: unknown type: {internal_type_name}, use VARCHAR as fallback.")
-    return MYSQL_DATA_TYPE.VARCHAR
-
-
-def _make_table_response(result: list[dict[str, Any]], cursor: pymssql.Cursor) -> Response:
-    """Build response from result and cursor.
-
-    Args:
-        result (list[dict[str, Any]]): result of the query.
-        cursor (pymssql.Cursor): cursor object.
-
-    Returns:
-        Response: response object.
-    """
-    description: list[tuple[Any]] = cursor.description
-    mysql_types: list[MYSQL_DATA_TYPE] = []
-
-    data_frame = pd.DataFrame(
-        result,
-        schema=[x[0] for x in cursor.description],
-        infer_schema_length=99999999999999,
-        orient="row"
-    )
-
-    for column in description:
-        column_name = column[0]
-        column_type = column[1]
-        column_dtype = data_frame[column_name].dtype
-        
-        match column_type:
-            case pymssql.NUMBER:
-                if column_dtype in [pd.Int8, pd.Int16, pd.Int32, pd.Int64, pd.UInt8, pd.UInt16, pd.UInt32, pd.UInt64]:
-                    mysql_types.append(MYSQL_DATA_TYPE.INT)                    
-                elif column_dtype in [pd.Float32, pd.Float64]:
-                    mysql_types.append(MYSQL_DATA_TYPE.FLOAT)
-                elif mysql_types in [pd.Boolean]:
-                    mysql_types.append(MYSQL_DATA_TYPE.TINYINT)
-                else:
-                    mysql_types.append(MYSQL_DATA_TYPE.DOUBLE)                
-                if column_dtype == pd.Null:
-                    data_frame = data_frame.with_columns([pd.col(column_name).cast(pd.Int64).alias(column_name)])
-            case pymssql.DECIMAL:
-                mysql_types.append(MYSQL_DATA_TYPE.DECIMAL)
-                if column_dtype == pd.Null:
-                    data_frame = data_frame.with_columns([pd.col(column_name).cast(pd.Float64).alias(column_name)])
-            case pymssql.STRING:
-                mysql_types.append(MYSQL_DATA_TYPE.TEXT)
-                if column_dtype == pd.Null:
-                    data_frame = data_frame.with_columns([pd.col(column_name).cast(pd.String).alias(column_name)])
-            case pymssql.DATETIME:
-                mysql_types.append(MYSQL_DATA_TYPE.DATETIME)
-                if column_dtype == pd.Null:
-                    data_frame = data_frame.with_columns([pd.col(column_name).cast(pd.Datetime).alias(column_name)])
-            case pymssql.BINARY:
-                mysql_types.append(MYSQL_DATA_TYPE.BINARY)
-                if column_dtype == pd.Null:
-                    data_frame = data_frame.with_columns([pd.col(column_name).cast(pd.Binary).alias(column_name)])
-            case _:
-                logger.warning(f"Unknown type: {column_type}, use TEXT as fallback.")
-                mysql_types.append(MYSQL_DATA_TYPE.TEXT)
-                if column_dtype == pd.Null:
-                    data_frame = data_frame.with_columns([pd.col(column_name).cast(pd.String).alias(column_name)])
-
-    return Response(
-        RESPONSE_TYPE.TABLE,
-        data_frame=data_frame,
-        mysql_types=mysql_types
-    )
-
-
-class SqlServerHandler(DatabaseHandler):
+class SqlServerNgxHandler(DatabaseHandler):
     """
     This handler handles connection and execution of the Microsoft SQL Server statements.
     """
@@ -131,19 +38,17 @@ class SqlServerHandler(DatabaseHandler):
 
     def __init__(self, name, **kwargs):
         super().__init__(name)
-        self.parser = parse_sql
+        #self.parser = parse_sql
         self.connection_args = kwargs.get('connection_data')
         self.dialect = 'mssql'
         self.database = self.connection_args.get('database')
         self.renderer = SqlalchemyRender('mssql')
         self.uncommitted = self.connection_args.get('uncommitted', True)
 
-        self.connection = None
-        self.is_connected = False
+        self.uri = f"mssql://{self.connection_args.get('user')}:{parse.quote_plus(self.connection_args.get('password'))}@{self.connection_args.get('host')}:{self.connection_args.get('port', 1433)}/{self.connection_args.get('database')}?encrypt=true&trust_server_certificate=true"
 
     def __del__(self):
-        if self.is_connected is True:
-            self.disconnect()
+        pass
 
     def connect(self):
         """
@@ -154,49 +59,15 @@ class SqlServerHandler(DatabaseHandler):
 
         Returns:
             pymssql.Connection: A connection object to the Microsoft SQL Server database.
-        """
-
-        if self.is_connected is True:
-            return self.connection
-
-        # Mandatory connection parameters
-        if not all(key in self.connection_args for key in ['host', 'user', 'password', 'database']):
-            raise ValueError('Required parameters (host, user, password, database) must be provided.')
-
-        config = {
-            'host': self.connection_args.get('host'),
-            'user': self.connection_args.get('user'),
-            'password': self.connection_args.get('password'),
-            'database': self.connection_args.get('database'),
-            'timeout': int(self.connection_args.get('timeout', 600)),
-            'login_timeout': int(self.connection_args.get('login_timeout', 60)),
-        }
-
-        # Optional connection parameters
-        if 'port' in self.connection_args:
-            config['port'] = self.connection_args.get('port')
-
-        if 'server' in self.connection_args:
-            config['server'] = self.connection_args.get('server')
-
-        try:
-            self.connection = pymssql.connect(**config)
-            self.is_connected = True            
-            return self.connection
-        except OperationalError as e:
-            logger.error(f'Error connecting to Microsoft SQL Server {self.database}, {e}!')
-            self.is_connected = False
-            raise
+        """      
+        pass
 
     def disconnect(self):
         """
         Closes the connection to the Microsoft SQL Server database if it's currently open.
         """
+        pass
 
-        if not self.is_connected:
-            return
-        self.connection.close()
-        self.is_connected = False
 
     def check_connection(self) -> StatusResponse:
         """
@@ -205,28 +76,18 @@ class SqlServerHandler(DatabaseHandler):
         Returns:
             StatusResponse: An object containing the success status and an error message if an error occurs.
         """
-
         response = StatusResponse(False)
-        need_to_close = self.is_connected is False
-
         try:
-            connection = self.connect()
-            with connection.cursor() as cur:
-                # Execute a simple query to test the connection
-                cur.execute('select 1;')
+            #print(self.uri)
+            cx.read_sql(conn=self.uri, query="SELECT 1 as resp;")
+            logger.info(f'Connected to Microsoft SQL Server {self.database}')
             response.success = True
-        except OperationalError as e:
+        except Exception as e:
             logger.error(f'Error connecting to Microsoft SQL Server {self.database}, {e}!')
             response.error_message = str(e)
-
-        if response.success and need_to_close:
-            self.disconnect()
-        elif not response.success and self.is_connected:
-            self.is_connected = False
-
         return response
 
-    def native_query(self, query: str) -> Response:
+    def native_query(self, query: str, lower_col_names: bool = True) -> Response:
         """
         Executes a SQL query on the Microsoft SQL Server database and returns the result.
 
@@ -236,31 +97,38 @@ class SqlServerHandler(DatabaseHandler):
         Returns:
             Response: A response object containing the result of the query or an error message.
         """
-        need_to_close = self.is_connected is False
+        sql = ""
+        if self.uncommitted:
+            sql = "SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; SET NOCOUNT ON; "
+        sql = f"{sql}{query}"
 
-        connection = self.connect()
-        with connection.cursor() as cur:
-            try:
-                if self.uncommitted is True:
-                    cur.execute("SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED")
-                cur.execute(query)
-                if cur.description:                    
-                    result = cur.fetchall()
-                    response = _make_table_response(result, cur)
-                else:
-                    response = Response(RESPONSE_TYPE.OK, affected_rows=cur.rowcount)
-                connection.commit()
-            except Exception as e:
-                logger.error(f'Error running query: {query} on {self.database}, {e}!')
-                response = Response(
-                    RESPONSE_TYPE.ERROR,
-                    error_code=0,
-                    error_message=str(e)
-                )
-                connection.rollback()
+        result = pd.read_database_uri(query=sql, uri=self.uri, engine="connectorx")
 
-        if need_to_close is True:
-            self.disconnect()
+        mysql_types: list[MYSQL_DATA_TYPE] = []
+        for dtype in result.dtypes:
+            match dtype:
+                case pd.String | pd.Object: # Varchar
+                    mysql_types.append(MYSQL_DATA_TYPE.VARCHAR)
+                case pd.Date: # Date
+                    mysql_types.append(MYSQL_DATA_TYPE.DATE)
+                case pd.Int8 | pd.Int16 | pd.Int32 | pd.Int64 | pd.UInt8 | pd.UInt16 | pd.UInt32 | pd.UInt64: # Integer
+                    mysql_types.append(MYSQL_DATA_TYPE.BIGINT)
+                case pd.Datetime: # Datetime
+                    mysql_types.append(MYSQL_DATA_TYPE.DATETIME)
+                case pd.Float32 | pd.Float64: # Decimal
+                    mysql_types.append(MYSQL_DATA_TYPE.FLOAT)
+                case pd.Binary: # Binary
+                    mysql_types.append(MYSQL_DATA_TYPE.BINARY)
+                case pd.Boolean: # Binary
+                    mysql_types.append(MYSQL_DATA_TYPE.BIT)
+                case _:
+                    logger.info(f"Unknown type: {dtype}, use VARCHAR as fallback.")
+                    mysql_types.append(MYSQL_DATA_TYPE.VARCHAR)
+        
+        # por compatibilidad con diferentes motores manejamos los nombres de las columnas en minuscula
+        if lower_col_names:
+            result.columns = [col.lower() for col in result.columns]
+        response = Response(RESPONSE_TYPE.TABLE, data_frame=result, mysql_types=mysql_types) 
 
         return response
 
@@ -274,7 +142,7 @@ class SqlServerHandler(DatabaseHandler):
         Returns:
             Response: The response from the `native_query` method, containing the result of the SQL query execution.
         """
-        query_str = self.renderer.get_string(query, with_failback=True)
+        query_str = self.renderer.get_string(query, with_failback=True)        
         logger.debug(f"Executing SQL query: {query_str}")
         return self.native_query(query_str)
 
@@ -294,7 +162,9 @@ class SqlServerHandler(DatabaseHandler):
             FROM {self.database}.INFORMATION_SCHEMA.TABLES
             WHERE TABLE_TYPE in ('BASE TABLE', 'VIEW');
         """
-        return self.native_query(query)
+        resp = self.native_query(query, lower_col_names=False)
+        print(resp)
+        return resp
 
     def get_columns(self, table_name) -> Response:
         """
@@ -328,6 +198,6 @@ class SqlServerHandler(DatabaseHandler):
             WHERE
                 table_name = '{table_name}'
         """
-        result = self.native_query(query)
-        result.to_columns_table_response(map_type_fn=_map_type)
+        result = self.native_query(query, lower_col_names=False)
+        result.resp_type = RESPONSE_TYPE.COLUMNS_TABLE
         return result

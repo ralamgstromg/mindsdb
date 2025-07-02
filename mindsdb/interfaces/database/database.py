@@ -24,6 +24,7 @@ class DatabaseController:
         if name not in databases:
             raise EntityNotExistsError("Database does not exists", name)
         db_type = databases[name]["type"]
+        print(db_type)
         if db_type == "project":
             project = self.get_project(name)
             project.delete()
