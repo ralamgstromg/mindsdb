@@ -62,7 +62,7 @@ from mindsdb.api.mysql.mysql_proxy.libs.constants.mysql import (
     CHARSET_NUMBERS,
     SERVER_STATUS,
     CAPABILITIES,
-    NULL_VALUE,
+    ##NULL_VALUE,
     COMMANDS,
     ERR,
     getConstName
@@ -90,6 +90,31 @@ logger = log.getLogger(__name__)
 
 def empty_fn():
     pass
+
+
+NULL_VALUE = b"\xfb"
+TWO_BYTE_ENC = b"\xfc"
+THREE_BYTE_ENC = b"\xfd"
+EIGHT_BYTE_ENC = b"\xfe"
+NULL_VALUE_INT = ord(NULL_VALUE)
+
+def serialize_bytes_only(value: bytes) -> bytes:
+    val_len = len(value)
+
+    if val_len == 0:
+        return b"\0"
+    if val_len < NULL_VALUE_INT:
+        return struct.pack("B", val_len) + value
+
+    byte_count = (val_len.bit_length() + 7) // 8
+    if byte_count <= 2:
+        return TWO_BYTE_ENC + struct.pack("<H", val_len) + value
+    if byte_count <= 3:
+        return THREE_BYTE_ENC + struct.pack("<I", val_len)[:3] + value
+    if byte_count <= 8:
+        return EIGHT_BYTE_ENC + struct.pack("<Q", val_len) + value
+
+    raise ValueError(f"Value too long to serialize: {val_len} bytes")
 
 
 @dataclass
@@ -426,19 +451,7 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
 
     def send_table_packets(self, result_set: ResultSet, status: int = 0):
         df, columns_dicts = dump_result_set_to_mysql(result_set, infer_column_size=True)
-        # text protocol, convert all to string and serialize as packages
 
-        # print(type(df))
-        # print(df)
-
-        # def apply_f(v):
-        #     if v is None:
-        #         return NULL_VALUE
-        #     if not isinstance(v, str):
-        #         v = str(v)
-        #     return Datum.serialize_str(v)
-
-        # columns packages
         packets = [self.packet(ColumnCountPacket, count=len(columns_dicts))]
 
         packets.extend(self._get_column_defenition_packets(columns_dicts))
@@ -447,35 +460,21 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
             packets.append(self.packet(EofPacket, status=status))
         self.send_package_group(packets)
 
-        # chunk_size = 100
-        # for start in range(0, len(df), chunk_size):
-        #     string = b"".join([
-        #         self.packet(body=body, length=len(body)).accum()
-        #         #for body in df[start:start + chunk_size].applymap(apply_f).values.sum(axis=1)
-        #         for body in df[start:start + chunk_size].applymap(apply_f).values.sum(axis=1)
-        #     ])
-        #     self.socket.sendall(string)
+        expressions = []
+        for col_name in df.columns:
+            col_expr = pd.col(col_name)
+            if df[col_name].dtype != pd.Binary:
+                col_expr = col_expr.cast(pd.Utf8).cast(pd.Binary)
 
-        # processed_df = df.with_columns([
-        #     pd.col(col).map_elements(
-        #         lambda v: NULL_VALUE if v is None else (Datum.serialize_str(str(v)) if not isinstance(v, bytes) else v),
-        #         return_dtype=pd.Binary
-        #     ).alias(col) for col in df.columns
-        # ])
+            processed_expr = col_expr.map_elements(
+                serialize_bytes_only, return_dtype=pd.Binary
+            ).fill_null(NULL_VALUE)
 
-        processed_df = df.with_columns([
-            pd.when(pd.col(col).is_null())
-            .then(pd.lit(NULL_VALUE))
-            .otherwise(
-                pd.col(col).map_elements(
-                    lambda x: Datum.serialize_str(str(x)) if not isinstance(x, bytes) else x,
-                    return_dtype=pd.Binary
-                )
-            ).alias(col) for col in df.columns
-        ]
-        )
+            expressions.append(processed_expr.alias(col_name))
 
-        chunk_size = 100
+        processed_df = df.with_columns(expressions)
+
+        chunk_size = 1000
         for i in range(0, processed_df.height, chunk_size):
             chunk = processed_df.slice(i, chunk_size)
             byte_arrays_for_chunk = chunk.to_numpy()
@@ -485,7 +484,7 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
                 for body in concatenated_rows_bytes
             ])
             self.socket.sendall(string_to_send)
-            
+
 
     def decode_utf(self, text):
         try:

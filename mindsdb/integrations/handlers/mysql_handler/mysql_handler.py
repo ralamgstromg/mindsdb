@@ -128,6 +128,7 @@ class MySQLHandler(DatabaseHandler):
         response = None       
         try:            
             result = pd.read_database_uri(query=query, uri=self.uri, engine="connectorx", protocol="binary")
+            #print(result)
 
             mysql_types: list[MYSQL_DATA_TYPE] = []
             for dtype in result.dtypes:
@@ -153,6 +154,8 @@ class MySQLHandler(DatabaseHandler):
             # por compatibilidad con diferentes motores manejamos los nombres de las columnas en minuscula
             if lower_col_names:
                 result.columns = [col.lower() for col in result.columns]
+
+            print(mysql_types)
 
             response = Response(RESPONSE_TYPE.TABLE, data_frame=result, mysql_types=mysql_types)             
         except Exception as e:
@@ -202,7 +205,7 @@ class MySQLHandler(DatabaseHandler):
             SELECT
                 TABLE_SCHEMA AS table_schema,
                 TABLE_NAME AS table_name,
-                CASE WHEN TABLE_TYPE = 'VIEW' AND FLAGS = 'IS_TABLE_VALUED_FUNCTION' THEN 'TABLE FUNCTION' ELSE TABLE_TYPE END AS table_type
+                TABLE_TYPE AS table_type
             FROM
                 information_schema.TABLES
             WHERE
@@ -212,6 +215,7 @@ class MySQLHandler(DatabaseHandler):
             ;
         """
         result = self.native_query(sql, lower_col_names=False)
+        #print(result)
         return result
 
     def get_columns(self, table_name) -> Response:

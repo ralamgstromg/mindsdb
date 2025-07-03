@@ -379,49 +379,49 @@ def dump_result_set_to_mysql(
 
     #print("Dumping result set to MySQL format", type(df), df.shape)
     #print(df)
-    #print(result_set.columns)
+    # print(result_set.columns)
 
-    #print(df)
+    # #print(df)
     
-    for i, column in enumerate(result_set.columns):
-        series = df[column.name]
-        #print(series)
-        if isinstance(column.type, MYSQL_DATA_TYPE) is False:
-            column.type = get_mysql_data_type_from_series(series)        
+    # for i, column in enumerate(result_set.columns):
+    #     series = df[column.name]
+    #     #print(series)
+    #     if isinstance(column.type, MYSQL_DATA_TYPE) is False:
+    #         column.type = get_mysql_data_type_from_series(series)        
 
-        column_type: MYSQL_DATA_TYPE = column.type
+    #     column_type: MYSQL_DATA_TYPE = column.type
     
-        #print(column_type, series.dtype)
+    #     #print(column_type, series.dtype)
 
-        match column_type:
-            case MYSQL_DATA_TYPE.BOOL | MYSQL_DATA_TYPE.BOOLEAN:
-                series = _handle_series_as_bool(series)
-            case MYSQL_DATA_TYPE.DATE:
-                series = _handle_series_as_date(series)
-            case MYSQL_DATA_TYPE.DATETIME:
-                series = _handle_series_as_datetime(series)
-                # print(series)
-            case MYSQL_DATA_TYPE.TIME:
-                series = _handle_series_as_time(series)
-            case (
-                MYSQL_DATA_TYPE.INT
-                | MYSQL_DATA_TYPE.TINYINT
-                | MYSQL_DATA_TYPE.SMALLINT
-                | MYSQL_DATA_TYPE.MEDIUMINT
-                | MYSQL_DATA_TYPE.BIGINT
-            ):
-                series = _handle_series_as_int(series)
-            case MYSQL_DATA_TYPE.VECTOR:
-                series = _handle_series_as_vector(series)
-            case MYSQL_DATA_TYPE.JSON:
-                series = series.struct.json_encode()
+    #     match column_type:
+    #         case MYSQL_DATA_TYPE.BOOL | MYSQL_DATA_TYPE.BOOLEAN:
+    #             series = _handle_series_as_bool(series)
+    #         case MYSQL_DATA_TYPE.DATE:
+    #             series = _handle_series_as_date(series)
+    #         case MYSQL_DATA_TYPE.DATETIME:
+    #             series = _handle_series_as_datetime(series)
+    #             # print(series)
+    #         case MYSQL_DATA_TYPE.TIME:
+    #             series = _handle_series_as_time(series)
+    #         case (
+    #             MYSQL_DATA_TYPE.INT
+    #             | MYSQL_DATA_TYPE.TINYINT
+    #             | MYSQL_DATA_TYPE.SMALLINT
+    #             | MYSQL_DATA_TYPE.MEDIUMINT
+    #             | MYSQL_DATA_TYPE.BIGINT
+    #         ):
+    #             series = _handle_series_as_int(series)
+    #         case MYSQL_DATA_TYPE.VECTOR:
+    #             series = _handle_series_as_vector(series)
+    #         case MYSQL_DATA_TYPE.JSON:
+    #             series = series.struct.json_encode()
             
-            case _:
-                series = series.cast(pd.String)
+    #         case _:
+    #             series = series.cast(pd.String)
 
-        df = df.with_columns([
-            series.alias(column.name)
-        ])
+    #     df = df.with_columns([
+    #         series.alias(column.name)
+    #     ])
 
         #print(series)
 
@@ -429,19 +429,25 @@ def dump_result_set_to_mysql(
         # we may split this operation for dt and other types for optimisation
         #df[i] = series.replace([pd.Null], None)
 
+    # print(result_set.columns)
+
+    print(result_set)
+
     columns_dicts = [column_to_mysql_column_dict(column) for column in result_set.columns]
 
-    if infer_column_size and any(column_info.get("size") is None for column_info in columns_dicts):
-        if len(df) == 0:
-            for column_info in columns_dicts:
-                if column_info["size"] is None:
-                    column_info["size"] = 1
-        else:
-            sample = df.head(100)
-            for i, column_info in enumerate(columns_dicts):
-                try:
-                    column_info["size"] = sample[sample.columns[i]].astype(str).str.len().max()
-                except Exception:
-                    column_info["size"] = 1
+    # if infer_column_size and any(column_info.get("size") is None for column_info in columns_dicts):
+    #     if len(df) == 0:
+    #         for column_info in columns_dicts:
+    #             if column_info["size"] is None:
+    #                 column_info["size"] = 1
+    #     else:
+    #         sample = df.head(100)
+    #         for i, column_info in enumerate(columns_dicts):
+    #             try:
+    #                 column_info["size"] = sample[sample.columns[i]].astype(str).str.len().max()
+    #             except Exception:
+    #                 column_info["size"] = 1
+
+    #print(df)
 
     return df, columns_dicts
