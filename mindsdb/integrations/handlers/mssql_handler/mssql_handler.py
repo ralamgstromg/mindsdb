@@ -163,7 +163,7 @@ class SqlServerNgxHandler(DatabaseHandler):
             WHERE TABLE_TYPE in ('BASE TABLE', 'VIEW');
         """
         resp = self.native_query(query, lower_col_names=False)
-        print(resp)
+        #print(resp)
         return resp
 
     def get_columns(self, table_name) -> Response:
