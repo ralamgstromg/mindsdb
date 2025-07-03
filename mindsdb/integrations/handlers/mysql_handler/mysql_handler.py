@@ -8,7 +8,7 @@ import connectorx as cx
 import re
 from mindsdb.utilities.render.sqlalchemy_render import SqlalchemyRender
 from mindsdb_sql_parser.ast.base import ASTNode
-from mindsdb_sql_parser.ast.select import Identifier, Star, Function, Constant
+from mindsdb_sql_parser.ast.select import Identifier, Star, Function, Constant, Select
 
 from mindsdb.utilities import log
 from mindsdb.integrations.libs.base import DatabaseHandler
@@ -169,24 +169,25 @@ class MySQLHandler(DatabaseHandler):
         """
         Retrieve the data from the SQL statement.
         """
-        for tar in query.targets:
-            if isinstance(tar, Star):                
-                cols = cx.get_meta(conn=self.uri,
-                    query=f'SELECT * FROM {query.from_table}',
-                    protocol="binary"
-                )
-                identifiers_arr = []
-                for col, dtype in cols.dtypes.items():
-                    if query.using is not None and "cast_date_nullif" in query.using and query.using["cast_date_nullif"] == True:
-                        if dtype in ('date', 'datetime', 'timestamp', 'datetime64[ns]', 'datetime64[ns, tz]'):
-                            identifiers_arr.append(Function(op="nullif", distinct=False, alias=Identifier(col), args=[Identifier(col), Constant("0000-00-00 00:00:00")]))
+        if isinstance(query, Select):
+            for tar in query.targets:
+                if isinstance(tar, Star):                
+                    cols = cx.get_meta(conn=self.uri,
+                        query=f'SELECT * FROM {query.from_table}',
+                        protocol="binary"
+                    )
+                    identifiers_arr = []
+                    for col, dtype in cols.dtypes.items():
+                        if query.using is not None and "cast_date_nullif" in query.using and query.using["cast_date_nullif"] == True:
+                            if dtype in ('date', 'datetime', 'timestamp', 'datetime64[ns]', 'datetime64[ns, tz]'):
+                                identifiers_arr.append(Function(op="nullif", distinct=False, alias=Identifier(col), args=[Identifier(col), Constant("0000-00-00 00:00:00")]))
+                            else:
+                                identifiers_arr.append(Identifier(col))
                         else:
                             identifiers_arr.append(Identifier(col))
-                    else:
-                        identifiers_arr.append(Identifier(col))
-                
-                query.targets.remove(tar)
-                query.targets = identifiers_arr + query.targets                
+                    
+                    query.targets.remove(tar)
+                    query.targets = identifiers_arr + query.targets                
 
 
         query_str = self.renderer.get_string(query, with_failback=True)        
