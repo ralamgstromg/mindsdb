@@ -4,16 +4,9 @@ import datetime
 
 from urllib import parse
 import connectorx as cx
-#import pymssql
-#from pymssql import OperationalError
-# import pandas as pd
-# from pandas.api import types as pd_types
-#from sqlalchemy.ext.asyncio import create_async_engine
+
 import polars as pd
-# from polars import pandas as pd_types
 
-
-#from mindsdb_sql_parser import parse_sql
 from mindsdb_sql_parser.ast.base import ASTNode
 
 from mindsdb.integrations.libs.base import DatabaseHandler
@@ -38,14 +31,13 @@ class SqlServerNgxHandler(DatabaseHandler):
 
     def __init__(self, name, **kwargs):
         super().__init__(name)
-        #self.parser = parse_sql
-        self.connection_args = kwargs.get('connection_data')
+        self.connection_data = kwargs.get('connection_data')
         self.dialect = 'mssql'
-        self.database = self.connection_args.get('database')
+        self.database = self.connection_data.get('database')
         self.renderer = SqlalchemyRender('mssql')
-        self.uncommitted = self.connection_args.get('uncommitted', True)
+        self.uncommitted = self.connection_data.get('uncommitted', True)
 
-        self.uri = f"mssql://{self.connection_args.get('user')}:{parse.quote_plus(self.connection_args.get('password'))}@{self.connection_args.get('host')}:{self.connection_args.get('port', 1433)}/{self.connection_args.get('database')}?encrypt=true&trust_server_certificate=true"
+        self.uri = f"mssql://{self.connection_data.get('user')}:{parse.quote_plus(self.connection_data.get('password'))}@{self.connection_data.get('host')}:{self.connection_data.get('port', 1433)}/{self.connection_data.get('database')}?encrypt=true&trust_server_certificate=true"
 
     def __del__(self):
         pass
@@ -78,7 +70,6 @@ class SqlServerNgxHandler(DatabaseHandler):
         """
         response = StatusResponse(False)
         try:
-            #print(self.uri)
             cx.read_sql(conn=self.uri, query="SELECT 1 as resp;")
             logger.info(f'Connected to Microsoft SQL Server {self.database}')
             response.success = True
@@ -163,7 +154,6 @@ class SqlServerNgxHandler(DatabaseHandler):
             WHERE TABLE_TYPE in ('BASE TABLE', 'VIEW');
         """
         resp = self.native_query(query, lower_col_names=False)
-        #print(resp)
         return resp
 
     def get_columns(self, table_name) -> Response:

@@ -5,8 +5,10 @@ import connectorx as cx
 #import mysql.connector
 
 #from mindsdb_sql_parser import parse_sql
+import re
 from mindsdb.utilities.render.sqlalchemy_render import SqlalchemyRender
 from mindsdb_sql_parser.ast.base import ASTNode
+from mindsdb_sql_parser.ast.select import Identifier, Star, Function, Constant
 
 from mindsdb.utilities import log
 from mindsdb.integrations.libs.base import DatabaseHandler
@@ -15,6 +17,10 @@ from mindsdb.integrations.libs.response import (
     HandlerResponseNgx as Response,
     RESPONSE_TYPE,
 )
+
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 #from mindsdb.integrations.handlers.mysql_handler.settings import ConnectionConfig
 # from mindsdb.api.mysql.mysql_proxy.libs.constants.mysql import MYSQL_DATA_TYPE
 # from mindsdb.api.mysql.mysql_proxy.libs.constants.mysql import C_TYPES, DATA_C_TYPE_MAP
@@ -22,136 +28,6 @@ from mindsdb.integrations.libs.response import (
 from mindsdb.api.mysql.mysql_proxy.libs.constants.mysql import MYSQL_DATA_TYPE
 
 logger = log.getLogger(__name__)
-
-
-# def _map_type(mysql_type_text: str) -> MYSQL_DATA_TYPE:
-#     """Map MySQL text types names to MySQL types as enum.
-
-#     Args:
-#         mysql_type_text (str): The name of the MySQL type to map.
-
-#     Returns:
-#         MYSQL_DATA_TYPE: The MySQL type enum that corresponds to the MySQL text type name.
-#     """
-#     try:
-#         return MYSQL_DATA_TYPE(mysql_type_text.upper())
-#     except Exception:
-#         logger.warning(f"MySQL handler: unknown type: {mysql_type_text}, use TEXT as fallback.")
-#         return MYSQL_DATA_TYPE.TEXT
-
-
-# def _make_table_response(result: list[dict], cursor: mysql.connector.cursor.MySQLCursor) -> Response:
-#     """Build response from result and cursor.
-
-#     Args:
-#         result (list[dict]): result of the query.
-#         cursor (mysql.connector.cursor.MySQLCursor): cursor object.
-
-#     Returns:
-#         Response: response object.
-#     """
-#     description = cursor.description
-#     reverse_c_type_map = {v.code: k for k, v in DATA_C_TYPE_MAP.items() if v.code != C_TYPES.MYSQL_TYPE_BLOB}
-#     mysql_types: list[MYSQL_DATA_TYPE] = []
-#     for col in description:
-#         type_int = col[1]
-#         if isinstance(type_int, int) is False:
-#             mysql_types.append(MYSQL_DATA_TYPE.TEXT)
-#             continue
-
-#         if type_int == C_TYPES.MYSQL_TYPE_TINY:
-#             # There are 3 types that returns as TINYINT: TINYINT, BOOL, BOOLEAN.
-#             mysql_types.append(MYSQL_DATA_TYPE.TINYINT)
-#             continue
-
-#         if type_int in reverse_c_type_map:
-#             mysql_types.append(reverse_c_type_map[type_int])
-#             continue
-
-#         if type_int == C_TYPES.MYSQL_TYPE_BLOB:
-#             # region determine text/blob type by flags
-#             # Unfortunately, there is no way to determine particular type of text/blob column by flags.
-#             # Subtype have to be determined by 8-s element of description tuple, but mysql.conector
-#             # return the same value for all text types (TINYTEXT, TEXT, MEDIUMTEXT, LONGTEXT), and for
-#             # all blob types (TINYBLOB, BLOB, MEDIUMBLOB, LONGBLOB).
-#             if col[7] == 16:  # and col[8] == 45
-#                 mysql_types.append(MYSQL_DATA_TYPE.TEXT)
-#             elif col[7] == 144:  # and col[8] == 63
-#                 mysql_types.append(MYSQL_DATA_TYPE.BLOB)
-#             else:
-#                 logger.debug(f"MySQL handler: unknown type code {col[7]}, use TEXT as fallback.")
-#                 mysql_types.append(MYSQL_DATA_TYPE.TEXT)
-#             # endregion
-#         else:
-#             logger.warning(f"MySQL handler: unknown type id={type_int} in column {col[0]}, use TEXT as fallback.")
-#             mysql_types.append(MYSQL_DATA_TYPE.TEXT)
-
-#     # region cast int and bool to nullable types
-#     serieses = []
-#     for i, mysql_type in enumerate(mysql_types):
-#         expected_dtype = None
-#         column_name = description[i][0]
-#         if mysql_type in (
-#             MYSQL_DATA_TYPE.SMALLINT,
-#             MYSQL_DATA_TYPE.INT,
-#             MYSQL_DATA_TYPE.MEDIUMINT,
-#             MYSQL_DATA_TYPE.BIGINT,
-#             MYSQL_DATA_TYPE.TINYINT,
-#         ):
-#             expected_dtype = pd.Int64
-#         elif mysql_type in (MYSQL_DATA_TYPE.BOOL, MYSQL_DATA_TYPE.BOOLEAN):
-#             expected_dtype = pd.Boolean
-#         elif mysql_type in (
-#             MYSQL_DATA_TYPE.FLOAT,
-#             MYSQL_DATA_TYPE.DOUBLE,
-#             MYSQL_DATA_TYPE.DECIMAL,
-#         ):
-#             expected_dtype = pd.Float64
-#         elif mysql_type in (
-#             MYSQL_DATA_TYPE.TEXT,
-#             MYSQL_DATA_TYPE.VARCHAR,
-#             MYSQL_DATA_TYPE.CHAR,
-#             MYSQL_DATA_TYPE.TINYTEXT,
-#             MYSQL_DATA_TYPE.MEDIUMTEXT,
-#             MYSQL_DATA_TYPE.LONGTEXT,
-#         ):
-#             expected_dtype = pd.String
-#         elif mysql_type in (
-#             MYSQL_DATA_TYPE.BLOB,
-#             MYSQL_DATA_TYPE.TINYBLOB,
-#             MYSQL_DATA_TYPE.MEDIUMBLOB,
-#             MYSQL_DATA_TYPE.LONGBLOB,
-#         ):
-#             expected_dtype = pd.String
-#         elif mysql_type in (
-#             MYSQL_DATA_TYPE.VARBINARY,
-#             MYSQL_DATA_TYPE.BINARY,
-#         ):
-#             expected_dtype = pd.String
-#         elif mysql_type in (
-#             MYSQL_DATA_TYPE.DATE,
-#         ):
-#             expected_dtype = pd.Date
-#         elif mysql_type in (
-#             MYSQL_DATA_TYPE.DATETIME,
-#             MYSQL_DATA_TYPE.TIMESTAMP,
-#         ):
-#             expected_dtype = pd.Datetime
-#         elif mysql_type in (
-#             MYSQL_DATA_TYPE.TIME,
-#         ):
-#             expected_dtype = pd.Time
-#         else:
-#             logger.warning(f"MySQL handler: unknown type {mysql_type}, use TEXT as fallback.")
-#             expected_dtype = pd.String
-
-#         serieses.append(pd.Series(name=column_name, values=[row[column_name] for row in result], dtype=expected_dtype))
-#     df = pd.DataFrame(serieses)
-#     # print(df)
-
-#     response = Response(RESPONSE_TYPE.TABLE, df, affected_rows=cursor.rowcount, mysql_types=mysql_types)
-#     return response
-
 
 class MySQLHandler(DatabaseHandler):
     """
@@ -167,12 +43,12 @@ class MySQLHandler(DatabaseHandler):
         super().__init__(name)
         #self.parser = parse_sql
         self.dialect = "mysql"
-        self.connection_args = kwargs.get("connection_data", {})
-        self.database = self.connection_args.get("database")
+        self.connection_data = kwargs.get("connection_data", {})
+        self.database = self.connection_data.get("database")
         self.renderer = SqlalchemyRender('mysql')
 
         # self.connection = None
-        self.uri = f"mysql://{self.connection_args.get('user')}:{parse.quote_plus(self.connection_args.get('password'))}@{self.connection_args.get('host')}:{self.connection_args.get('port', 3306)}/{self.connection_args.get('database')}"
+        self.uri = f"mysql://{self.connection_data.get('user')}:{parse.quote_plus(self.connection_data.get('password'))}@{self.connection_data.get('host')}:{self.connection_data.get('port', 3306)}/{self.connection_data.get('database')}"
 
     def __del__(self):
         pass
@@ -214,52 +90,12 @@ class MySQLHandler(DatabaseHandler):
             MySQLConnection: An active connection to the database.
         """
         pass
-        # if self.is_connected and self.connection.is_connected():
-        #     return self.connection
-        # config = self._unpack_config()
-        # if "conn_attrs" in self.connection_data:
-        #     config["conn_attrs"] = self.connection_data["conn_attrs"]
-
-        # if "connection_timeout" not in config:
-        #     config["connection_timeout"] = 10
-
-        # ssl = self.connection_data.get("ssl")
-        # if ssl is True:
-        #     ssl_ca = self.connection_data.get("ssl_ca")
-        #     ssl_cert = self.connection_data.get("ssl_cert")
-        #     ssl_key = self.connection_data.get("ssl_key")
-        #     config["client_flags"] = [mysql.connector.constants.ClientFlag.SSL]
-        #     if ssl_ca is not None:
-        #         config["ssl_ca"] = ssl_ca
-        #     if ssl_cert is not None:
-        #         config["ssl_cert"] = ssl_cert
-        #     if ssl_key is not None:
-        #         config["ssl_key"] = ssl_key
-        # elif ssl is False:
-        #     config["ssl_disabled"] = True
-
-        # if "collation" not in config:
-        #     config["collation"] = "utf8mb4_general_ci"
-        # if "use_pure" not in config:
-        #     config["use_pure"] = True
-        # try:
-        #     connection = mysql.connector.connect(**config)
-        #     connection.autocommit = True
-        #     self.connection = connection
-        #     return self.connection
-        # except mysql.connector.Error as e:
-        #     logger.error(f"Error connecting to MySQL {self.database}, {e}!")
-        #     raise
 
     def disconnect(self):
         """
         Closes the connection to the MySQL database if it's currently open.
         """
         pass
-        # if self.is_connected is False:
-        #     return
-        # self.connection.close()
-        # return
 
     def check_connection(self) -> StatusResponse:
         """
@@ -270,7 +106,6 @@ class MySQLHandler(DatabaseHandler):
         """
         response = StatusResponse(False)
         try:
-            #print(self.uri)
             cx.read_sql(conn=self.uri, query="SELECT 1 as resp;")
             logger.info(f'Connected to MySQL {self.database}')
             response.success = True
@@ -279,22 +114,8 @@ class MySQLHandler(DatabaseHandler):
             response.error_message = str(e)
         return response
 
-        # result = StatusResponse(False)
-        # need_to_close = not self.is_connected
 
-        # try:
-        #     connection = self.connect()
-        #     result.success = connection.is_connected()
-        # except mysql.connector.Error as e:
-        #     logger.error(f"Error connecting to MySQL {self.connection_data['database']}, {e}!")
-        #     result.error_message = str(e)
-
-        # if result.success and need_to_close:
-        #     self.disconnect()
-
-        # return result
-
-    def native_query(self, query: str, lower_col_names: bool = True) -> Response:
+    def native_query(self, query: str, lower_col_names: bool = True, using: dict = None) -> Response:
         """
         Executes a SQL query on the MySQL database and returns the result.
 
@@ -305,8 +126,8 @@ class MySQLHandler(DatabaseHandler):
             Response: A response object containing the result of the query or an error message.
         """ 
         response = None       
-        try:
-            result = pd.read_database_uri(query=query, uri=self.uri, engine="connectorx")
+        try:            
+            result = pd.read_database_uri(query=query, uri=self.uri, engine="connectorx", protocol="binary")
 
             mysql_types: list[MYSQL_DATA_TYPE] = []
             for dtype in result.dtypes:
@@ -333,47 +154,44 @@ class MySQLHandler(DatabaseHandler):
             if lower_col_names:
                 result.columns = [col.lower() for col in result.columns]
 
-            #print(result.dtypes)
             response = Response(RESPONSE_TYPE.TABLE, data_frame=result, mysql_types=mysql_types)             
         except Exception as e:
+            logger.error(f"Error running query: {query} on {self.connection_data['database']}!")
+            response = Response(RESPONSE_TYPE.ERROR, error_message=str(e))
+        except pd.exceptions.PanicException as e:
             logger.error(f"Error running query: {query} on {self.connection_data['database']}!")
             response = Response(RESPONSE_TYPE.ERROR, error_message=str(e))
         
         return response 
 
-        # need_to_close = not self.is_connected
-        # connection = None
-        # try:
-        #     connection = self.connect()
-        #     with connection.cursor(dictionary=True, buffered=True) as cur:
-        #         cur.execute(query)
-        #         if cur.with_rows:
-        #             result = cur.fetchall()
-        #             response = _make_table_response(result, cur)
-        #         else:
-        #             response = Response(RESPONSE_TYPE.OK, affected_rows=cur.rowcount)
-        # except mysql.connector.Error as e:
-        #     logger.error(f"Error running query: {query} on {self.connection_data['database']}!")
-        #     response = Response(RESPONSE_TYPE.ERROR, error_message=str(e))
-        #     if connection is not None and connection.is_connected():
-        #         connection.rollback()
-
-        # if need_to_close:
-        #     self.disconnect()
-
-        # return response
 
     def query(self, query: ASTNode) -> Response:
         """
         Retrieve the data from the SQL statement.
         """
-        #print(query.using)
+        for tar in query.targets:
+            if isinstance(tar, Star):                
+                cols = cx.get_meta(conn=self.uri,
+                    query=f'SELECT * FROM {query.from_table}',
+                    protocol="binary"
+                )
+                identifiers_arr = []
+                for col, dtype in cols.dtypes.items():
+                    if query.using is not None and "cast_date_nullif" in query.using and query.using["cast_date_nullif"] == True:
+                        if dtype in ('date', 'datetime', 'timestamp', 'datetime64[ns]', 'datetime64[ns, tz]'):
+                            identifiers_arr.append(Function(op="nullif", distinct=False, alias=Identifier(col), args=[Identifier(col), Constant("0000-00-00 00:00:00")]))
+                        else:
+                            identifiers_arr.append(Identifier(col))
+                    else:
+                        identifiers_arr.append(Identifier(col))
+                
+                query.targets.remove(tar)
+                query.targets = identifiers_arr + query.targets                
+
+
         query_str = self.renderer.get_string(query, with_failback=True)        
-        logger.debug(f"Executing SQL query: {query_str}")
-        return self.native_query(query_str)
-        # renderer = SqlalchemyRender("mysql")
-        # query_str = renderer.get_string(query, with_failback=True)
-        # return self.native_query(query_str)
+        return self.native_query(query_str, using=query.using)
+
 
     def get_tables(self) -> Response:
         """
@@ -419,6 +237,5 @@ class MySQLHandler(DatabaseHandler):
                 table_name = '{table_name}';
         """
         result = self.native_query(q, lower_col_names=False)
-        #result.to_columns_table_response(map_type_fn=_map_type)
         result.resp_type = RESPONSE_TYPE.COLUMNS_TABLE
         return result
