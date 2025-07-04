@@ -283,5 +283,5 @@ class IntegrationDataNode(DataNode):
         #print(df)
 
         return DataHubResponse(
-            data_frame=df, columns=columns_info, affected_rows=result.affected_rows, mysql_types=result.mysql_types
+            data_frame=df, columns=columns_info, affected_rows=result.affected_rows #, mysql_types=result.mysql_types
         )

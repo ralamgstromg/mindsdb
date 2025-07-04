@@ -78,7 +78,7 @@ class SqlServerNgxHandler(DatabaseHandler):
             response.error_message = str(e)
         return response
 
-    def native_query(self, query: str, lower_col_names: bool = True) -> Response:
+    def native_query(self, query: str, lower_col_names: bool = True, column_types_pl: dict = None) -> Response:
         """
         Executes a SQL query on the Microsoft SQL Server database and returns the result.
 
@@ -93,35 +93,29 @@ class SqlServerNgxHandler(DatabaseHandler):
             sql = "SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; SET NOCOUNT ON; "
         sql = f"{sql}{query}"
 
-        result = pd.read_database_uri(query=sql, uri=self.uri, engine="connectorx")
+        try:            
+            result = pd.read_database_uri(query=sql, uri=self.uri, engine="connectorx", protocol="binary")
 
-        mysql_types: list[MYSQL_DATA_TYPE] = []
-        for dtype in result.dtypes:
-            match dtype:
-                case pd.String | pd.Object: # Varchar
-                    mysql_types.append(MYSQL_DATA_TYPE.VARCHAR)
-                case pd.Date: # Date
-                    mysql_types.append(MYSQL_DATA_TYPE.DATE)
-                case pd.Int8 | pd.Int16 | pd.Int32 | pd.Int64 | pd.UInt8 | pd.UInt16 | pd.UInt32 | pd.UInt64: # Integer
-                    mysql_types.append(MYSQL_DATA_TYPE.BIGINT)
-                case pd.Datetime: # Datetime
-                    mysql_types.append(MYSQL_DATA_TYPE.DATETIME)
-                case pd.Float32 | pd.Float64: # Decimal
-                    mysql_types.append(MYSQL_DATA_TYPE.FLOAT)
-                case pd.Binary: # Binary
-                    mysql_types.append(MYSQL_DATA_TYPE.BINARY)
-                case pd.Boolean: # Binary
-                    mysql_types.append(MYSQL_DATA_TYPE.BIT)
-                case _:
-                    logger.info(f"Unknown type: {dtype}, use VARCHAR as fallback.")
-                    mysql_types.append(MYSQL_DATA_TYPE.VARCHAR)
+            if column_types_pl is None:
+                column_types_pl = {
+                    col[0]: col[1] for col in result.schema
+                }
+            
+            if lower_col_names:
+                result.cast({col: column_types_pl.get(col, pd.String) for col in result.columns})
+                result.columns = [col.lower() for col in result.columns]
+            else:
+                result.cast({col: column_types_pl.get(col, pd.String) for col in result.columns})
+
+            response = Response(RESPONSE_TYPE.TABLE, data_frame=result)
+        except Exception as e:
+            logger.error(f"Error running query: {query} on {self.connection_data['database']}!")
+            response = Response(RESPONSE_TYPE.ERROR, error_message=str(e))
+        except pd.exceptions.PanicException as e:
+            logger.error(f"Error running query: {query} on {self.connection_data['database']}!")
+            response = Response(RESPONSE_TYPE.ERROR, error_message=str(e))
         
-        # por compatibilidad con diferentes motores manejamos los nombres de las columnas en minuscula
-        if lower_col_names:
-            result.columns = [col.lower() for col in result.columns]
-        response = Response(RESPONSE_TYPE.TABLE, data_frame=result, mysql_types=mysql_types) 
-
-        return response
+        return response 
 
     def query(self, query: ASTNode) -> Response:
         """
@@ -134,7 +128,6 @@ class SqlServerNgxHandler(DatabaseHandler):
             Response: The response from the `native_query` method, containing the result of the SQL query execution.
         """
         query_str = self.renderer.get_string(query, with_failback=True)        
-        logger.debug(f"Executing SQL query: {query_str}")
         return self.native_query(query_str)
 
     def get_tables(self) -> Response:

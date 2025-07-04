@@ -235,7 +235,7 @@ class PostgresHandler(MetaDatabaseHandler):
         return response
 
 
-    def native_query(self, query: str, params=None, lower_col_names: bool = True) -> Response:
+    def native_query(self, query: str, params=None, lower_col_names: bool = True, column_types_pl: dict = None) -> Response:
         """
         Executes a SQL query on the PostgreSQL database and returns the result.
 
@@ -245,34 +245,29 @@ class PostgresHandler(MetaDatabaseHandler):
         Returns:
             Response: A response object containing the result of the query or an error message.
         """
-        result = pd.read_database_uri(query=query, uri=self.uri, engine="connectorx")
-        mysql_types: list[MYSQL_DATA_TYPE] = []
-        for dtype in result.dtypes:
-            match dtype:
-                case pd.String | pd.Object: # Varchar
-                    mysql_types.append(MYSQL_DATA_TYPE.VARCHAR)
-                case pd.Date: # Date
-                    mysql_types.append(MYSQL_DATA_TYPE.DATE)
-                case pd.Int8 | pd.Int16 | pd.Int32 | pd.Int64 | pd.UInt8 | pd.UInt16 | pd.UInt32 | pd.UInt64: # Integer
-                    mysql_types.append(MYSQL_DATA_TYPE.BIGINT)
-                case pd.Datetime: # Datetime
-                    mysql_types.append(MYSQL_DATA_TYPE.DATETIME)
-                case pd.Float32 | pd.Float64: # Decimal
-                    mysql_types.append(MYSQL_DATA_TYPE.FLOAT)
-                case pd.Binary: # Binary
-                    mysql_types.append(MYSQL_DATA_TYPE.BINARY)
-                case pd.Boolean: # Binary
-                    mysql_types.append(MYSQL_DATA_TYPE.BIT)
-                case _:
-                    logger.info(f"Unknown type: {dtype}, use VARCHAR as fallback.")
-                    mysql_types.append(MYSQL_DATA_TYPE.VARCHAR)
-        
-        # por compatibilidad con diferentes motores manejamos los nombres de las columnas en minuscula
-        if lower_col_names:
-            result.columns = [col.lower() for col in result.columns]
-        response = Response(RESPONSE_TYPE.TABLE, data_frame=result, mysql_types=mysql_types) 
+        try:            
+            result = pd.read_database_uri(query=query, uri=self.uri, engine="connectorx", protocol="binary")
 
-        return response
+            if column_types_pl is None:
+                column_types_pl = {
+                    col[0]: col[1] for col in result.schema
+                }
+            
+            if lower_col_names:
+                result.cast({col: column_types_pl.get(col, pd.String) for col in result.columns})
+                result.columns = [col.lower() for col in result.columns]
+            else:
+                result.cast({col: column_types_pl.get(col, pd.String) for col in result.columns})
+
+            response = Response(RESPONSE_TYPE.TABLE, data_frame=result)
+        except Exception as e:
+            logger.error(f"Error running query: {query} on {self.connection_data['database']}!")
+            response = Response(RESPONSE_TYPE.ERROR, error_message=str(e))
+        except pd.exceptions.PanicException as e:
+            logger.error(f"Error running query: {query} on {self.connection_data['database']}!")
+            response = Response(RESPONSE_TYPE.ERROR, error_message=str(e))
+        
+        return response 
 
     def query_stream(self, query: ASTNode, fetch_size: int = 1000):
         """
@@ -357,9 +352,33 @@ class PostgresHandler(MetaDatabaseHandler):
         Returns:
             Response: The response from the `native_query` method, containing the result of the SQL query execution.
         """
+        # if isinstance(query, Select):
+        #     for tar in query.targets:
+        #         if isinstance(tar, Star):                
+        #             if len(query.from_table.parts) == 2:
+        #                 table_name = query.from_table.parts[1]
+        #                 schema = query.from_table.parts[0]
+        #             else:
+        #                 table_name = query.from_table.parts[0]
+        #                 schema = "public"
+
+        #             cols = cx.read_sql(conn=self.uri,
+        #                 query=f"SELECT column_name, DATA_TYPE FROM information_schema.columns WHERE table_name = '{table_name}' AND table_schema = '{schema}'",
+        #                 protocol="binary"
+        #             )
+        #             identifiers_arr = []
+        #             for _, col in cols.iterrows():
+        #                 if col["data_type"] in ("money",):
+        #                     identifiers_arr.append(TypeCast(type_name="decimal", precision=[18,4], arg=Identifier(col["column_name"])))
+        #                 else:
+        #                     identifiers_arr.append(Identifier(col["column_name"]))
+                    
+        #             query.targets.remove(tar)
+        #             query.targets = identifiers_arr + query.targets  
+
         if isinstance(query, Select):
             for tar in query.targets:
-                if isinstance(tar, Star):                
+                if isinstance(tar, Star):  
                     if len(query.from_table.parts) == 2:
                         table_name = query.from_table.parts[1]
                         schema = query.from_table.parts[0]
@@ -367,23 +386,51 @@ class PostgresHandler(MetaDatabaseHandler):
                         table_name = query.from_table.parts[0]
                         schema = "public"
 
+                    column_types_pl = {}
                     cols = cx.read_sql(conn=self.uri,
-                        query=f"SELECT column_name, DATA_TYPE FROM information_schema.columns WHERE table_name = '{table_name}' AND table_schema = '{schema}'",
+                        query=f"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{table_name}' AND table_schema = '{schema}'",
                         protocol="binary"
                     )
                     identifiers_arr = []
                     for _, col in cols.iterrows():
+                        r_col = col["column_name"]
+                        r_type = col["data_type"]
                         if col["data_type"] in ("money",):
+                            column_types_pl[r_col] = pd.Float32
                             identifiers_arr.append(TypeCast(type_name="decimal", precision=[18,4], arg=Identifier(col["column_name"])))
+                            continue
+                        if r_type in ('date',):
+                            column_types_pl[r_col] = pd.Date                            
+                        elif r_type in ('datetime', 'timestamp', 'timestamp without time zone', 'timestamp with time zone',):
+                            column_types_pl[r_col] = pd.Datetime
+                        elif r_type in ('time',):
+                            column_types_pl[r_col] = pd.Time
+                        elif r_type in ('bigint',):
+                            column_types_pl[r_col] = pd.Int64
+                        elif r_type in ('int', 'integer',):
+                            column_types_pl[r_col] = pd.Int32
+                        elif r_type in ('smallint','tinyint','enum'):
+                            column_types_pl[r_col] = pd.Int16
+                        elif r_type in ('bit',):
+                            column_types_pl[r_col] = pd.Boolean
+                        elif r_type in ('decimal','double', 'float', 'double precision', 'numeric', 'real'):
+                            column_types_pl[r_col] = pd.Float64
+                        elif r_type in ('varchar','json','longblob','longtext','mediumblob','mediumtext', 'char', 'blob', 'text', 'character varying', 'character'):
+                            column_types_pl[r_col] = pd.String
+                        elif r_type in ('varbinary'):
+                            column_types_pl[r_col] = pd.Binary
                         else:
-                            identifiers_arr.append(Identifier(col["column_name"]))
+                            logger.info(f"Unknown type: {r_type}, use VARCHAR as fallback.")
+                            column_types_pl[r_col] = pd.String
+                        
+                        identifiers_arr.append(Identifier(r_col))
                     
                     query.targets.remove(tar)
-                    query.targets = identifiers_arr + query.targets  
+                    query.targets = identifiers_arr + query.targets    
 
         query_str, params = self.renderer.get_exec_params(query, with_failback=True)
         logger.debug(f"Executing SQL query: {query_str}")
-        return self.native_query(query_str, params)
+        return self.native_query(query_str, params, column_types_pl=column_types_pl)
 
     def get_tables(self, all: bool = False) -> Response:
         """

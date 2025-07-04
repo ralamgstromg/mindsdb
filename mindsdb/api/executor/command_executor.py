@@ -8,6 +8,7 @@ from functools import reduce
 import polars as pd
 from mindsdb_sql_parser import parse_sql
 from mindsdb_sql_parser.ast.mindsdb import AlterDatabase
+from mindsdb.api.mysql.mysql_proxy.libs.constants.mysql import MYSQL_DATA_TYPE
 from mindsdb_sql_parser.ast import (
     Alter,
     ASTNode,
@@ -80,7 +81,7 @@ from mindsdb.api.executor.data_types.answer import ExecuteAnswer
 from mindsdb.api.mysql.mysql_proxy.libs.constants.mysql import (
     CHARSET_NUMBERS,
     SERVER_VARIABLES,
-    TYPES,
+    #TYPES,
 )
 
 from .exceptions import (
@@ -261,6 +262,7 @@ class ExecuteCommands:
                     )
 
                 query = SQLQuery(new_statement, session=self.session, database=database_name)
+                #print("[FILTER_DATABASE]", query)
                 return self.answer_select(query)
             elif sql_category in ("tables", "full tables"):
                 schema = database_name or "mindsdb"
@@ -333,15 +335,19 @@ class ExecuteCommands:
                     "Variable_name": list(data.keys()),
                     "Value": list(data.values())
                 }, schema={"Variable_name": pd.String, "Value": pd.String}, strict=False)
-                # print(df)
+                
                 df2 = query_df(df, new_statement)
+                # print(df2)
 
-                return ExecuteAnswer(data=ResultSet.from_df(df2, table_name="session_variables"))
+                mysql_types=[MYSQL_DATA_TYPE.VARCHAR, MYSQL_DATA_TYPE.VARCHAR]
+
+                return ExecuteAnswer(data=ResultSet.from_df(df2, table_name="session_variables", mysql_types=mysql_types))
             elif sql_category == "search_path":
                 return ExecuteAnswer(
                     data=ResultSet(
                         columns=[Column(name="search_path", table_name="search_path", type="str")],
                         values=[['"$user", public']],
+                        mysql_types=[MYSQL_DATA_TYPE.VARCHAR]
                     )
                 )
             elif "show status like 'ssl_version'" in sql_lower:
@@ -352,6 +358,7 @@ class ExecuteCommands:
                             Column(name="Value", table_name="session_variables", type="str"),
                         ],
                         values=[["Ssl_version", "TLSv1.1"]],
+                        mysql_types=[MYSQL_DATA_TYPE.VARCHAR, MYSQL_DATA_TYPE.VARCHAR]
                     )
                 )
             elif sql_category in ("function status", "procedure status"):
@@ -833,6 +840,7 @@ class ExecuteCommands:
             data=ResultSet(
                 columns=[Column(name=metric_name, table_name="", type="str")],
                 values=[[metric_value]],
+                mysql_types=[MYSQL_DATA_TYPE.VARCHAR]
             )
         )
 
@@ -1583,13 +1591,14 @@ class ExecuteCommands:
 
     def answer_show_create_table(self, table):
         columns = [
-            Column(table_name="", name="Table", type=TYPES.MYSQL_TYPE_VAR_STRING),
-            Column(table_name="", name="Create Table", type=TYPES.MYSQL_TYPE_VAR_STRING),
+            Column(table_name="", name="Table", type=MYSQL_DATA_TYPE.VARCHAR),
+            Column(table_name="", name="Create Table", type=MYSQL_DATA_TYPE.VARCHAR),
         ]
         return ExecuteAnswer(
             data=ResultSet(
                 columns=columns,
                 values=[[table, f"create table {table} ()"]],
+                mysql_types=[MYSQL_DATA_TYPE.VARCHAR, MYSQL_DATA_TYPE.VARCHAR]
             )
         )
 
@@ -1600,7 +1609,8 @@ class ExecuteCommands:
                 alias="Db",
                 table_name="schemata",
                 table_alias="ROUTINES",
-                type="str",
+                #type="str",
+                type=MYSQL_DATA_TYPE.VARCHAR,
                 database="mysql",
                 charset=self.charset_text_type,
             ),
@@ -1609,7 +1619,8 @@ class ExecuteCommands:
                 alias="Db",
                 table_name="routines",
                 table_alias="ROUTINES",
-                type="str",
+                #type="str",
+                type=MYSQL_DATA_TYPE.VARCHAR,
                 database="mysql",
                 charset=self.charset_text_type,
             ),
@@ -1618,7 +1629,8 @@ class ExecuteCommands:
                 alias="Type",
                 table_name="routines",
                 table_alias="ROUTINES",
-                type="str",
+                #type="str",
+                type=MYSQL_DATA_TYPE.VARCHAR,
                 database="mysql",
                 charset=CHARSET_NUMBERS["utf8_bin"],
             ),
@@ -1627,7 +1639,8 @@ class ExecuteCommands:
                 alias="Definer",
                 table_name="routines",
                 table_alias="ROUTINES",
-                type="str",
+                #type="str",
+                type=MYSQL_DATA_TYPE.VARCHAR,
                 database="mysql",
                 charset=CHARSET_NUMBERS["utf8_bin"],
             ),
@@ -1636,7 +1649,8 @@ class ExecuteCommands:
                 alias="Modified",
                 table_name="routines",
                 table_alias="ROUTINES",
-                type=TYPES.MYSQL_TYPE_TIMESTAMP,
+                #type=TYPES.MYSQL_TYPE_TIMESTAMP,
+                type=MYSQL_DATA_TYPE.DATETIME,
                 database="mysql",
                 charset=CHARSET_NUMBERS["binary"],
             ),
@@ -1645,7 +1659,8 @@ class ExecuteCommands:
                 alias="Created",
                 table_name="routines",
                 table_alias="ROUTINES",
-                type=TYPES.MYSQL_TYPE_TIMESTAMP,
+                #type=TYPES.MYSQL_TYPE_TIMESTAMP,
+                type=MYSQL_DATA_TYPE.DATETIME,
                 database="mysql",
                 charset=CHARSET_NUMBERS["binary"],
             ),
@@ -1654,7 +1669,8 @@ class ExecuteCommands:
                 alias="Security_type",
                 table_name="routines",
                 table_alias="ROUTINES",
-                type=TYPES.MYSQL_TYPE_STRING,
+                #type=TYPES.MYSQL_TYPE_STRING,
+                type=MYSQL_DATA_TYPE.VARCHAR,
                 database="mysql",
                 charset=CHARSET_NUMBERS["utf8_bin"],
             ),
@@ -1663,7 +1679,8 @@ class ExecuteCommands:
                 alias="Comment",
                 table_name="routines",
                 table_alias="ROUTINES",
-                type=TYPES.MYSQL_TYPE_BLOB,
+                #type=TYPES.MYSQL_TYPE_BLOB,
+                type=MYSQL_DATA_TYPE.TEXT,
                 database="mysql",
                 charset=CHARSET_NUMBERS["utf8_bin"],
             ),
@@ -1672,7 +1689,8 @@ class ExecuteCommands:
                 alias="character_set_client",
                 table_name="character_sets",
                 table_alias="ROUTINES",
-                type=TYPES.MYSQL_TYPE_VAR_STRING,
+                #type=TYPES.MYSQL_TYPE_VAR_STRING,
+                type=MYSQL_DATA_TYPE.VARCHAR,
                 database="mysql",
                 charset=self.charset_text_type,
             ),
@@ -1681,7 +1699,8 @@ class ExecuteCommands:
                 alias="collation_connection",
                 table_name="collations",
                 table_alias="ROUTINES",
-                type=TYPES.MYSQL_TYPE_VAR_STRING,
+                #type=TYPES.MYSQL_TYPE_VAR_STRING,
+                type=MYSQL_DATA_TYPE.VARCHAR,
                 database="mysql",
                 charset=self.charset_text_type,
             ),
@@ -1690,13 +1709,26 @@ class ExecuteCommands:
                 alias="Database Collation",
                 table_name="collations",
                 table_alias="ROUTINES",
-                type=TYPES.MYSQL_TYPE_VAR_STRING,
+                type=MYSQL_DATA_TYPE.VARCHAR,
                 database="mysql",
                 charset=self.charset_text_type,
             ),
         ]
+        mysql_types = [
+            MYSQL_DATA_TYPE.VARCHAR,
+            MYSQL_DATA_TYPE.VARCHAR,
+            MYSQL_DATA_TYPE.VARCHAR,
+            MYSQL_DATA_TYPE.VARCHAR,
+            MYSQL_DATA_TYPE.DATETIME,
+            MYSQL_DATA_TYPE.DATETIME,
+            MYSQL_DATA_TYPE.VARCHAR,
+            MYSQL_DATA_TYPE.TEXT,
+            MYSQL_DATA_TYPE.VARCHAR,
+            MYSQL_DATA_TYPE.VARCHAR,
+            MYSQL_DATA_TYPE.VARCHAR,
+        ]
 
-        return ExecuteAnswer(data=ResultSet(columns=columns))
+        return ExecuteAnswer(data=ResultSet(columns=columns, mysql_types=mysql_types))
 
     def answer_show_table_status(self, table_name):
         # NOTE at this moment parsed statement only like `SHOW TABLE STATUS LIKE 'table'`.
@@ -1707,7 +1739,8 @@ class ExecuteCommands:
                 "table_name": "tables",
                 "name": "Name",
                 "alias": "Name",
-                "type": TYPES.MYSQL_TYPE_VAR_STRING,
+                #"type": TYPES.MYSQL_TYPE_VAR_STRING,
+                "type": MYSQL_DATA_TYPE.VARCHAR,
                 "charset": self.charset_text_type,
             },
             {
@@ -1715,7 +1748,8 @@ class ExecuteCommands:
                 "table_name": "tables",
                 "name": "Engine",
                 "alias": "Engine",
-                "type": TYPES.MYSQL_TYPE_VAR_STRING,
+                #"type": TYPES.MYSQL_TYPE_VAR_STRING,
+                "type": MYSQL_DATA_TYPE.VARCHAR,
                 "charset": self.charset_text_type,
             },
             {
@@ -1723,7 +1757,8 @@ class ExecuteCommands:
                 "table_name": "tables",
                 "name": "Version",
                 "alias": "Version",
-                "type": TYPES.MYSQL_TYPE_LONGLONG,
+                #"type": TYPES.MYSQL_TYPE_LONGLONG,
+                "type": MYSQL_DATA_TYPE.BIGINT,
                 "charset": CHARSET_NUMBERS["binary"],
             },
             {
@@ -1731,7 +1766,8 @@ class ExecuteCommands:
                 "table_name": "tables",
                 "name": "Row_format",
                 "alias": "Row_format",
-                "type": TYPES.MYSQL_TYPE_VAR_STRING,
+                #"type": TYPES.MYSQL_TYPE_VAR_STRING,
+                "type": MYSQL_DATA_TYPE.VARCHAR,
                 "charset": self.charset_text_type,
             },
             {
@@ -1739,7 +1775,8 @@ class ExecuteCommands:
                 "table_name": "tables",
                 "name": "Rows",
                 "alias": "Rows",
-                "type": TYPES.MYSQL_TYPE_LONGLONG,
+                #"type": TYPES.MYSQL_TYPE_LONGLONG,
+                "type": MYSQL_DATA_TYPE.BIGINT,
                 "charset": CHARSET_NUMBERS["binary"],
             },
             {
@@ -1747,7 +1784,8 @@ class ExecuteCommands:
                 "table_name": "tables",
                 "name": "Avg_row_length",
                 "alias": "Avg_row_length",
-                "type": TYPES.MYSQL_TYPE_LONGLONG,
+                #"type": TYPES.MYSQL_TYPE_LONGLONG,
+                "type": MYSQL_DATA_TYPE.BIGINT,
                 "charset": CHARSET_NUMBERS["binary"],
             },
             {
@@ -1755,7 +1793,8 @@ class ExecuteCommands:
                 "table_name": "tables",
                 "name": "Data_length",
                 "alias": "Data_length",
-                "type": TYPES.MYSQL_TYPE_LONGLONG,
+                #"type": TYPES.MYSQL_TYPE_LONGLONG,
+                "type": MYSQL_DATA_TYPE.BIGINT,
                 "charset": CHARSET_NUMBERS["binary"],
             },
             {
@@ -1763,7 +1802,8 @@ class ExecuteCommands:
                 "table_name": "tables",
                 "name": "Max_data_length",
                 "alias": "Max_data_length",
-                "type": TYPES.MYSQL_TYPE_LONGLONG,
+                #"type": TYPES.MYSQL_TYPE_LONGLONG,
+                "type": MYSQL_DATA_TYPE.BIGINT,
                 "charset": CHARSET_NUMBERS["binary"],
             },
             {
@@ -1771,7 +1811,8 @@ class ExecuteCommands:
                 "table_name": "tables",
                 "name": "Index_length",
                 "alias": "Index_length",
-                "type": TYPES.MYSQL_TYPE_LONGLONG,
+                #"type": TYPES.MYSQL_TYPE_LONGLONG,
+                "type": MYSQL_DATA_TYPE.BIGINT,
                 "charset": CHARSET_NUMBERS["binary"],
             },
             {
@@ -1779,7 +1820,8 @@ class ExecuteCommands:
                 "table_name": "tables",
                 "name": "Data_free",
                 "alias": "Data_free",
-                "type": TYPES.MYSQL_TYPE_LONGLONG,
+                # "type": TYPES.MYSQL_TYPE_LONGLONG,
+                "type": MYSQL_DATA_TYPE.BIGINT,
                 "charset": CHARSET_NUMBERS["binary"],
             },
             {
@@ -1787,7 +1829,8 @@ class ExecuteCommands:
                 "table_name": "tables",
                 "name": "Auto_increment",
                 "alias": "Auto_increment",
-                "type": TYPES.MYSQL_TYPE_LONGLONG,
+                #"type": TYPES.MYSQL_TYPE_LONGLONG,
+                "type": MYSQL_DATA_TYPE.BIGINT,
                 "charset": CHARSET_NUMBERS["binary"],
             },
             {
@@ -1795,7 +1838,8 @@ class ExecuteCommands:
                 "table_name": "tables",
                 "name": "Create_time",
                 "alias": "Create_time",
-                "type": TYPES.MYSQL_TYPE_TIMESTAMP,
+                #"type": TYPES.MYSQL_TYPE_TIMESTAMP,
+                "type": MYSQL_DATA_TYPE.DATETIME,
                 "charset": CHARSET_NUMBERS["binary"],
             },
             {
@@ -1803,7 +1847,8 @@ class ExecuteCommands:
                 "table_name": "tables",
                 "name": "Update_time",
                 "alias": "Update_time",
-                "type": TYPES.MYSQL_TYPE_TIMESTAMP,
+                #"type": TYPES.MYSQL_TYPE_TIMESTAMP,
+                "type": MYSQL_DATA_TYPE.DATETIME,
                 "charset": CHARSET_NUMBERS["binary"],
             },
             {
@@ -1811,7 +1856,8 @@ class ExecuteCommands:
                 "table_name": "tables",
                 "name": "Check_time",
                 "alias": "Check_time",
-                "type": TYPES.MYSQL_TYPE_TIMESTAMP,
+                #"type": TYPES.MYSQL_TYPE_TIMESTAMP,
+                "type": MYSQL_DATA_TYPE.DATETIME,
                 "charset": CHARSET_NUMBERS["binary"],
             },
             {
@@ -1819,7 +1865,8 @@ class ExecuteCommands:
                 "table_name": "tables",
                 "name": "Collation",
                 "alias": "Collation",
-                "type": TYPES.MYSQL_TYPE_VAR_STRING,
+                #"type": TYPES.MYSQL_TYPE_VAR_STRING,
+                "type": MYSQL_DATA_TYPE.VARCHAR,
                 "charset": self.charset_text_type,
             },
             {
@@ -1827,7 +1874,7 @@ class ExecuteCommands:
                 "table_name": "tables",
                 "name": "Checksum",
                 "alias": "Checksum",
-                "type": TYPES.MYSQL_TYPE_LONGLONG,
+                "type": MYSQL_DATA_TYPE.VARCHAR,
                 "charset": CHARSET_NUMBERS["binary"],
             },
             {
@@ -1835,7 +1882,8 @@ class ExecuteCommands:
                 "table_name": "tables",
                 "name": "Create_options",
                 "alias": "Create_options",
-                "type": TYPES.MYSQL_TYPE_VAR_STRING,
+                #"type": TYPES.MYSQL_TYPE_VAR_STRING,
+                "type": MYSQL_DATA_TYPE.VARCHAR,
                 "charset": self.charset_text_type,
             },
             {
@@ -1843,11 +1891,32 @@ class ExecuteCommands:
                 "table_name": "tables",
                 "name": "Comment",
                 "alias": "Comment",
-                "type": TYPES.MYSQL_TYPE_BLOB,
+                #"type": TYPES.MYSQL_TYPE_BLOB,
+                "type": MYSQL_DATA_TYPE.TEXT,
                 "charset": self.charset_text_type,
             },
         ]
         columns = [Column(**d) for d in columns]
+        mysql_types = [
+                MYSQL_DATA_TYPE.VARCHAR,                
+                MYSQL_DATA_TYPE.VARCHAR,
+                MYSQL_DATA_TYPE.BIGINT,
+                MYSQL_DATA_TYPE.VARCHAR,
+                MYSQL_DATA_TYPE.BIGINT,
+                MYSQL_DATA_TYPE.BIGINT,
+                MYSQL_DATA_TYPE.BIGINT,
+                MYSQL_DATA_TYPE.BIGINT,
+                MYSQL_DATA_TYPE.BIGINT,
+                MYSQL_DATA_TYPE.BIGINT,
+                MYSQL_DATA_TYPE.BIGINT,
+                MYSQL_DATA_TYPE.DATETIME,
+                MYSQL_DATA_TYPE.DATETIME,
+                MYSQL_DATA_TYPE.DATETIME,
+                MYSQL_DATA_TYPE.VARCHAR,
+                MYSQL_DATA_TYPE.VARCHAR,
+                MYSQL_DATA_TYPE.VARCHAR,
+                MYSQL_DATA_TYPE.TEXT,
+        ]
         data = [
             [
                 table_name,  # Name
@@ -1870,7 +1939,7 @@ class ExecuteCommands:
                 "",  # Comment
             ]
         ]
-        return ExecuteAnswer(data=ResultSet(columns=columns, values=data))
+        return ExecuteAnswer(data=ResultSet(columns=columns, values=data, mysql_types=mysql_types))
 
     def answer_show_warnings(self):
         columns = [
@@ -1879,7 +1948,8 @@ class ExecuteCommands:
                 "table_name": "",
                 "name": "Level",
                 "alias": "Level",
-                "type": TYPES.MYSQL_TYPE_VAR_STRING,
+                #"type": TYPES.MYSQL_TYPE_VAR_STRING,
+                "type": MYSQL_DATA_TYPE.VARCHAR,
                 "charset": self.charset_text_type,
             },
             {
@@ -1887,7 +1957,8 @@ class ExecuteCommands:
                 "table_name": "",
                 "name": "Code",
                 "alias": "Code",
-                "type": TYPES.MYSQL_TYPE_LONG,
+                #"type": TYPES.MYSQL_TYPE_LONG,
+                "type": MYSQL_DATA_TYPE.TEXT,
                 "charset": CHARSET_NUMBERS["binary"],
             },
             {
@@ -1895,12 +1966,18 @@ class ExecuteCommands:
                 "table_name": "",
                 "name": "Message",
                 "alias": "Message",
-                "type": TYPES.MYSQL_TYPE_VAR_STRING,
+                #"type": TYPES.MYSQL_TYPE_VAR_STRING,
+                "type": MYSQL_DATA_TYPE.VARCHAR,
                 "charset": self.charset_text_type,
             },
         ]
+        mysql_types = [
+            MYSQL_DATA_TYPE.VARCHAR,
+            MYSQL_DATA_TYPE.TEXT,
+            MYSQL_DATA_TYPE.VARCHAR,
+        ]
         columns = [Column(**d) for d in columns]
-        return ExecuteAnswer(data=ResultSet(columns=columns))
+        return ExecuteAnswer(data=ResultSet(columns=columns, mysql_types=mysql_types))
 
     def answer_create_table(self, statement, database_name):
         SQLQuery(statement, session=self.session, execute=True, database=database_name)
@@ -1908,6 +1985,7 @@ class ExecuteCommands:
 
     def answer_select(self, query):
         data = query.fetched_data
+        #print("[DATAS]", data)
         return ExecuteAnswer(data=data)
 
     def answer_update_model_version(self, model_version, database_name):

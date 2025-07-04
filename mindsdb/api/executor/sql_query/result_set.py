@@ -178,6 +178,10 @@ class ResultSet:
         is_prediction: bool = False,
         mysql_types: list[MYSQL_DATA_TYPE] | None = None,
     ):
+        # print(mysql_types)
+        # print(df.columns)
+        # print(table_name)
+        # print("--------------------------------------")
         match mysql_types:
             case None:
                 mysql_types = [None] * len(df.columns)

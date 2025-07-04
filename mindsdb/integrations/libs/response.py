@@ -145,7 +145,7 @@ class HandlerResponseNgx:
     def __init__(
             self, resp_type: RESPONSE_TYPE, data_frame: polars.DataFrame = None, query: ASTNode = 0,
             error_code: int = 0, error_message: str | None = None, affected_rows: int | None = None,
-            mysql_types: list[MYSQL_DATA_TYPE] | None = None
+            #mysql_types: list[MYSQL_DATA_TYPE] | None = None
     ) -> None:
         self.resp_type = resp_type
         self.query = query
@@ -155,7 +155,7 @@ class HandlerResponseNgx:
         self.affected_rows = affected_rows
         if isinstance(self.affected_rows, int) is False or self.affected_rows < 0:
             self.affected_rows = 0
-        self.mysql_types = mysql_types
+        #self.mysql_types = mysql_types
 
     @property
     def type(self):

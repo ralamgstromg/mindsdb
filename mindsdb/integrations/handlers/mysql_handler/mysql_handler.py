@@ -8,7 +8,7 @@ import connectorx as cx
 import re
 from mindsdb.utilities.render.sqlalchemy_render import SqlalchemyRender
 from mindsdb_sql_parser.ast.base import ASTNode
-from mindsdb_sql_parser.ast.select import Identifier, Star, Function, Constant, Select
+from mindsdb_sql_parser.ast.select import Identifier, Star, Function, Constant, Select, TypeCast
 
 from mindsdb.utilities import log
 from mindsdb.integrations.libs.base import DatabaseHandler
@@ -25,7 +25,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 # from mindsdb.api.mysql.mysql_proxy.libs.constants.mysql import MYSQL_DATA_TYPE
 # from mindsdb.api.mysql.mysql_proxy.libs.constants.mysql import C_TYPES, DATA_C_TYPE_MAP
 
-from mindsdb.api.mysql.mysql_proxy.libs.constants.mysql import MYSQL_DATA_TYPE
+#from mindsdb.api.mysql.mysql_proxy.libs.constants.mysql import MYSQL_DATA_TYPE
 
 logger = log.getLogger(__name__)
 
@@ -115,7 +115,7 @@ class MySQLHandler(DatabaseHandler):
         return response
 
 
-    def native_query(self, query: str, lower_col_names: bool = True, using: dict = None) -> Response:
+    def native_query(self, query: str, lower_col_names: bool = True, column_types_pl: dict = None) -> Response:
         """
         Executes a SQL query on the MySQL database and returns the result.
 
@@ -128,36 +128,19 @@ class MySQLHandler(DatabaseHandler):
         response = None       
         try:            
             result = pd.read_database_uri(query=query, uri=self.uri, engine="connectorx", protocol="binary")
-            #print(result)
 
-            mysql_types: list[MYSQL_DATA_TYPE] = []
-            for dtype in result.dtypes:
-                match dtype:
-                    case pd.String | pd.Object: # Varchar
-                        mysql_types.append(MYSQL_DATA_TYPE.VARCHAR)
-                    case pd.Date: # Date
-                        mysql_types.append(MYSQL_DATA_TYPE.DATE)
-                    case pd.Int8 | pd.Int16 | pd.Int32 | pd.Int64 | pd.UInt8 | pd.UInt16 | pd.UInt32 | pd.UInt64: # Integer
-                        mysql_types.append(MYSQL_DATA_TYPE.BIGINT)
-                    case pd.Datetime: # Datetime
-                        mysql_types.append(MYSQL_DATA_TYPE.DATETIME)
-                    case pd.Float32 | pd.Float64: # Decimal
-                        mysql_types.append(MYSQL_DATA_TYPE.FLOAT)
-                    case pd.Binary: # Binary
-                        mysql_types.append(MYSQL_DATA_TYPE.BINARY)
-                    case pd.Boolean: # Binary
-                        mysql_types.append(MYSQL_DATA_TYPE.BIT)
-                    case _:
-                        logger.info(f"Unknown type: {dtype}, use VARCHAR as fallback.")
-                        mysql_types.append(MYSQL_DATA_TYPE.VARCHAR)
+            if column_types_pl is None:
+                column_types_pl = {
+                    col[0]: col[1] for col in result.schema
+                }
             
-            # por compatibilidad con diferentes motores manejamos los nombres de las columnas en minuscula
             if lower_col_names:
+                result.cast({col: column_types_pl.get(col, pd.String) for col in result.columns})
                 result.columns = [col.lower() for col in result.columns]
+            else:
+                result.cast({col: column_types_pl.get(col, pd.String) for col in result.columns})
 
-            print(mysql_types)
-
-            response = Response(RESPONSE_TYPE.TABLE, data_frame=result, mysql_types=mysql_types)             
+            response = Response(RESPONSE_TYPE.TABLE, data_frame=result)
         except Exception as e:
             logger.error(f"Error running query: {query} on {self.connection_data['database']}!")
             response = Response(RESPONSE_TYPE.ERROR, error_message=str(e))
@@ -175,26 +158,52 @@ class MySQLHandler(DatabaseHandler):
         if isinstance(query, Select):
             for tar in query.targets:
                 if isinstance(tar, Star):                
-                    cols = cx.get_meta(conn=self.uri,
-                        query=f'SELECT * FROM {query.from_table}',
+                    column_types_pl = {}
+                    cols = cx.read_sql(conn=self.uri,
+                        query=f"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{query.from_table}' AND table_schema = '{self.database}'",
                         protocol="binary"
                     )
                     identifiers_arr = []
-                    for col, dtype in cols.dtypes.items():
-                        if query.using is not None and "cast_date_nullif" in query.using and query.using["cast_date_nullif"] == True:
-                            if dtype in ('date', 'datetime', 'timestamp', 'datetime64[ns]', 'datetime64[ns, tz]'):
-                                identifiers_arr.append(Function(op="nullif", distinct=False, alias=Identifier(col), args=[Identifier(col), Constant("0000-00-00 00:00:00")]))
-                            else:
-                                identifiers_arr.append(Identifier(col))
+                    for _, col in cols.iterrows():
+                        r_col = col["column_name"]
+                        r_type = col["data_type"]
+                        if r_type in ('date',):
+                            column_types_pl[r_col] = pd.Date
+                            identifiers_arr.append(TypeCast(type_name="date", arg=Function(op="nullif", distinct=False, args=[Identifier(r_col), Constant("0000-00-00")]), alias=Identifier(r_col)))
+                            continue
+                        elif r_type in ('datetime', 'timestamp',):
+                            column_types_pl[r_col] = pd.Datetime
+                            identifiers_arr.append(TypeCast(type_name="datetime", arg=Function(op="nullif", distinct=False, alias=Identifier(r_col), args=[Identifier(r_col), Constant("0000-00-00 00:00:00")]), alias=Identifier(r_col)))
+                            continue
+                        elif r_type in ('time',):
+                            column_types_pl[r_col] = pd.Time
+                        elif r_type in ('bigint',):
+                            column_types_pl[r_col] = pd.Int64
+                        elif r_type in ('int',):
+                            column_types_pl[r_col] = pd.Int32
+                        elif r_type in ('smallint','tinyint','enum'):
+                            column_types_pl[r_col] = pd.Int16
+                        elif r_type in ('bit',):
+                            column_types_pl[r_col] = pd.Boolean
+                        elif r_type in ('decimal','double', 'float',):
+                            column_types_pl[r_col] = pd.Float64
+                        elif r_type in ('varchar','json','longblob','longtext','mediumblob','mediumtext', 'char', 'blob', 'text'):
+                            column_types_pl[r_col] = pd.String
+                        elif r_type in ('varbinary'):
+                            column_types_pl[r_col] = pd.Binary
                         else:
-                            identifiers_arr.append(Identifier(col))
+                            logger.info(f"Unknown type: {r_type}, use VARCHAR as fallback.")
+                            column_types_pl[r_col] = pd.String
+                        
+                        identifiers_arr.append(Identifier(r_col))
                     
                     query.targets.remove(tar)
                     query.targets = identifiers_arr + query.targets                
 
+        #print(column_types_pl)
 
         query_str = self.renderer.get_string(query, with_failback=True)        
-        return self.native_query(query_str, using=query.using)
+        return self.native_query(query_str, column_types_pl=column_types_pl)
 
 
     def get_tables(self) -> Response:
@@ -215,7 +224,6 @@ class MySQLHandler(DatabaseHandler):
             ;
         """
         result = self.native_query(sql, lower_col_names=False)
-        #print(result)
         return result
 
     def get_columns(self, table_name) -> Response:

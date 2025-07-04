@@ -53,6 +53,8 @@ from .mindsdb_tables import (
 
 from mindsdb.api.executor.datahub.classes.tables_row import TablesRow
 
+#from collections import OrderedDict
+from mindsdb.api.mysql.mysql_proxy.libs.constants.mysql import MYSQL_DATA_TYPE
 
 logger = log.getLogger(__name__)
 
@@ -113,7 +115,7 @@ class InformationSchemaDataNode(DataNode):
 
         self.tables = {t.name: t for t in self.tables_list}
 
-        #print(self.tables)
+#        print(self.tables)
 
 
     def __getitem__(self, key):
@@ -246,10 +248,26 @@ class InformationSchemaDataNode(DataNode):
 
         columns_info = [{"name": k, "type": v} for k, v in data.schema.items()]
 
-        # print(columns_info)
-        # print(data)
-
-        return DataHubResponse(data_frame=data, columns=columns_info, affected_rows=0)
+        # mysql_types = []
+        # for col in columns_info:        
+        #     if col["type"] in (pd.String, pd.Object,):
+        #         mysql_types.append(MYSQL_DATA_TYPE.VARCHAR)
+        #     elif col["type"] in (pd.Int64, pd.Int32, pd.Int16, pd.Int8,):
+        #         mysql_types.append(MYSQL_DATA_TYPE.BIGINT)
+        #     elif col["type"] in (pd.Float64, pd.Float32,):
+        #         mysql_types.append(MYSQL_DATA_TYPE.DOUBLE)
+        #     elif col["type"] in (pd.Boolean,):
+        #         mysql_types.append(MYSQL_DATA_TYPE.TINYINT)
+        #     elif col["type"] in (pd.Datetime,):
+        #         mysql_types.append(MYSQL_DATA_TYPE.DATETIME)
+        #     elif col["type"] in (pd.Date,):
+        #         mysql_types.append(MYSQL_DATA_TYPE.DATE)
+        #     else:
+        #         print(col)
+        #         mysql_types.append(MYSQL_DATA_TYPE.VARCHAR)
+        #         logger.warning(f'The type {col["type"]} not managed, default MySQL VARCHAR')
+        
+        return DataHubResponse(data_frame=data, columns=columns_info, affected_rows=0) #, mysql_types=mysql_types)
 
     def _get_empty_table(self, table):
         columns = table.columns

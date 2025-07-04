@@ -13,6 +13,9 @@ from mindsdb.interfaces.database.projects import ProjectController
 from mindsdb.interfaces.query_context.context_controller import query_context_controller
 
 from mindsdb.api.executor.datahub.datanodes.system_tables import Table
+from mindsdb.api.mysql.mysql_proxy.libs.constants.mysql import MYSQL_DATA_TYPE
+
+from collections import OrderedDict
 
 
 def to_json(obj):
@@ -65,6 +68,28 @@ class ModelsTable(MdbTable):
         "TRAINING_TIME",
     ]
 
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    # ]
+
     @classmethod
     def get_data(cls, session, inf_schema, **kwargs):
         data = []
@@ -109,6 +134,12 @@ class ModelsTable(MdbTable):
 class DatabasesTable(MdbTable):
     name = "DATABASES"
     columns = ["NAME", "TYPE", "ENGINE", "CONNECTION_DATA"]
+    # mysql_types = OrderedDict({
+    #     "NAME": MYSQL_DATA_TYPE.VARCHAR,
+    #     "TYPE": MYSQL_DATA_TYPE.VARCHAR,
+    #     "ENGINE": MYSQL_DATA_TYPE.VARCHAR,
+    #     "COLLECTION_DATA": MYSQL_DATA_TYPE.VARCHAR,
+    # })
 
     @classmethod
     def get_data(cls, session, inf_schema, **kwargs):
@@ -122,6 +153,11 @@ class DatabasesTable(MdbTable):
 class MLEnginesTable(MdbTable):
     name = "ML_ENGINES"
     columns = ["NAME", "HANDLER", "CONNECTION_DATA"]
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    # ]
 
     @classmethod
     def get_data(cls, session, inf_schema, **kwargs):
@@ -148,6 +184,16 @@ class HandlersTable(MdbTable):
         "IMPORT_SUCCESS",
         "IMPORT_ERROR",
     ]
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,        
+    # ]
 
     @classmethod
     def get_data(cls, inf_schema, **kwargs):
@@ -190,6 +236,17 @@ class JobsTable(MdbTable):
         "IF_QUERY",
         "VARIABLES",
     ]
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,        
+    # ]
 
     @classmethod
     def get_data(cls, query: ASTNode = None, **kwargs):
@@ -242,6 +299,30 @@ class TriggersTable(MdbTable):
         "COLLATION_CONNECTION",
         "DATABASE_COLLATION",
     ]
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    # ]
 
     mindsdb_columns = ["NAME", "PROJECT", "DATABASE", "TABLE", "QUERY", "LAST_ERROR"]
 
@@ -286,6 +367,16 @@ class ChatbotsTable(MdbTable):
         "LAST_ERROR",
         "WEBHOOK_TOKEN",
     ]
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,        
+    # ]
 
     @classmethod
     def get_data(cls, query: ASTNode = None, **kwargs):
@@ -335,6 +426,22 @@ class KBTable(MdbTable):
         "ERROR",
         "QUERY_ID",
     ]
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,        
+    # ]
 
     @classmethod
     def get_data(cls, query: ASTNode = None, inf_schema=None, **kwargs):
@@ -384,6 +491,12 @@ class KBTable(MdbTable):
 class SkillsTable(MdbTable):
     name = "SKILLS"
     columns = ["NAME", "PROJECT", "TYPE", "PARAMS"]
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,        
+    # ]
 
     @classmethod
     def get_data(cls, query: ASTNode = None, **kwargs):
@@ -404,6 +517,13 @@ class SkillsTable(MdbTable):
 class AgentsTable(MdbTable):
     name = "AGENTS"
     columns = ["NAME", "PROJECT", "MODEL_NAME", "SKILLS", "PARAMS"]
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,        
+    # ]
 
     @classmethod
     def get_data(cls, query: ASTNode = None, inf_schema=None, **kwargs):
@@ -432,6 +552,14 @@ class AgentsTable(MdbTable):
 class ViewsTable(MdbTable):
     name = "VIEWS"
     columns = ["NAME", "PROJECT", "QUERY", "TABLE_SCHEMA", "TABLE_NAME", "VIEW_DEFINITION"]
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,        
+    # ]
 
     @classmethod
     def get_data(cls, query: ASTNode = None, **kwargs):
@@ -461,10 +589,20 @@ class QueriesTable(MdbTable):
         "CONTEXT",
         "UPDATED_AT",
     ]
-    # struct_cols = [
-    #     "PARAMETERS",
-    #     "CONTEXT",
+
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.BIGINT,
+    #     MYSQL_DATA_TYPE.DATETIME,
+    #     MYSQL_DATA_TYPE.DATETIME,
+    #     MYSQL_DATA_TYPE.BIGINT,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.DATETIME,        
     # ]
+    
     cols_dtypes = {
         "ID": pd.Int64,
         "STARTED_AT": pd.Datetime,

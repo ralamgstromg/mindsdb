@@ -12,4 +12,4 @@ class DataHubResponse:
     data_frame: pd.DataFrame = field(default_factory=pd.DataFrame)
     columns: List[Dict] = field(default_factory=list)
     affected_rows: int | None = None
-    mysql_types: list[MYSQL_DATA_TYPE] | None = None
+    # mysql_types: list[MYSQL_DATA_TYPE] | None = None

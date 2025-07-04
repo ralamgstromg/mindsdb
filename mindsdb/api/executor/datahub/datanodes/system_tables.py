@@ -13,6 +13,7 @@ from mindsdb.interfaces.data_catalog.data_catalog_reader import DataCatalogReade
 from mindsdb.api.mysql.mysql_proxy.libs.constants.mysql import MYSQL_DATA_TYPE, MYSQL_DATA_TYPE_COLUMNS_DEFAULT
 from mindsdb.api.executor.datahub.classes.tables_row import TABLES_ROW_TYPE, TablesRow
 
+from collections import OrderedDict
 
 logger = log.getLogger(__name__)
 
@@ -59,6 +60,14 @@ class SchemataTable(Table):
         "SQL_PATH",
     ]
 
+    # mysql_types = OrderedDict({
+    #     "CATALOG_NAME": MYSQL_DATA_TYPE.VARCHAR,
+    #     "SCHEMA_NAME": MYSQL_DATA_TYPE.VARCHAR,
+    #     "DEFAULT_CHARACTER_SET_NAME": MYSQL_DATA_TYPE.VARCHAR,
+    #     "DEFAULT_COLLATION_NAME": MYSQL_DATA_TYPE.VARCHAR,
+    #     "SQL_PATH": MYSQL_DATA_TYPE.VARCHAR,     
+    # })
+
     @classmethod
     def get_data(cls, inf_schema=None, **kwargs):
         databases_meta = inf_schema.session.database_controller.get_list()
@@ -94,6 +103,30 @@ class TablesTable(Table):
         "CREATE_OPTIONS",
         "TABLE_COMMENT",
     ]
+
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.DATETIME,
+    #     MYSQL_DATA_TYPE.DATETIME,
+    #     MYSQL_DATA_TYPE.DATETIME,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    # ]
 
     @classmethod
     def get_data(cls, query: ASTNode = None, inf_schema=None, **kwargs):
@@ -353,6 +386,34 @@ class EventsTable(Table):
         "DATABASE_COLLATION",
     ]
 
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.DATETIME,
+    #     MYSQL_DATA_TYPE.DATETIME,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,        
+    # ]
+
+
 
 class RoutinesTable(Table):
     name = "ROUTINE"
@@ -390,6 +451,41 @@ class RoutinesTable(Table):
         "DATABASE_COLLATION",
     ]
 
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.DATETIME,        
+    #     MYSQL_DATA_TYPE.DATETIME,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,        
+    # ]
+    
+
 
 class PluginsTable(Table):
     name = "PLUGINS"
@@ -408,11 +504,35 @@ class PluginsTable(Table):
         "PLUGIN_MATURITY",
         "PLUGIN_AUTH_VERSION",
     ]
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,                
+    # ]
+    
 
 
 class EnginesTable(Table):
     name = "ENGINES"
     columns = ["ENGINE", "SUPPORT", "COMMENT", "TRANSACTIONS", "XA", "SAVEPOINTS"]
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,                
+    # ]
 
     @classmethod
     def get_data(cls, **kwargs):
@@ -447,6 +567,20 @@ class KeyColumnUsageTable(Table):
         "REFERENCED_TABLE_NAME",
         "REFERENCED_COLUMN_NAME",
     ]
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.INT,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,                
+    # ]
 
 class ReferentialConstraintsTable(Table):
     name = "REFERENTIAL_CONSTRAINTS"
@@ -463,6 +597,19 @@ class ReferentialConstraintsTable(Table):
         "TABLE_NAME",
         "REFERENCED_TABLE_NAME",
     ]
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,                
+    # ]
 
 class TableConstraintsTable(Table):
     name = "TABLE_CONSTRAINTS"
@@ -474,6 +621,14 @@ class TableConstraintsTable(Table):
         "TABLE_NAME",
         "CONSTRAINT_TYPE",
     ]
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,                
+    # ]
 
 
 class StatisticsTable(Table):
@@ -499,6 +654,27 @@ class StatisticsTable(Table):
         "IS_VISIBLE",
         "EXPRESSION",
     ]
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,                
+    # ]
 
 
 class CharacterSetsTable(Table):
@@ -509,6 +685,12 @@ class CharacterSetsTable(Table):
         "DESCRIPTION",
         "MAXLEN",
     ]
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.INT,                
+    # ]
 
     @classmethod
     def get_data(cls, **kwargs):
@@ -534,6 +716,16 @@ class CollationsTable(Table):
         "SORTLEN",
         "PAD_ATTRIBUTE",
     ]
+
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.INT,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.INT,
+    #     MYSQL_DATA_TYPE.VARCHAR,                
+    # ]
 
     @classmethod
     def get_data(cls, **kwargs):
@@ -569,6 +761,14 @@ class MetaTablesTable(Table):
     name = "META_TABLES"
 
     columns = ["TABLE_CATALOG", "TABLE_SCHEMA", "TABLE_NAME", "TABLE_TYPE", "TABLE_DESCRIPTION", "ROW_COUNT"]
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.BIGINT,                
+    # ]
 
     @classmethod
     def get_data(cls, query: ASTNode = None, inf_schema=None, **kwargs):
@@ -606,6 +806,16 @@ class MetaColumnsTable(Table):
         "COLUMN_DEFAULT",
         "IS_NULLABLE",
     ]
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,                
+    # ]
 
     @classmethod
     def get_data(cls, query: ASTNode = None, inf_schema=None, **kwargs):
@@ -649,6 +859,16 @@ class MetaColumnStatisticsTable(Table):
         "MIN_VALUE",
         "MAX_VALUE",
     ]
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.BIGINT,
+    #     MYSQL_DATA_TYPE.BIGINT,
+    #     MYSQL_DATA_TYPE.BIGINT,                
+    # ]
 
     @classmethod
     def get_data(cls, query: ASTNode = None, inf_schema=None, **kwargs):
@@ -700,6 +920,16 @@ class MetaTableConstraintsTable(Table):
         "CONSTRAINT_TYPE",
         "ENFORCED",
     ]
+
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,                
+    # ]
 
     @classmethod
     def get_data(cls, query: ASTNode = None, inf_schema=None, **kwargs):
@@ -768,6 +998,20 @@ class MetaColumnUsageTable(Table):
         "REFERENCED_TABLE_NAME",
         "REFERENCED_COLUMN_NAME",
     ]
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,                
+    # ]
 
     @classmethod
     def get_data(cls, query: ASTNode = None, inf_schema=None, **kwargs):
@@ -843,6 +1087,10 @@ class MetaColumnUsageTable(Table):
 class MetaHandlerInfoTable(Table):
     name = "META_HANDLER_INFO"
     columns = ["HANDLER_INFO", "TABLE_SCHEMA"]
+    # mysql_types = [
+    #     MYSQL_DATA_TYPE.VARCHAR,
+    #     MYSQL_DATA_TYPE.VARCHAR,                
+    # ]
 
     @classmethod
     def get_data(cls, query: ASTNode = None, inf_schema=None, **kwargs):

@@ -794,7 +794,7 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
                     #print(p.type.value)
                     response = SQLAnswer(RESPONSE_TYPE.OK)                
                 else:
-                    print(p.type.value)
+                    # print(p.type.value)
                     logger.warning("Command has no specific handler, return OK msg")
                     logger.debug(str(p))
                     # p.pprintPacket() TODO: Make a version of print packet

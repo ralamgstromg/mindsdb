@@ -11,6 +11,7 @@
 
 import enum
 from dataclasses import dataclass, field
+import polars as pl
 
 # CAPABILITIES
 # As defined in : https://dev.mysql.com/doc/dev/mysql-server/8.0.0/group__group__cs__capabilities__flags.html
@@ -367,6 +368,30 @@ DATA_C_TYPE_MAP = {
     ),
 }
 
+
+PL_DATA_C_TYPE_MAP = {
+    pl.Int8: CTypeProperties(C_TYPES.MYSQL_TYPE_TINY, 4),
+    pl.Int16: CTypeProperties(C_TYPES.MYSQL_TYPE_SHORT, 6),
+    pl.Int32: CTypeProperties(C_TYPES.MYSQL_TYPE_INT24, 9),
+    pl.Int64: CTypeProperties(C_TYPES.MYSQL_TYPE_LONG, 11),
+    pl.Int128: CTypeProperties(C_TYPES.MYSQL_TYPE_LONGLONG, 20),
+    pl.Float32: CTypeProperties(C_TYPES.MYSQL_TYPE_FLOAT, 12),
+    pl.Float64: CTypeProperties(C_TYPES.MYSQL_TYPE_NEWDECIMAL),    
+    pl.Time: CTypeProperties(C_TYPES.MYSQL_TYPE_TIME, 10, [FIELD_FLAG.BINARY_COLLATION]),
+    pl.Date: CTypeProperties(C_TYPES.MYSQL_TYPE_DATE, 10, [FIELD_FLAG.BINARY_COLLATION]),
+    pl.Datetime: CTypeProperties(C_TYPES.MYSQL_TYPE_DATETIME, 19, [FIELD_FLAG.BINARY_COLLATION]),  
+    pl.Datetime(time_unit='us', time_zone=None): CTypeProperties(C_TYPES.MYSQL_TYPE_DATETIME, 19, [FIELD_FLAG.BINARY_COLLATION]),
+    pl.String: CTypeProperties(C_TYPES.MYSQL_TYPE_VAR_STRING),
+    pl.Binary: CTypeProperties(C_TYPES.MYSQL_TYPE_STRING, flags=[FIELD_FLAG.BINARY_COLLATION]),    
+    pl.UInt8: CTypeProperties(C_TYPES.MYSQL_TYPE_BIT, 8, [FIELD_FLAG.UNSIGNED]),
+    pl.Boolean: CTypeProperties(C_TYPES.MYSQL_TYPE_TINY, 1),
+    pl.Object: CTypeProperties(
+        C_TYPES.MYSQL_TYPE_JSON, flags=[FIELD_FLAG.BLOB, FIELD_FLAG.BINARY_COLLATION]
+    ),
+    pl.Struct: CTypeProperties(
+        C_TYPES.MYSQL_TYPE_VECTOR, 4096, flags=[FIELD_FLAG.BLOB, FIELD_FLAG.BINARY_COLLATION]
+    ),
+}
 
 # HANDSHAKE
 
