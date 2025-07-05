@@ -14,7 +14,7 @@ from mindsdb.utilities import log
 from mindsdb.integrations.libs.base import DatabaseHandler
 from mindsdb.integrations.libs.response import (
     HandlerStatusResponse as StatusResponse,
-    HandlerResponseNgx as Response,
+    HandlerResponse as Response,
     RESPONSE_TYPE,
 )
 

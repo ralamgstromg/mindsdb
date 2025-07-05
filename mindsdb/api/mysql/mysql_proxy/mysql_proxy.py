@@ -138,7 +138,7 @@ class SQLAnswer:
                 "type": self.resp_type,
                 "affected_rows": self.affected_rows,
             }
-        elif self.resp_type in (RESPONSE_TYPE.TABLE, RESPONSE_TYPE.COLUMNS_TABLE):
+        elif self.resp_type in (RESPONSE_TYPE.TABLE, RESPONSE_TYPE.COLUMNS_TABLE):            
             data = self.result_set.to_lists(json_types=True)
             return {
                 "type": RESPONSE_TYPE.TABLE,

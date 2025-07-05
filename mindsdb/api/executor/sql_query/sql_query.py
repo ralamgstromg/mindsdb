@@ -248,7 +248,7 @@ class SQLQuery:
             raise LogicError(e)
 
         if self.planner.plan.is_resumable:
-            print("resumable")
+            #print("resumable")
             # create query
             if self.query_id is not None:
                 self.run_query = query_context_controller.get_query(self.query_id)

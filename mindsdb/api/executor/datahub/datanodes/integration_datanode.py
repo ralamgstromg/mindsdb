@@ -195,12 +195,16 @@ class IntegrationDataNode(DataNode):
                 pass
 
         values = result_set.to_lists()
+        #print(values)
 
         if len(values) == 0:
             # not need to insert
             return DataHubResponse()
 
+        #print(values)
         insert_ast = Insert(table=table_name, columns=insert_columns, values=values, is_plain=True)
+
+        #print(insert_ast)
 
         try:
             result: DataHubResponse = self.query(insert_ast)
@@ -225,6 +229,7 @@ class IntegrationDataNode(DataNode):
             time_before_query = time.perf_counter()
             if query is not None:
                 #print(self.integration_handler)
+                #print(query)
                 result: HandlerResponse = self.integration_handler.query(query)
             else:
                 #print("ELSE")

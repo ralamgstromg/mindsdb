@@ -397,7 +397,8 @@ class ResultSet:
                 if self._df is None:
                     column_type = MYSQL_DATA_TYPE.TEXT
                 else:
-                    column_type = get_mysql_data_type_from_series(self._df.iloc[:, i])
+                    #column_type = get_mysql_data_type_from_series(self._df.iloc[:, i])
+                    column_type = get_mysql_data_type_from_series(self._df[:, i])
 
             sqlalchemy_type = type_mapping.get(column_type, sqlalchemy_types.TEXT)
 
@@ -411,11 +412,12 @@ class ResultSet:
         :return: list of lists
         """
 
-        if len(self.get_raw_df()) == 0:
+        df = self.get_raw_df().clone()
+
+        if len(df) == 0:
             return []
         # output for APIs. simplify types
-        if json_types:
-            df = self.get_raw_df().clone()
+        if json_types:            
             for name, dtype in df.schema.items():
                 if dtype in [datetime.datetime]:
                     df[name] = df[name].dt.strftime("%Y-%m-%d %H:%M:%S.%f")
@@ -424,10 +426,11 @@ class ResultSet:
             for i, column in enumerate(self.columns):
                 if column.type == MYSQL_DATA_TYPE.VECTOR:
                     df[i] = df[i].apply(_dump_vector)
-            return df.rows()
+            #return df.rows()
+        #print(df.to_dicts())
 
-        return df.to_dicts("split")["data"]
-
+        return df
+    
     def get_column_values(self, col_idx):
         # get by column index
         df = self.get_raw_df()
@@ -457,13 +460,15 @@ class ResultSet:
 
     @property
     def records(self):
-        return list(self.get_records())
+        r = self.get_records()
+        return list(r)
 
     def get_records(self):
         # get records as dicts.
         # !!! Attention: !!!
         # if resultSet contents duplicate column name: only one of them will be in output
         names = self.get_column_names()
+        #print("[names]", names)
         for row in self.to_lists():
             yield dict(zip(names, row))
 

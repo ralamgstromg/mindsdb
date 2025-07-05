@@ -91,6 +91,7 @@ class Executor:
 
         if ret.data is not None:
             self.data = ret.data.to_lists()
+            #print(self.data)
             self.columns = ret.data.columns
 
         self.state_track = ret.state_track

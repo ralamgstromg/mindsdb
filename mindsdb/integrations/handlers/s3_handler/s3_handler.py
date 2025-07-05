@@ -61,12 +61,12 @@ class FileTable(APIResource):
     def list(self, targets: List[str] = None, table_name=None, *args, **kwargs) -> pd.DataFrame:
         return self.handler.read_as_table(table_name)
 
-    def add(self, data, table_name=None):        
-        # df = pd.DataFrame(data)
-        #print(data)
-        df = pd.DataFrame(data)
-        #print(df)
-        return self.handler.add_data_to_table(table_name, df)
+    # def add(self, data, table_name=None):        
+    #     # df = pd.DataFrame(data)
+    #     print("[DATA]")
+    #     print(data)
+    #     df = pd.DataFrame(data)
+    #     return self.handler.add_data_to_table(table_name, df)
 
 
 class S3Handler(APIHandler):
@@ -284,7 +284,7 @@ class S3Handler(APIHandler):
         obj = client.get_object(Bucket=bucket, Key=key)
         content = obj['Body'].read()
 
-        print(content)
+        #print(content)
         return content
 
     def add_data_to_table(self, key, df) -> None:
@@ -318,6 +318,7 @@ class S3Handler(APIHandler):
                 # create table
                 #print(f's3://{bucket}/{key}')
                 #print(df.dtypes)
+                #print(df)
                 connection.execute(f"COPY df TO 's3://{bucket}/{key}' (FORMAT PARQUET, OVERWRITE_OR_IGNORE true);")
 
     def _create_table(self, key, df) -> None:
@@ -431,9 +432,14 @@ class S3Handler(APIHandler):
                 data_frame=df
             )
         elif isinstance(query, Insert):
+            # print("[QQQQQQ]")
+            # print(query.values)
             table_name = query.table.parts[-1]
-            table = FileTable(self, table_name=table_name)
-            table.insert(query)
+            # table = FileTable(self, table_name=table_name)
+            print("[INSERT]")
+            print(query)
+            # table.insert(query)
+            self.add_data_to_table(table_name, query.values)
             response = Response(RESPONSE_TYPE.OK)
         else:
             raise NotImplementedError
