@@ -47,7 +47,31 @@ connection_args = OrderedDict(
         'description': 'Specify if endpoint URL use SSL or not. Default is `true`.',
         'required': False,
         'label': 'USE SSL'
-    }
+    },
+    file_format={
+        'type': ARG_TYPE.STR,
+        'description': 'Set the format for file as parquet, csv, tsv, others',
+        'required': False,
+        'label': 'File Format'
+    },
+    file_compressionfile_format={
+        'type': ARG_TYPE.STR,
+        'description': 'Set the compression algorithm as: uncompressed, snappy, gzip, zstd, brotli, lz4, lz4_raw',
+        'required': False,
+        'label': 'File Compression'
+    },
+    file_compression_level={
+        'type': ARG_TYPE.INT,
+        'description': 'Set the compression level between 1 (lowest) and 22 (highest)',
+        'required': False,
+        'label': 'File Compression Level'
+    },
+    parquet_version={
+        'type': ARG_TYPE.STR,
+        'description': 'Set the default parquet version: V1, V2',
+        'required': False,
+        'label': 'File Compression'
+    },
 )
 
 connection_args_example = OrderedDict(

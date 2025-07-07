@@ -414,20 +414,21 @@ class ResultSet:
 
         df = self.get_raw_df().clone()
 
-        if len(df) == 0:
-            return []
-        # output for APIs. simplify types
-        if json_types:            
-            for name, dtype in df.schema.items():
-                if dtype in [datetime.datetime]:
-                    df[name] = df[name].dt.strftime("%Y-%m-%d %H:%M:%S.%f")
-                elif dtype in [datetime.date]:
-                    df[name] = df[name].dt.strftime("%Y-%m-%d")
-            for i, column in enumerate(self.columns):
-                if column.type == MYSQL_DATA_TYPE.VECTOR:
-                    df[i] = df[i].apply(_dump_vector)
-            #return df.rows()
-        #print(df.to_dicts())
+        # if len(df) == 0:
+        
+        #     return []
+        # # output for APIs. simplify types
+        # if json_types:            
+        #     for name, dtype in df.schema.items():
+        #         if dtype in [datetime.datetime]:
+        #             df[name] = df[name].dt.strftime("%Y-%m-%d %H:%M:%S.%f")
+        #         elif dtype in [datetime.date]:
+        #             df[name] = df[name].dt.strftime("%Y-%m-%d")
+        #     for i, column in enumerate(self.columns):
+        #         if column.type == MYSQL_DATA_TYPE.VECTOR:
+        #             df[i] = df[i].apply(_dump_vector)
+        #     #return df.rows()
+        # print("[df.shape]", df.shape)
 
         return df
     

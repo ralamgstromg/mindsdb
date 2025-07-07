@@ -24,6 +24,9 @@ from mindsdb.utilities import log
 from mindsdb.utilities.profiler import profiler
 from mindsdb.api.executor.datahub.datanodes.system_tables import infer_mysql_type
 
+# Borrame
+import sys
+
 logger = log.getLogger(__name__)
 
 
@@ -202,9 +205,13 @@ class IntegrationDataNode(DataNode):
             return DataHubResponse()
 
         #print(values)
+        #print(self)
+
         insert_ast = Insert(table=table_name, columns=insert_columns, values=values, is_plain=True)
 
-        #print(insert_ast)
+        # print(f"{sys.getsizeof(insert_ast)} bytes")
+        #print(insert_ast.using)
+
 
         try:
             result: DataHubResponse = self.query(insert_ast)
@@ -220,16 +227,20 @@ class IntegrationDataNode(DataNode):
 
     @profiler.profile()
     def query_stream(self, query: ASTNode, fetch_size: int = None) -> Iterable:
+        # print(query.using)
         # returns generator of results from handler (split by chunks)
         return self.integration_handler.query_stream(query, fetch_size=fetch_size)
 
     @profiler.profile()
     def query(self, query: ASTNode | None = None, native_query: str | None = None, session=None) -> DataHubResponse:
         try:            
-            time_before_query = time.perf_counter()
+            time_before_query = time.perf_counter()            
+            # if query.using is not None:
+            #     print(query.using)
+
             if query is not None:
                 #print(self.integration_handler)
-                #print(query)
+                #print(query)                
                 result: HandlerResponse = self.integration_handler.query(query)
             else:
                 #print("ELSE")

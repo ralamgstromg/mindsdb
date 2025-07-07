@@ -23,10 +23,7 @@ from mindsdb.integrations.libs.response import (
     RESPONSE_TYPE
 )
 
-#from mindsdb.integrations.libs.api_handler import APIResource, APIHandler
-
-from mindsdb.integrations.libs.base import DatabaseHandler
-
+from mindsdb.integrations.libs.api_handler import APIResource, APIHandler
 from mindsdb.integrations.utilities.sql_utils import FilterCondition, FilterOperator
 
 from sqlalchemy.sql import sqltypes
@@ -34,53 +31,53 @@ from sqlalchemy.sql import sqltypes
 logger = log.getLogger(__name__)
 
 
-# class ListFilesTable(APIResource):
+class ListFilesTable(APIResource):
 
-#     def list(self,
-#              targets: List[str] = None,
-#              conditions: List[FilterCondition] = [],
-#              limit: int = 100,
-#              *args, **kwargs) -> pd.DataFrame:        
+    def list(self,
+             targets: List[str] = None,
+             conditions: List[FilterCondition] = [],
+             limit: int = 100,
+             *args, **kwargs) -> pd.DataFrame:        
 
-#         data = []
-#         for obj in self.handler.get_objects(limit=limit, conditions=conditions):
-#             path = obj['Key']
-#             path = path.replace('`', '')
-#             item = {
-#                 'path': path,
-#                 'bucket': obj['Bucket'],
-#                 'name': path[path.rfind('/') + 1:],
-#                 'extension': path[path.rfind('.') + 1:]
-#             }
+        data = []
+        for obj in self.handler.get_objects(limit=limit, conditions=conditions):
+            path = obj['Key']
+            path = path.replace('`', '')
+            item = {
+                'path': path,
+                'bucket': obj['Bucket'],
+                'name': path[path.rfind('/') + 1:],
+                'extension': path[path.rfind('.') + 1:]
+            }
 
-#             data.append(item)
+            data.append(item)
 
-#         return pd.DataFrame(data=data, schema=self.get_columns(), orient="row")
+        return pd.DataFrame(data=data, schema=self.get_columns(), orient="row")
 
-#     def get_columns(self) -> List[str]:
-#         return ["path", "name", "extension", "bucket", "content"]
-
-
-# class FileTable(APIResource):
-
-#     def list(self, targets: List[str] = None, table_name=None, *args, **kwargs) -> pd.DataFrame:
-#         return self.handler.read_as_table(table_name)
-
-#     # def add(self, data, table_name=None):        
-#     #     # df = pd.DataFrame(data)
-#     #     print("[DATA]")
-#     #     print(data)
-#     #     df = pd.DataFrame(data)
-#     #     return self.handler.add_data_to_table(table_name, df)
+    def get_columns(self) -> List[str]:
+        return ["path", "name", "extension", "bucket", "content"]
 
 
-class S3Handler(DatabaseHandler):
+class FileTable(APIResource):
+
+    def list(self, targets: List[str] = None, table_name=None, *args, **kwargs) -> pd.DataFrame:
+        return self.handler.read_as_table(table_name)
+
+    # def add(self, data, table_name=None):        
+    #     # df = pd.DataFrame(data)
+    #     print("[DATA]")
+    #     print(data)
+    #     df = pd.DataFrame(data)
+    #     return self.handler.add_data_to_table(table_name, df)
+
+
+class S3Handler(APIHandler):
     """
     This handler handles connection and execution of the SQL statements on AWS S3.
     """
 
     name = 's3'
-    #supported_file_formats = ['csv', 'tsv', 'json', 'parquet']
+    supported_file_formats = ['csv', 'tsv', 'json', 'parquet']
 
     def __init__(self, name: Text, connection_data: Optional[Dict], **kwargs):
         """
@@ -101,14 +98,9 @@ class S3Handler(DatabaseHandler):
         self.bucket = self.connection_data.get('bucket')
         self._regions = {}
 
-        self.file_format = self.connection_data.get('file_format', 'parquet')
-        self.file_compression = self.connection_data.get('file_compression', 'zstd')
-        self.file_compression_level = self.connection_data.get('file_compression_level', 8)
-        self.parquet_version = self.connection_data.get('parquet_version', 'V2')
-
         self.resource = None
 
-        #self._files_table = ListFilesTable(self)
+        self._files_table = ListFilesTable(self)
 
     def __del__(self):
         if self.is_connected is True:
@@ -273,29 +265,14 @@ class S3Handler(DatabaseHandler):
         ar = key.split('/')
         return ar[0], '/'.join(ar[1:])
 
-    def read_as_table(self, key, targets, where, limit) -> pd.DataFrame:
+    def read_as_table(self, key) -> pd.DataFrame:
         """
         Read object as dataframe. Uses duckdb
         """
         bucket, key = self._get_bucket(key)
 
-        cols = []
-
-        for tar in targets:
-            if isinstance(tar, Star):
-                cols.append("*")
-            else:
-                cols.append(f"{tar}")   
-        
-        extra = ""
-        if where is not None:
-            extra = f" WHERE {where}"
-
-        if limit is not None:
-            extra = f" {extra} LIMIT {limit}"
-
         with self._connect_duckdb(bucket) as connection:
-            data = connection.execute(f"SELECT {','.join(cols)} FROM 's3://{bucket}/{key}' {extra}").pl()
+            data = connection.execute(f"SELECT * FROM 's3://{bucket}/{key}'").pl()
             return data
 
     def _read_as_content(self, key) -> None:
@@ -333,6 +310,8 @@ class S3Handler(DatabaseHandler):
 
         df = query.values
 
+        #print(query.values)
+
         with self._connect_duckdb(bucket) as connection:
             # copy
             if exists:
@@ -340,9 +319,13 @@ class S3Handler(DatabaseHandler):
                 # insert
                 connection.execute("INSERT INTO tmp_table BY NAME SELECT * FROM df")
                 # upload
-                connection.execute(f"COPY tmp_table TO 's3://{bucket}/{key}' (FORMAT {self.file_format}, PARQUET_VERSION {self.parquet_version}, OVERWRITE_OR_IGNORE true, COMPRESSION {self.file_compression}, COMPRESSION_LEVEL {self.file_compression_level});")
+                connection.execute(f"COPY tmp_table TO 's3://{bucket}/{key}' (FORMAT PARQUET, OVERWRITE_OR_IGNORE true);")
             else:
-                connection.execute(f"COPY df TO 's3://{bucket}/{key}' (FORMAT {self.file_format}, PARQUET_VERSION {self.parquet_version}, COMPRESSION {self.file_compression}, COMPRESSION_LEVEL {self.file_compression_level});")
+                # create table
+                #print(f's3://{bucket}/{key}')
+                #print(df.dtypes)
+                #print(df)                
+                connection.execute(f"COPY df TO 's3://{bucket}/{key}' (FORMAT PARQUET);")
 
     def _create_table(self, key, df) -> None:
         """
@@ -358,7 +341,7 @@ class S3Handler(DatabaseHandler):
             exists = True
         except Exception as e:
             with self._connect_duckdb(bucket) as connection:
-                connection.execute(f"COPY df TO 's3://{bucket}/{key}' (FORMAT {self.file_format}, PARQUET_VERSION {self.parquet_version}, COMPRESSION {self.file_compression}, COMPRESSION_LEVEL {self.file_compression_level});")
+                connection.execute(f"COPY df TO 's3://{bucket}/{key}'")
 
         if exists:
             logger.error(f'Table {key} already exists in the bucket {bucket}')
@@ -368,7 +351,7 @@ class S3Handler(DatabaseHandler):
     def _get_columns(self) -> List[str]:
         return ["path", "name", "extension", "bucket", "content"]
 
-    def query(self, query: ASTNode) -> Response:
+    def query(self, query: ASTNode, *args, **kwargs) -> Response:
         """
         Executes a SQL query represented by an ASTNode and retrieves the data.
 
@@ -382,7 +365,7 @@ class S3Handler(DatabaseHandler):
             Response: A response object containing the result of the query or an error message.
         """        
 
-        self.connect()                
+        self.connect()        
 
         if isinstance(query, DropTables):
             for table_identifier in query.tables:
@@ -404,7 +387,6 @@ class S3Handler(DatabaseHandler):
         elif isinstance(query, CreateTable):
             # print("[CREATE TABLE AS]")
             # print(query.to_tree())
-
             table = query.name.parts[-1]
 
             df = pd.DataFrame([], schema=[col.name for col in query.columns])
@@ -451,15 +433,12 @@ class S3Handler(DatabaseHandler):
                     df['content'] = df['path'].apply(self._read_as_content)
             else:
                 extension = table_name.split('.')[-1]
-                if extension not in (self.file_format,):
-                    logger.error(f'The file format authorized is {self.file_format}')
-                    raise ValueError(f'The file format authorized is {self.file_format}')
-                
+                if extension not in self.supported_file_formats:
+                    logger.error(f'The file format {extension} is not supported!')
+                    raise ValueError(f'The file format {extension} is not supported!')
 
-                df = self.read_as_table(table_name, query.targets, query.where, query.limit)
-
-                #table = FileTable(self, table_name=table_name)
-                #df = table.select(query)
+                table = FileTable(self, table_name=table_name)
+                df = table.select(query)
 
             response = Response(
                 RESPONSE_TYPE.TABLE,
@@ -467,7 +446,7 @@ class S3Handler(DatabaseHandler):
             )
         elif isinstance(query, Insert):
             # print("[INSERT]")
-            #print(query)            
+            # print(query.values)
             table_name = query.table.parts[-1]
             self.add_data_to_table(table_name, query)
             response = Response(RESPONSE_TYPE.OK)
@@ -486,9 +465,9 @@ class S3Handler(DatabaseHandler):
         Returns:
             Response: A response object containing the result of the query or an error message.
         """
-        #print("[query]", query)
+        print("[query]", query)
         query_ast = parse_sql(query)
-        #print("[native_query]", query_ast.using)
+        print("[native_query]", query_ast.using)
         return self.query(query_ast)
 
     def get_objects(self, limit=100, conditions=[]) -> List[dict]:
@@ -575,7 +554,7 @@ class S3Handler(DatabaseHandler):
         supported_names = [
             f"`{obj['Key']}`"
             for obj in self.get_objects()
-            if obj['Key'].split('.')[-1] in (self.file_format,) #self.supported_file_formats
+            if obj['Key'].split('.')[-1] in self.supported_file_formats
         ]
 
         # virtual table with list of files
