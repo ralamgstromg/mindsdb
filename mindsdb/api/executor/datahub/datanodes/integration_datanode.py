@@ -197,7 +197,7 @@ class IntegrationDataNode(DataNode):
             except Exception:
                 pass
 
-        values = result_set.to_lists()
+        values = result_set.get_raw_df() #.to_lists()
         #print(values)
 
         if len(values) == 0:

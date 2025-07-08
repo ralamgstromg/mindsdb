@@ -412,7 +412,7 @@ class ResultSet:
         :return: list of lists
         """
 
-        df = self.get_raw_df().clone()
+        df = self.get_raw_df() #.clone()
 
         # if len(df) == 0:
         
@@ -430,7 +430,8 @@ class ResultSet:
         #     #return df.rows()
         # print("[df.shape]", df.shape)
 
-        return df
+        # return df
+        return df.rows()
     
     def get_column_values(self, col_idx):
         # get by column index
