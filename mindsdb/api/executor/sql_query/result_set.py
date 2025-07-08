@@ -414,9 +414,6 @@ class ResultSet:
 
         df = self.get_raw_df() #.clone()
 
-        # if len(df) == 0:
-        
-        #     return []
         # # output for APIs. simplify types
         # if json_types:            
         #     for name, dtype in df.schema.items():
