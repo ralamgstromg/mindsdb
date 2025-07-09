@@ -3,12 +3,15 @@ import polars as pd
 from urllib import parse
 import connectorx as cx
 #import mysql.connector
+from sqlalchemy import create_engine, text
+from sqlalchemy.sql import sqltypes
 
 #from mindsdb_sql_parser import parse_sql
 import re
 from mindsdb.utilities.render.sqlalchemy_render import SqlalchemyRender
 from mindsdb_sql_parser.ast.base import ASTNode
-from mindsdb_sql_parser.ast.select import Identifier, Star, Function, Constant, Select, TypeCast
+from mindsdb_sql_parser.ast import Select, Identifier, Insert, Star, Constant, DropTables, CreateTable, Delete, TypeCast, Function
+from mindsdb_sql_parser.ast.select import Star
 
 from mindsdb.utilities import log
 from mindsdb.integrations.libs.base import DatabaseHandler
@@ -41,46 +44,18 @@ class MySQLHandler(DatabaseHandler):
 
     def __init__(self, name, **kwargs):
         super().__init__(name)
-        #self.parser = parse_sql
+
         self.dialect = "mysql"
         self.connection_data = kwargs.get("connection_data", {})
         self.database = self.connection_data.get("database")
         self.renderer = SqlalchemyRender('mysql')
 
-        # self.connection = None
         self.uri = f"mysql://{self.connection_data.get('user')}:{parse.quote_plus(self.connection_data.get('password'))}@{self.connection_data.get('host')}:{self.connection_data.get('port', 3306)}/{self.connection_data.get('database')}"
+        self.sqlalchemy_uri = f"mysql+mysqlconnector://{self.connection_data.get('user')}:{parse.quote_plus(self.connection_data.get('password'))}@{self.connection_data.get('host')}:{self.connection_data.get('port', 3306)}/{self.connection_data.get('database')}"
+
 
     def __del__(self):
         pass
-        # if self.is_connected:
-        #     self.disconnect()
-
-    # def _unpack_config(self):
-    #     """
-    #     Unpacks the config from the connection_data by validation all parameters.
-
-    #     Returns:
-    #         dict: A dictionary containing the validated connection parameters.
-    #     """
-    #     try:
-    #         config = ConnectionConfig(**self.connection_data)
-    #         return config.model_dump(exclude_unset=True)
-    #     except ValueError as e:
-    #         raise ValueError(str(e))
-
-    # @property
-    # def is_connected(self):
-    #     """
-    #     Checks if the handler is connected to the MySQL database.
-
-    #     Returns:
-    #         bool: True if the handler is connected, False otherwise.
-    #     """
-    #     return self.connection is not None and self.connection.is_connected()
-
-    # @is_connected.setter
-    # def is_connected(self, value):
-    #     pass
 
     def connect(self):
         """
@@ -156,9 +131,9 @@ class MySQLHandler(DatabaseHandler):
         Retrieve the data from the SQL statement.
         """
         if isinstance(query, Select):
+            column_types_pl = {}
             for tar in query.targets:
-                if isinstance(tar, Star):                
-                    column_types_pl = {}
+                if isinstance(tar, Star):                                    
                     cols = cx.read_sql(conn=self.uri,
                         query=f"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{query.from_table}' AND table_schema = '{self.database}'",
                         protocol="binary"
@@ -200,10 +175,90 @@ class MySQLHandler(DatabaseHandler):
                     query.targets.remove(tar)
                     query.targets = identifiers_arr + query.targets                
 
-        #print(column_types_pl)
+            query_str = self.renderer.get_string(query, with_failback=True)        
+            return self.native_query(query_str, column_types_pl=column_types_pl)
+    
+        elif isinstance(query, Insert):
+            return self._mysql_table_insert(query.table, query.values)
+        elif isinstance(query, Delete):
+            return self._mysql_table_delete(query)
+        elif isinstance(query, CreateTable):
+            return self._mysql_table_create(query)
+        elif isinstance(query, DropTables):
+            return self._mysql_exec_ddl(query)
+        else:
+            logger.info(f"Operation not supported in MySQL {type(query)}")
+            return Response(RESPONSE_TYPE.TABLE, data_frame=pd.DataFrame())
 
-        query_str = self.renderer.get_string(query, with_failback=True)        
-        return self.native_query(query_str, column_types_pl=column_types_pl)
+    def _mysql_table_delete(self, sql):
+        engine = create_engine(self.sqlalchemy_uri)
+        with engine.connect() as conn:
+            try:
+                res = conn.execute(text(f"{sql}"))
+                conn.commit()
+                return Response(RESPONSE_TYPE.OK, affected_rows=res.rowcount)
+            except Exception as ex:
+                logger.error(f"Error deleting data from table {sql}, {ex}")
+                conn.rollback()
+                return Response(RESPONSE_TYPE.ERROR, error_code=10, error_message=f"Error deleting data from table {sql}, {ex}")
+            
+    def _mysql_table_create(self, query):
+        engine = create_engine(self.sqlalchemy_uri)
+        with engine.connect() as conn:
+            try:
+                columns = []
+                for col in query.columns:                    
+                    if col.type == sqltypes.TEXT:
+                        columns.append(f"{col.name} TEXT")
+                    elif col.type == sqltypes.INTEGER:
+                        columns.append(f"{col.name} INTEGER")
+                    elif col.type == sqltypes.FLOAT:
+                        columns.append(f"{col.name} FLOAT")
+                    elif col.type == sqltypes.Date:
+                        columns.append(f"{col.name} DATE")
+                    elif col.type == sqltypes.DateTime:
+                        columns.append(f"{col.name} DATETIME")
+                    else:
+                        logger.info(f"Type not supported: {col.name}, {col.type}")
+                        columns.append(f"{col.name} TEXT")
+
+                sql = f"CREATE TABLE {query.name} ({', '.join(columns)})"
+
+                res = conn.execute(text(f"{sql}"))
+                conn.commit()
+                return Response(RESPONSE_TYPE.OK, affected_rows=res.rowcount)
+            except Exception as ex:
+                logger.error(f"Error executing DDL {sql}, {ex}")
+                conn.rollback()
+                return Response(RESPONSE_TYPE.ERROR, error_code=10, error_message=f"Error executing DDL {sql}, {ex}")
+
+            
+
+    def _mysql_exec_ddl(self, sql):
+        engine = create_engine(self.sqlalchemy_uri)
+        with engine.connect() as conn:
+            try:
+                res = conn.execute(text(f"{sql}"))
+                conn.commit()
+                return Response(RESPONSE_TYPE.OK, affected_rows=res.rowcount)
+            except Exception as ex:
+                logger.error(f"Error executing DDL {sql}, {ex}")
+                conn.rollback()
+                return Response(RESPONSE_TYPE.ERROR, error_code=10, error_message=f"Error executing DDL {sql}, {ex}")
+
+
+    def _mysql_table_insert(self, table_name, df):
+        try:
+            df.write_database(
+                table_name=f"{table_name}",
+                connection=self.sqlalchemy_uri,
+                engine="sqlalchemy",
+                if_table_exists = 'append'
+            )
+            return Response(RESPONSE_TYPE.OK, affected_rows=df.shape[0])
+        except Exception as ex:
+            logger.error(f"Error inserting data to table {table_name}, {ex}")
+            return StatusResponse(False, f"Error inserting data to table {table_name}, {ex}")
 
 
     def get_tables(self) -> Response:
