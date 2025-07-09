@@ -273,15 +273,19 @@ class LogDBController:
             "postgres"
         render = SqlalchemyRender(render_engine)
         query_str = render.get_string(query, with_failback=False)
-        #df = pd.read_sql_query(query_str, db.engine)
-        df = pd.read_database(query_str, db.engine)        
 
-        df = df.with_columns([
-            pd.col(column_name).cast(column_type).alias(column_name)
-            for column_name, column_type in log_table.schemas_map.items()
-        ])
+        df = pd.read_database(query_str, db.engine)  
 
-        #print(df)
+        for t_name, t_table in self._tables.items():            
+            casts = []
+            if t_name in query_str:   
+                for column_name, column_type in t_table.schemas_map.items():                    
+                    if column_type in (pd.Datetime, 'datetime[μs]'):
+                        casts.append(pd.col(column_name).cast(pd.String).str.to_datetime("%Y-%m-%d %H:%M:%S%.f").alias(column_name))
+                    else:
+                        casts.append(pd.col(column_name).cast(column_type).alias(column_name))
+            
+                df = df.with_columns(casts)
 
         columns_info = [{"name": k, "type": v} for k, v in df.schema.items()]
 

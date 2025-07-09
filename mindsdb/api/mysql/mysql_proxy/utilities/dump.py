@@ -380,8 +380,11 @@ def dump_result_set_to_mysql(
     df = result_set.get_raw_df()
 
     columns_dicts = []
+    #print(df)
     for col in result_set.columns:
-        pl_type = df.schema[col.name]
+        pl_type = df.schema[col.name]        
+        #print(pl_type)
+        # print(type(pl_type))
         type_properties: CTypeProperties = PL_DATA_C_TYPE_MAP[pl_type]
         columns_dicts.append(
             {

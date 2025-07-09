@@ -77,9 +77,10 @@ def query_df_with_type_infer_fallback(query_str: str, dataframes: dict, user_fun
         exception = None
         for sample_size in [1000, 10000, 1000000]:
             try:
-                con.execute(f"set global pandas_analyze_sample={sample_size};")
+                #con.execute(f"set global pandas_analyze_sample={sample_size};")
                 #print("[QUERY_STR]", query_str)
                 result_df = con.execute(query_str).pl()
+                #print(result_df)
             except InvalidInputException as e:
                 exception = e
             else:

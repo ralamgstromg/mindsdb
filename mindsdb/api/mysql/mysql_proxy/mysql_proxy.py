@@ -464,7 +464,11 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
         for col_name in df.columns:
             col_expr = pd.col(col_name)
             if df[col_name].dtype != pd.Binary:
-                col_expr = col_expr.cast(pd.Utf8).cast(pd.Binary)
+                if df[col_name].dtype == pd.List(pd.Int32):
+                    pd.concat_str(["[", col_expr.cast(pd.List(pd.Utf8)).list.join(","), "]"])
+                else:
+                    col_expr = col_expr.cast(pd.Utf8).cast(pd.Binary)
+                # print(col_expr)
 
             processed_expr = col_expr.map_elements(
                 serialize_bytes_only, return_dtype=pd.Binary
@@ -472,6 +476,7 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
 
             expressions.append(processed_expr.alias(col_name))
 
+        #print(expressions)
         processed_df = df.with_columns(expressions)
 
         chunk_size = 1000

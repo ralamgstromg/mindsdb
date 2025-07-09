@@ -626,21 +626,41 @@ class QueriesTable(MdbTable):
         """
 
         data = query_context_controller.list_queries()
-        columns_lower = [col.lower() for col in cls.columns]
-
-        data = [[row[k] for k in columns_lower] for row in data]
+        #columns_lower = [col.lower() for col in cls.columns]
+        #print(cls.cols_dtypes)
+        columns_lower = {col.lower(): value for col, value in cls.cols_dtypes.items()}
 
         # print(data)
+        # print(columns_lower)
+
+        #data = [[row[k] for k in columns_lower] for row in data]
+        
         # print(cls.columns)
 
-        if data == []:
-            to_return = pd.DataFrame([], schema=cls.cols_dtypes, orient="row")
+        
+
+        if data is None or len(data) == 0:
+            to_return = pd.DataFrame([], schema=columns_lower, orient="row")
         else:
-            to_return = pd.DataFrame(data, schema=cls.cols_dtypes, orient="row")
+            #to_return = pd.DataFrame(data)
+            to_return = pd.DataFrame(data, schema=columns_lower, orient="row")
+
+        #print(to_return)
+
+        # print("ANTES", to_return)
+
+        # to_return = to_return.with_columns([
+        #     pd.when(pd.col("parameters") == pd.struct([])).then(pd.Null).otherwise(pd.col("parameters")).alias("parameters"),
+        #     pd.when(pd.col("context") == pd.struct([])).then(pd.Null).otherwise(pd.col("context")).alias("context")
+        # ])
+
+        # print("DESPUES", to_return)
         
         # to_return = to_return.with_columns([
         #     pd.col(col).struct.json_encode().alias(col)
         #     for col in cls.struct_cols            
         # ])
+
+        #print(to_return)
 
         return to_return
