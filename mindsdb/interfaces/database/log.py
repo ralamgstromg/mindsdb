@@ -192,6 +192,24 @@ class JobsHistoryTable(LogTable):
         )
         return query
 
+default_log_types = {
+    "name": pd.String,
+    "project": pd.String,
+    "run_start": pd.String,
+    "run_end": pd.String,
+    "error": pd.String,
+    "query": pd.String,
+    "api_key": pd.String,
+    "model_name": pd.String,
+    "input": pd.String,
+    "output": pd.String,
+    "start_time": pd.String,
+    "end_time": pd.String,
+    "prompt_tokens": pd.Int32,
+    "completion_tokens": pd.Int32,
+    "total_tokens": pd.Int32,
+    "success": pd.Boolean,
+}
 
 class LogDBController:
     def __init__(self):
@@ -272,9 +290,9 @@ class LogDBController:
         if render_engine == "postgresql":
             "postgres"
         render = SqlalchemyRender(render_engine)
-        query_str = render.get_string(query, with_failback=False)
-
-        df = pd.read_database(query_str, db.engine)          
+        query_str = render.get_string(query, with_failback=False)      
+        
+        df = pd.read_database(query_str, db.engine, schema_overrides=default_log_types)                  
 
         for t_name, t_table in self._tables.items():            
             casts = []
