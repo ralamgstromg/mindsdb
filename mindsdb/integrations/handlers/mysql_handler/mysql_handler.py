@@ -129,8 +129,10 @@ class MySQLHandler(DatabaseHandler):
     def query(self, query: ASTNode) -> Response:
         """
         Retrieve the data from the SQL statement.
-        """
-        if isinstance(query, Select):
+        """        
+        # print(query)
+        # print(type(query))
+        if isinstance(query, Select):            
             column_types_pl = {}
             for tar in query.targets:
                 if isinstance(tar, Star):                                    
