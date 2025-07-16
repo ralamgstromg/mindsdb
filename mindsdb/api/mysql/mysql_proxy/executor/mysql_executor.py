@@ -79,6 +79,7 @@ class Executor:
 
     @profiler.profile()
     def query_execute(self, sql):
+        #print("[MYSQL_EXECUTOR/QUERY_EXECUTE]", sql)
         self.parse(sql)
         self.do_execute()
 
@@ -92,6 +93,7 @@ class Executor:
 
         try:
             self.query = parse_sql(sql)
+            #print("[MUSQL_EXECUTOR/PARSE]", self.query)
         except Exception as mdb_error:
             # not all statements are parsed by parse_sql
             logger.warning('Failed to parse SQL query')
@@ -112,10 +114,12 @@ class Executor:
         if self.is_executed:
             return
 
-        #print("antes de ejecutado")
-        #print(self.query)
+        #print("[DO_EXECUTE]", self.query)
+        #print("antes de ejecutado")        
         executor_answer: ExecuteAnswer = self.command_executor.execute_command(self.query)
         #print("despues de ejecutado")
+        #print("[DO_EXECUTE_EXECUTE_ANSWER]", executor_answer)
+        
         self.executor_answer = executor_answer
 
         self.is_executed = True

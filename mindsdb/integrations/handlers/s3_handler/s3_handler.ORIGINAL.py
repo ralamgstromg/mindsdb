@@ -465,9 +465,9 @@ class S3Handler(APIHandler):
         Returns:
             Response: A response object containing the result of the query or an error message.
         """
-        print("[query]", query)
+        #print("[query]", query)
         query_ast = parse_sql(query)
-        print("[native_query]", query_ast.using)
+        #print("[native_query]", query_ast.using)
         return self.query(query_ast)
 
     def get_objects(self, limit=100, conditions=[]) -> List[dict]:

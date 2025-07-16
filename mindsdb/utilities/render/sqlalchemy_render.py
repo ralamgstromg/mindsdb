@@ -520,7 +520,7 @@ class SqlalchemyRender:
             col = self.to_expression(t)
             cols.append(col)
 
-        query = sa.select(*cols)
+        query = sa.select(*cols)        
 
         if node.cte is not None:
             for cte in node.cte:
@@ -540,6 +540,7 @@ class SqlalchemyRender:
 
         if node.from_table is not None:
             from_table = node.from_table
+            #print(from_table.__dict__)
 
             if isinstance(from_table, ast.Join):
                 join_list = self.prepare_join(from_table)
@@ -588,18 +589,36 @@ class SqlalchemyRender:
 
             elif isinstance(from_table, ast.Select):
                 table = self.to_table(from_table)
-                query = query.select_from(table)
+                query = query.select_from(table)                
 
-            elif isinstance(from_table, ast.Identifier):
+            elif isinstance(from_table, ast.Identifier):                
                 table = self.to_table(from_table)
-                query = query.select_from(table)
+                query = query.select_from(table)                
 
-            elif isinstance(from_table, ast.NativeQuery):
+            elif isinstance(from_table, ast.NativeQuery):     
+                #print("[SQLALCHEMY_RENDER/prepare_select]", self.integration)           
                 alias = None
                 if from_table.alias:
-                    alias = from_table.alias.parts[-1]
-                table = sa.text(from_table.query).columns().subquery(alias)
+                    alias = from_table.alias.parts[-1]                
+                table_name = f"{from_table}"
+                table_name = ".".join(table_name.split(".")[1:])
+                #print(table_name)
+                #print(f"{from_table}")
+                #print(from_table.integration)
+                #table = sa.text(table_name).columns().subquery(alias)    
+                table = sa.text(f"SELECT * FROM {table_name}").columns().subquery(alias)    
+                #table = table.select("*")                
+                # table = sa.text(from_table.query).columns().subquery(alias)    
+                #table = f"{from_table}"            
+                #query = query.select_from(table)
                 query = query.select_from(table)
+                #query._from_obj = query._from_obj[0]
+                #print(query.__dict__)
+                #print(query)
+                
+                #print("NATIVE",  table, query)
+                #print("[TABLE]", table)
+                #print("[QUERY]", query)
             else:
                 raise NotImplementedError(f"Select from {from_table}")
 
@@ -786,7 +805,9 @@ class SqlalchemyRender:
     def get_query(self, ast_query, with_params=False):
         params = None
         if isinstance(ast_query, (ast.Select, ast.Union, ast.Except, ast.Intersect)):
+            #print(["PREPARE_SELECT"])
             stmt = self.prepare_select(ast_query)
+            #print("[GET_QUERY]", stmt)
         elif isinstance(ast_query, ast.Insert):
             stmt, params = self.prepare_insert(ast_query, with_params=with_params)
         elif isinstance(ast_query, ast.Update):
@@ -809,7 +830,9 @@ class SqlalchemyRender:
         :param with_failback:  switch to standard render in case of error
         :return:
         """
+        #print("[AST_QUERY]", ast_query.__dict__)
         sql, _ = self.get_exec_params(ast_query, with_failback=with_failback, with_params=False)
+        #print("[GET_STRING]", sql)
         return sql
 
     def get_exec_params(self, ast_query, with_failback=True, with_params=True):
@@ -826,9 +849,11 @@ class SqlalchemyRender:
             render_func = render_dml_query
 
         try:
-            stmt, params = self.get_query(ast_query, with_params=with_params)
+            stmt, params = self.get_query(ast_query, with_params=with_params)            
 
             sql = render_func(stmt, self.dialect)
+
+            #print("[GET_EXEC_PARAMS]", sql, params)
 
             return sql, params
 

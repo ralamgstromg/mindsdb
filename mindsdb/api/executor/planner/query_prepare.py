@@ -495,6 +495,8 @@ class PreparedStatementPlanner():
 
         query = self.planner.query
 
+        
+
         if params is not None:
 
             if len(params) != len(stmt.params):
@@ -514,7 +516,7 @@ class PreparedStatementPlanner():
                 or isinstance(query, ast.Insert)
                 or isinstance(query, ast.Update)
                 or isinstance(query, ast.Delete)
-        ):
+        ):            
             return self.plan_query(query)
         else:
             return []
@@ -522,6 +524,7 @@ class PreparedStatementPlanner():
     def plan_query(self, query):
         # use v1 planner
         self.planner.from_query(query)
+        #print("[QUERY_PREPARE/PLAN_QUERY]", self.planner.plan.__dict__)
         step = None
         for step in self.planner.plan.steps:
             yield step

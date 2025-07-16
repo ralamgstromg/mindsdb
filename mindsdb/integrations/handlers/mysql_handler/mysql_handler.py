@@ -131,7 +131,6 @@ class MySQLHandler(DatabaseHandler):
         Retrieve the data from the SQL statement.
         """        
         # print(query)
-        # print(type(query))
         if isinstance(query, Select):            
             column_types_pl = {}
             for tar in query.targets:

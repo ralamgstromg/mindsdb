@@ -242,6 +242,8 @@ class IntegrationDataNode(DataNode):
             # if query.using is not None:
             #     print(query.using)
 
+            #print("[INTEGRATION_DATANODE/QUERY]", query, native_query)
+
             if query is not None:
                 #print(self.integration_handler)
                 #print(query)                

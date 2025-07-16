@@ -83,12 +83,16 @@ class FetchDataframeStepCall(BaseStepCall):
         query = step.query
 
         if dn is None:
-            raise UnknownError(f"Unknown integration name: {step.integration}")
+            raise UnknownError(f"Unknown integration name: {step.integration}")               
 
         if query is None:
             table_alias = (self.context.get("database"), "result", "result")
 
             # fetch raw_query
+            # print("[FetchDataframeStepCall]", table_alias)
+            # print(step.__dict__)
+            #print("[FETCH_DATAFRAME]", step.raw_query)
+
             response: DataHubResponse = dn.query(native_query=step.raw_query, session=self.session)
             df = response.data_frame
         else:

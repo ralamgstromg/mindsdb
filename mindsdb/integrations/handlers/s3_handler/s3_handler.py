@@ -355,7 +355,7 @@ class S3Handler(DatabaseHandler):
             exists = True
         except Exception as e:
             config_duckdb = self._parse_using(query.using)
-            print("[_create_table]", config_duckdb)
+            #print("[_create_table]", config_duckdb)
             config_str = self._config_to_sql(config_duckdb)
             with self._connect_duckdb(self.bucket) as connection:
                 connection.execute(f"COPY df TO 's3://{self.bucket}/{table}' {config_str};")

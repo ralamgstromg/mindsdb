@@ -775,7 +775,7 @@ class QueryPlanner:
         if query.cte is not None:
             self.plan_cte(query)
 
-        from_table = query.from_table
+        from_table = query.from_table        
 
         if isinstance(from_table, Identifier):
             return self.plan_select_identifier(query)
@@ -784,9 +784,13 @@ class QueryPlanner:
         elif isinstance(from_table, Join):
             plan_join = PlanJoin(self)
             return plan_join.plan(query, integration)
-        elif isinstance(from_table, NativeQuery):
+        elif isinstance(from_table, NativeQuery):            
             integration = from_table.integration.parts[0].lower()
-            step = FetchDataframeStep(integration=integration, raw_query=from_table.query)
+            raw_query = f"SELECT * FROM {from_table}"
+            raw_query = raw_query.replace(integration + ".", "")
+            #print("[QUERY_PLANNER/plan_select]", raw_query, integration)
+            #step = FetchDataframeStep(integration=integration, raw_query=from_table.query)
+            step = FetchDataframeStep(integration=integration, raw_query=f"{raw_query}")
             last_step = self.plan.add_step(step)
             return self.plan_sub_select(query, last_step)
 
@@ -846,6 +850,8 @@ class QueryPlanner:
 
         if query is None:
             query = self.query
+
+        #print("[QUERY_PLANNER/from_query]", query, type(query))
 
         if isinstance(query, (Select, Union, Except, Intersect)):
             if self.check_single_integration(query):
@@ -952,6 +958,8 @@ class QueryPlanner:
 
     def execute_steps(self, params=None):
         statement_planner = PreparedStatementPlanner(self)
+
+        #print("[QUERY_PLANNER/EXECUTE_STEPS]", statement_planner)
 
         # return generator
         return statement_planner.execute_steps(params)

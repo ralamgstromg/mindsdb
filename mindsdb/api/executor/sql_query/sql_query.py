@@ -92,12 +92,17 @@ class SQLQuery:
             self.query = sql
             renderer = SqlalchemyRender('mysql')            
             try:
+                #print("TRY")
                 self.context['query_str'] = renderer.get_string(self.query, with_failback=True)                
             except Exception:
+                #print("EXCEPT")
                 self.context['query_str'] = str(self.query)
         
         self.create_planner()
         #print("post planner")
+
+        # print("[SQL_QUERY]", self.query)
+        #print("[SQL_QUERY/__INIT]", self.context['query_str'])
         
 
         if execute:
@@ -196,6 +201,8 @@ class SQLQuery:
 
         database = None if self.database == '' else self.database.lower()
 
+        #print("[SQL_QUERY/CREATE_PLANNER]", self.query, databases)
+
         self.context['predictor_metadata'] = predictor_metadata
         self.planner = query_planner.QueryPlanner(
             self.query,
@@ -249,7 +256,7 @@ class SQLQuery:
         except PlanningException as e:
             raise LogicError(e)
                 
-        #print("[AQUI]", steps)
+        #print("[SQL_QUERY/EXECUTE_QUERY]", self.context["query_str"], steps)
 
         if self.planner.plan.is_resumable:
             #print("resumable")
@@ -342,6 +349,8 @@ class SQLQuery:
         # print(step)
         # print(steps_data)
         # print(handler)
+
+        #print("[SQL_QUERY/EXECUTE_STEP]", step)
 
         return handler(self, steps_data=steps_data).call(step)
 
