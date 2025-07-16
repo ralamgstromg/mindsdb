@@ -385,7 +385,12 @@ def dump_result_set_to_mysql(
             col_name = f"_{col.table_alias}_{col.name}"
         else:
             col_name = f"{col.name}"
-        pl_type = df.schema[col_name]        
+        pl_type = df.schema[col_name]      
+        
+        ## RCP
+        if isinstance(pl_type, pd.Datetime):
+            pl_type = pd.Datetime
+            
         type_properties: CTypeProperties = PL_DATA_C_TYPE_MAP[pl_type]
         columns_dicts.append(
             {

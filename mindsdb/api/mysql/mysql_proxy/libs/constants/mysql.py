@@ -381,6 +381,7 @@ PL_DATA_C_TYPE_MAP = {
     pl.Date: CTypeProperties(C_TYPES.MYSQL_TYPE_DATE, 10, [FIELD_FLAG.BINARY_COLLATION]),
     pl.Datetime: CTypeProperties(C_TYPES.MYSQL_TYPE_DATETIME, 19, [FIELD_FLAG.BINARY_COLLATION]),  
     pl.Datetime(time_unit='us', time_zone=None): CTypeProperties(C_TYPES.MYSQL_TYPE_DATETIME, 19, [FIELD_FLAG.BINARY_COLLATION]),
+    pl.Datetime(time_unit='us'): CTypeProperties(C_TYPES.MYSQL_TYPE_DATETIME, 19, [FIELD_FLAG.BINARY_COLLATION]),
     pl.String: CTypeProperties(C_TYPES.MYSQL_TYPE_VAR_STRING),
     pl.Binary: CTypeProperties(C_TYPES.MYSQL_TYPE_STRING, flags=[FIELD_FLAG.BINARY_COLLATION]),    
     pl.UInt8: CTypeProperties(C_TYPES.MYSQL_TYPE_BIT, 8, [FIELD_FLAG.UNSIGNED]),
@@ -1233,6 +1234,7 @@ SERVER_VARIABLES = {
     "@@event_scheduler": ("OFF", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
     "@@default_storage_engine": ("InnoDB", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
     "@@default_tmp_storage_engine": ("InnoDB", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
+    "@@autocommit": ("InnoDB", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
 }
 
 

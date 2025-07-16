@@ -62,10 +62,7 @@ class S3Handler(DatabaseHandler):
         self.bucket = self.connection_data.get('bucket')
         self._regions = {}
 
-        self.file_format = self.connection_data.get('file_format', 'parquet')
-        self.file_compression = self.connection_data.get('file_compression', 'zstd')
-        self.file_compression_level = self.connection_data.get('file_compression_level', 8)
-        self.parquet_version = self.connection_data.get('parquet_version', 'V2')
+        self.supported_files = ["parquet", "csv", "tsv", "json", "csv.gz"]
 
         self.resource = None
 
@@ -241,6 +238,67 @@ class S3Handler(DatabaseHandler):
         with self._connect_duckdb(self.bucket) as connection:
             data = connection.execute(sql).pl()
             return data
+        
+    def _parse_using(self, using: dict) -> dict:
+        config_duckdb = {}
+        if using is not None:
+            if "format" in using: 
+                config_duckdb["FORMAT"] = f'{using["format"]}'
+            else:
+                config_duckdb["FORMAT"] = "parquet"
+            
+            if config_duckdb["FORMAT"] == "parquet":
+
+                if "parquet_version" in using:
+                    config_duckdb["PARQUET_VERSION"] = f'{using["parquet_version"]}'
+                else:
+                    if config_duckdb["FORMAT"] == "parquet":
+                        config_duckdb["PARQUET_VERSION"] = "V2"
+
+                if "compression" in using:
+                    config_duckdb["COMPRESSION"] = f'{using["compression"]}'
+                else:
+                    config_duckdb["COMPRESSION"] = "zstd"
+
+                if config_duckdb["COMPRESSION"] == "zstd" and "compression_level" in using:
+                    config_duckdb["COMPRESSION_LEVEL"] = using["compression_level"]
+
+            elif config_duckdb["FORMAT"] == "csv":
+                if "compression" in using:
+                    config_duckdb["COMPRESSION"] = f'{using["compression"]}'
+
+                if "dateformat" in using:
+                    config_duckdb["DATEFORMAT"] = f'{using["dateformat"]}'
+
+                if "delim" in using:
+                    config_duckdb["DELIM"] = f'{using["delim"]}'
+
+                if "escape" in using:
+                    config_duckdb["ESCAPE"] = f'{using["escape"]}'
+
+                if "header" in using:
+                    config_duckdb["HEADER"] = f'{using["header"]}'
+
+                if "nullstr" in using:
+                    config_duckdb["NULLSTR"] = f'{using["nullstr"]}'
+
+                if "quote" in using:
+                    config_duckdb["QUOTE"] = f'{using["quote"]}'
+
+                if "timestampformat" in using:
+                    config_duckdb["TIMESTAMPFORMAT"] = f'{using["timestampformat"]}'
+                
+
+        return config_duckdb
+
+    def _config_to_sql(self, config_sql: dict):
+        config_arr = []
+        for key, val in config_sql.items():
+            config_arr.append(f"{key} {val}")
+        if len(config_arr)>0:
+            return "(" + ", ".join(config_arr) + ")"
+        else:
+            return ""
 
 
     def add_data_to_table(self, key, query: Insert) -> None: #df) -> None:
@@ -264,6 +322,11 @@ class S3Handler(DatabaseHandler):
 
         df = query.values
 
+        config_duckdb = self._parse_using(query.using)
+        #print("[add_data_to_table]", config_duckdb)
+        config_str = self._config_to_sql(config_duckdb)
+
+
         with self._connect_duckdb(self.bucket) as connection:
             # copy
             if exists:
@@ -271,26 +334,35 @@ class S3Handler(DatabaseHandler):
                 # insert
                 connection.execute("INSERT INTO tmp_table BY NAME SELECT * FROM df")
                 # upload
-                connection.execute(f"COPY tmp_table TO 's3://{self.bucket}/{key}' (FORMAT {self.file_format}, PARQUET_VERSION {self.parquet_version}, OVERWRITE_OR_IGNORE true, COMPRESSION {self.file_compression}, COMPRESSION_LEVEL {self.file_compression_level});")
+                connection.execute(f"COPY tmp_table TO 's3://{self.bucket}/{key}' {config_str};")
             else:
-                connection.execute(f"COPY df TO 's3://{self.bucket}/{key}' (FORMAT {self.file_format}, PARQUET_VERSION {self.parquet_version}, COMPRESSION {self.file_compression}, COMPRESSION_LEVEL {self.file_compression_level});")
+                connection.execute(f"COPY df TO 's3://{self.bucket}/{key}' {config_str};")
 
-    def _create_table(self, key, df) -> None:
+
+    def _create_table(self, query, df) -> None:
         """
         Create a table in the S3 bucket.
         """
+        table = query.name.parts[-1]
+
+        #print(query.to_tree())
+        #print(query)
+
         client = self.connect()
         exists = False
         try:
-            client.head_object(Bucket=self.bucket, Key=key)
+            client.head_object(Bucket=self.bucket, Key=table)
             exists = True
         except Exception as e:
+            config_duckdb = self._parse_using(query.using)
+            print("[_create_table]", config_duckdb)
+            config_str = self._config_to_sql(config_duckdb)
             with self._connect_duckdb(self.bucket) as connection:
-                connection.execute(f"COPY df TO 's3://{self.bucket}/{key}' (FORMAT {self.file_format}, PARQUET_VERSION {self.parquet_version}, COMPRESSION {self.file_compression}, COMPRESSION_LEVEL {self.file_compression_level});")
+                connection.execute(f"COPY df TO 's3://{self.bucket}/{table}' {config_str};")
 
         if exists:
-            logger.error(f'Table {key} already exists in the bucket {self.bucket}')
-            raise ValueError(f'Table {key} already exists in the bucket {self.bucket}')
+            logger.error(f'Table {table} already exists in the bucket {self.bucket}')
+            raise ValueError(f'Table {table} already exists in the bucket {self.bucket}')
 
 
     def _get_s3_objects(self, limit:int = None ) -> list[dict]:
@@ -306,7 +378,7 @@ class S3Handler(DatabaseHandler):
                 'bucket': obj.bucket_name,              
                 'content': None                             
             }
-            if item["extension"] == self.file_format:
+            if item["extension"] in self.supported_files:
                 arr_files.append(item)
                 rid+=1
 
@@ -331,7 +403,10 @@ class S3Handler(DatabaseHandler):
 
         self.connect()                
 
+        #print(query.to_string())
+
         if isinstance(query, DropTables):
+            #print("[DROP TABLE]")
             for table_identifier in query.tables:
                 if len(table_identifier.parts) == 2 and table_identifier.parts[0] != self.name:
                     return Response(
@@ -349,8 +424,9 @@ class S3Handler(DatabaseHandler):
             response = Response(RESPONSE_TYPE.OK)
 
         elif isinstance(query, CreateTable):
-            table = query.name.parts[-1]
-
+            #table = query.name.parts[-1]
+            #print("[S3_CREATE_TABLE]", query.using)
+            # print(query)
             df = pd.DataFrame([], schema=[col.name for col in query.columns])
 
             for col in query.columns:     
@@ -375,7 +451,8 @@ class S3Handler(DatabaseHandler):
                     pd.col(col.name).cast(dtype).alias(col.name)
                 ])
                 
-            self._create_table(table, df)            
+            #self._create_table(table, df)            
+            self._create_table(query, df)
             response = Response(RESPONSE_TYPE.OK)
 
         elif isinstance(query, Select):
@@ -391,6 +468,7 @@ class S3Handler(DatabaseHandler):
                 data_frame=df
             )
         elif isinstance(query, Insert):     
+            #print("[S3_INSERT]", query.using)
             table_name = query.table.parts[-1]
             self.add_data_to_table(table_name, query)
             response = Response(RESPONSE_TYPE.OK)
@@ -454,7 +532,7 @@ class S3Handler(DatabaseHandler):
             Response: A response object containing the column details, formatted as per the `Response` class.
         """
 
-        print("[table_name]", table_name)
+        #print("[table_name]", table_name)
         query = Select(
             targets=[Star()],
             from_table=Identifier(parts=[table_name]),

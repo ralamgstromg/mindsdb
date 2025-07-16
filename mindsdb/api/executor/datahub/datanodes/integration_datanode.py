@@ -141,12 +141,16 @@ class IntegrationDataNode(DataNode):
         is_replace: bool = False,
         is_create: bool = False,
         raise_if_exists: bool = True,
+        using: dict = None,
         **kwargs,
     ) -> DataHubResponse:
         # is_create - create table
         #   if !raise_if_exists: error will be skipped
         # is_replace - drop table if exists
         # is_create==False and is_replace==False: just insert
+
+        # print(table_name)
+        # print(result_set)
 
         table_columns_meta = {}
 
@@ -161,7 +165,7 @@ class IntegrationDataNode(DataNode):
             is_create = True
 
         if is_create:
-            create_table_ast = CreateTable(name=table_name, columns=columns, is_replace=is_replace)
+            create_table_ast = CreateTable(name=table_name, columns=columns, is_replace=is_replace, using=using)
             try:
                 self.query(create_table_ast)
             except Exception as e:
@@ -207,7 +211,7 @@ class IntegrationDataNode(DataNode):
         #print(values)
         #print(self)
 
-        insert_ast = Insert(table=table_name, columns=insert_columns, values=values, is_plain=True)
+        insert_ast = Insert(table=table_name, columns=insert_columns, values=values, is_plain=True, using=using)
 
         # print(f"{sys.getsizeof(insert_ast)} bytes")
         #print(insert_ast.using)

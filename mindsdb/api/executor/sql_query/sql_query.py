@@ -90,19 +90,21 @@ class SQLQuery:
         else:
             #print("sql is ASTNode")
             self.query = sql
-            renderer = SqlalchemyRender('mysql')
+            renderer = SqlalchemyRender('mysql')            
             try:
-                self.context['query_str'] = renderer.get_string(self.query, with_failback=True)
+                self.context['query_str'] = renderer.get_string(self.query, with_failback=True)                
             except Exception:
                 self.context['query_str'] = str(self.query)
-
-        #print(self.context['query_str'])
+        
         self.create_planner()
         #print("post planner")
+        
 
         if execute:
             #print("execute")
+            #print(self.context['query_str'])
             self.execute_query()
+                
 
     @classmethod
     def register_steps(cls):
@@ -246,6 +248,8 @@ class SQLQuery:
             steps = list(self.planner.execute_steps())
         except PlanningException as e:
             raise LogicError(e)
+                
+        #print("[AQUI]", steps)
 
         if self.planner.plan.is_resumable:
             #print("resumable")
@@ -274,16 +278,18 @@ class SQLQuery:
         process_mark = None
         try:
             #print("try")
-            steps_classes = (x.__class__ for x in steps)
+            steps_classes = (x.__class__ for x in steps)            
             predict_steps = (ApplyPredictorRowStep, ApplyPredictorStep, ApplyTimeseriesPredictorStep)
             if any(s in predict_steps for s in steps_classes):
                 process_mark = create_process_mark('predict')
             for step in steps:
                 #print(step)
                 with profiler.Context(f'step: {step.__class__.__name__}'):
+                    #print("step", step)
                     step_result = self.execute_step(step)
                 #print(step_result)
                 self.steps_data[step.step_num] = step_result
+                #print("steps_data", self.steps_data[step.step_num])
         except Exception as e:
             if self.run_query is not None:
                 # set error and place where it stopped
@@ -332,8 +338,10 @@ class SQLQuery:
         if handler is None:
             raise UnknownError(f"Unknown step: {cls_name}")
         
+        # print("[execute_step]")
         # print(step)
         # print(steps_data)
+        # print(handler)
 
         return handler(self, steps_data=steps_data).call(step)
 

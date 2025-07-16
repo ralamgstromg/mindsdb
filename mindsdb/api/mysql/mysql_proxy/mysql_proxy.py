@@ -798,13 +798,16 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
                 elif int(p.type.value) in [103, 101, 112, 47, 116, 110, 109, 39, 44, 95]:
                     #print(p.type.value)
                     response = SQLAnswer(RESPONSE_TYPE.OK)                
+
                 else:
-                    # print(p.type.value)
+                    #print(str(p))
                     logger.warning("Command has no specific handler, return OK msg")
-                    logger.debug(str(p))
+                    logger.info("sql", str(sql))
+                    logger.info("p", str(p))
+                    logger.info("p_int", int(p.type.value))
                     # p.pprintPacket() TODO: Make a version of print packet
                     # that sends it to debug instead
-                    response = SQLAnswer(RESPONSE_TYPE.OK)
+                    response = SQLAnswer(RESPONSE_TYPE.OK, result_set=None)
 
             except SqlApiException as e:
                 # classified error

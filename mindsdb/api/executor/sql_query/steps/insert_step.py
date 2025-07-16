@@ -93,7 +93,7 @@ class InsertToTableCall(BaseStepCall):
                 col_names.add(col.alias)
 
         response = dn.create_table(
-            table_name=table_name, result_set=data, is_replace=is_replace, is_create=is_create, params=step.params
+            table_name=table_name, result_set=data, is_replace=is_replace, is_create=is_create, params=step.params, using=step.using
         )
         return ResultSet(affected_rows=response.affected_rows)
 
@@ -115,5 +115,5 @@ class CreateTableCall(BaseStepCall):
 
         dn = self.session.datahub.get(integration_name)
 
-        dn.create_table(table_name=table_name, columns=step.columns, is_replace=step.is_replace, is_create=True)
+        dn.create_table(table_name=table_name, columns=step.columns, is_replace=step.is_replace, is_create=True, using=step.using)
         return ResultSet()

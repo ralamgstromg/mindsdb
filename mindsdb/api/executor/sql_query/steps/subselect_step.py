@@ -76,6 +76,8 @@ class QueryStepCall(BaseStepCall):
     def call(self, step: QueryStep):
         query = step.query
 
+        #print("[QueryStep]", step)
+
         if step.from_table is not None:
             if isinstance(step.from_table, pd.DataFrame):
                 result_set = ResultSet.from_df(step.from_table)
@@ -85,6 +87,8 @@ class QueryStepCall(BaseStepCall):
             # only from_table can content result
             prev_step_num = query.from_table.value.step_num
             result_set = self.steps_data[prev_step_num]
+
+        #print("AQUI")
 
         df, col_names = result_set.to_df_cols()
         col_idx = {}
@@ -111,6 +115,8 @@ class QueryStepCall(BaseStepCall):
         for col in query.targets:
             if col.alias is not None:
                 aliases.append(col.alias.parts[0])
+
+        #print("[AQUI2]")
 
         # analyze condition and change name of columns
         def check_fields(node, is_target=None, **kwargs):
@@ -186,10 +192,14 @@ class QueryStepCall(BaseStepCall):
 
                 new_name = search_idx[key]
                 return Identifier(parts=[new_name], alias=node.alias)
+            
+        #print("[ANTES_FILL]")
 
         # fill params
         fill_params = get_fill_param_fnc(self.steps_data)
         query_traversal(query, fill_params)
+
+        #print("PASE", fill_params)
 
         if not step.strict_where:
             # remove conditions with not-existed columns.
@@ -209,10 +219,17 @@ class QueryStepCall(BaseStepCall):
 
             query_traversal(query.where, remove_not_used_conditions)
 
+        #print("DESPUES_IF")
+
         query_traversal(query, check_fields)
         query.where = query_context_controller.remove_lasts(query.where)
 
+        #print("AQUI 4")
+
         query.from_table = Identifier("df_table")
-        res = query_df(df, query, session=self.session)
+
+        #print("AQUI5", query, df, self.session)
+
+        res = query_df(df, query, session=self.session)        
 
         return ResultSet.from_df_cols(df=res, columns_dict=col_names, strict=False)

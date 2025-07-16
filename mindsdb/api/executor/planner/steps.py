@@ -225,7 +225,7 @@ class MultipleSteps(PlanStep):
 
 
 class SaveToTable(PlanStep):
-    def __init__(self, table, dataframe, is_replace=False, params=None, *args, **kwargs):
+    def __init__(self, table, dataframe, is_replace=False, params=None, using: dict = None, *args, **kwargs):
         """
         Creates table if not exists and fills it with content of dataframe
         is_replace - to drop table beforehand
@@ -237,10 +237,11 @@ class SaveToTable(PlanStep):
         if params is None:
             params = {}
         self.params = params
+        self.using = using
 
 
 class InsertToTable(PlanStep):
-    def __init__(self, table, dataframe=None, query=None, params=None, *args, **kwargs):
+    def __init__(self, table, dataframe=None, query=None, params=None, using: dict = None, *args, **kwargs):
         """Fills table with content of dataframe"""
         super().__init__(*args, **kwargs)
         self.table = table
@@ -249,15 +250,17 @@ class InsertToTable(PlanStep):
         if params is None:
             params = {}
         self.params = params
+        self.using = using
 
 
 class CreateTableStep(PlanStep):
-    def __init__(self, table, columns=None, is_replace=False, *args, **kwargs):
+    def __init__(self, table, columns=None, is_replace=False, using: dict = None, *args, **kwargs):
         """Fills table with content of dataframe"""
         super().__init__(*args, **kwargs)
         self.table = table
         self.columns = columns
-        self.is_replace = is_replace
+        self.is_replace = is_replace        
+        self.using = using
 
 
 class UpdateToTable(PlanStep):

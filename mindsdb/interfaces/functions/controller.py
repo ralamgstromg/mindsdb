@@ -1,9 +1,10 @@
 import os
 import copy
 
-from duckdb.typing import BIGINT, DOUBLE, VARCHAR, BLOB, BOOLEAN
+from duckdb.typing import BIGINT, DOUBLE, VARCHAR, BLOB, BOOLEAN, TIMESTAMP, TIMESTAMP_TZ
 from mindsdb.interfaces.storage.model_fs import HandlerStorage
 from mindsdb.utilities.config import config
+from .mysql_functions import mysql_native_functions
 
 
 def python_to_duckdb_type(py_type):
@@ -17,6 +18,7 @@ def python_to_duckdb_type(py_type):
         return BOOLEAN
     elif py_type == 'bytes':
         return BLOB
+        
     else:
         # Unknown
         return VARCHAR
@@ -59,6 +61,7 @@ class BYOMFunctionsController:
         return self.byom_engines
 
     def get_methods(self, engine):
+        #print("[engine]", engine)
         if engine not in self.byom_methods:
             ml_handler = self.session.integration_controller.get_ml_handler(engine)
 
@@ -110,7 +113,6 @@ class BYOMFunctionsController:
         return self.byom_handlers[engine].function_call(method_name, args)
 
     def create_function_set(self):
-        #print(self)
         return DuckDBFunctions(self)
 
 
@@ -236,7 +238,6 @@ class FunctionController(BYOMFunctionsController):
 
         return chat_model_params
 
-
 class DuckDBFunctions:
     def __init__(self, controller):
         self.controller = controller
@@ -266,7 +267,9 @@ class DuckDBFunctions:
         }
 
     def register(self, connection):
-        for name, info in self.functions.items():
+        for name, info in mysql_native_functions.items():            
+            self.functions[name] = info
+        for name, info in self.functions.items():            
             connection.create_function(
                 name,
                 info['callback'],

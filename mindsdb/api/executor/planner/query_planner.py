@@ -659,6 +659,7 @@ class QueryPlanner:
                         table=query.name,
                         columns=query.columns,
                         is_replace=query.is_replace,
+                        using=query.using,
                     )
                 )
                 return
@@ -675,6 +676,7 @@ class QueryPlanner:
                 table=query.name,
                 dataframe=last_step.result,
                 is_replace=query.is_replace,
+                using=query.using,
             )
         )
 
@@ -699,6 +701,7 @@ class QueryPlanner:
                     table=table,
                     dataframe=last_step.result,
                     params=params,
+                    using=query.using,
                 )
             )
         else:
@@ -706,6 +709,7 @@ class QueryPlanner:
                 InsertToTable(
                     table=table,
                     query=query,
+                    using=query.using
                 )
             )
 

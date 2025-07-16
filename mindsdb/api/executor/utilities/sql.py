@@ -188,8 +188,12 @@ def query_df(df, query, session=None):
 
     # print(df)
     # print(df.schema)
+
+    #print("[FINAL]", query_str, df, user_functions.__dict__)
+    
     result_df, description = query_df_with_type_infer_fallback(query_str, {"df": df}, user_functions=user_functions)
 
+    
     #print("result_df", result_df)
 
     #result_df.replace({np.nan: None}, inplace=True)
