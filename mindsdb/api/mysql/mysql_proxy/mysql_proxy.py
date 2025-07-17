@@ -759,6 +759,12 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
             error_text = None
             error_traceback = None
 
+            print(p.__dict__)
+            if hasattr(p, "sql"):
+                print(self.decode_utf(p.sql.value))
+            else:
+                print(p._body)            
+
             try:
                 if p.type.value == COMMANDS.COM_QUERY:
                     sql = self.decode_utf(p.sql.value)
@@ -768,7 +774,6 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
                         query=sql, api="mysql", environment=config.get("environment")
                     )
                     with profiler.Context("mysql_query_processing"):
-                        #print("MYSQL_PROXY/handle", sql)
                         response = self.process_query(sql)
                 elif p.type.value == COMMANDS.COM_STMT_PREPARE:
                     sql = self.decode_utf(p.sql.value)
@@ -798,20 +803,29 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
                 elif int(p.type.value) in [103, 101, 112, 47, 116, 110, 109, 39, 44, 95]:
                     #print(p.type.value)
                     response = SQLAnswer(RESPONSE_TYPE.OK)                
+                
+                elif p.type.value == COMMANDS.COM_PING:
+                    logger.warning("COMAND_PING")
+                    response = SQLAnswer(RESPONSE_TYPE.OK)
 
                 else:
                     #print(str(p))
                     logger.warning("Command has no specific handler, return OK msg")
-                    logger.info("sql", str(sql))
-                    logger.info("p", str(p))
-                    logger.info("p_int", int(p.type.value))
+                    logger.info("[SQL]= " + str(sql))
+                    logger.info("[p]=" + str(p))
+                    #logger.info("p_int", int(p.type.value))
                     # p.pprintPacket() TODO: Make a version of print packet
                     # that sends it to debug instead
-                    response = SQLAnswer(RESPONSE_TYPE.OK, result_set=None)
+                    #response = SQLAnswer(RESPONSE_TYPE.TABLE, result_set=ResultSet(df=pd.DataFrame()))
+                    response = SQLAnswer(RESPONSE_TYPE.OK)
 
             except SqlApiException as e:
                 # classified error
                 error_type = "expected"
+
+                logger.error(
+                    f"ERROR Api\n" f"{e}"
+                )
 
                 response = SQLAnswer(
                     resp_type=RESPONSE_TYPE.ERROR,
@@ -838,6 +852,10 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
                 else:
                     error_code = ERR.ER_SYNTAX_ERROR
 
+                logger.error(
+                    f"ERROR expected\n" f"{e}"
+                )
+
                 response = SQLAnswer(
                     resp_type=RESPONSE_TYPE.ERROR,
                     error_code=error_code,
@@ -846,6 +864,10 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
             except exec_exc.UnknownError as e:
                 # unclassified
                 error_type = "unexpected"
+
+                logger.error(
+                    f"ERROR unexpected\n" f"{e}"
+                )
 
                 response = SQLAnswer(
                     resp_type=RESPONSE_TYPE.ERROR,
@@ -866,6 +888,10 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
                     error_code=error_code,
                     error_message=str(e),
                 )
+
+            print(response)
+            print(response.__dict__)
+            print("---"*50)
 
             if response is not None:
                 self.send_query_answer(response)
