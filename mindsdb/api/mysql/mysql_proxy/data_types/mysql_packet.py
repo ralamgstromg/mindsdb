@@ -89,6 +89,7 @@ class Packet:
 
     def send(self):
         string = self.get_packet_string()
+        print("[SEND]", string)
         self.session.logging.debug(f"Sending packet: {self.__class__.__name__}")
         self.session.logging.debug(string)
         self.mysql_socket.sendall(string)

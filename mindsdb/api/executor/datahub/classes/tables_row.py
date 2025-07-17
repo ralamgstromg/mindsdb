@@ -32,7 +32,9 @@ class TablesRow:
     AUTO_INCREMENT: int = None
     CREATE_TIME: datetime = datetime(2024, 1, 1)
     UPDATE_TIME: datetime = datetime(2024, 1, 1)
+    #UPDATE_TIME: datetime = None
     CHECK_TIME: datetime = datetime(2024, 1, 1)
+    #CHECK_TIME: datetime = None
     TABLE_COLLATION: str = None
     CHECKSUM: int = None
     CREATE_OPTIONS: str = None

@@ -460,15 +460,19 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
             packets.append(self.packet(EofPacket, status=status))
         self.send_package_group(packets)
 
+        print("[ORIGINAL_DF]", df)
+
         expressions = []
         for col_name in df.columns:
             col_expr = pd.col(col_name)
             if df[col_name].dtype != pd.Binary:
                 if df[col_name].dtype == pd.List(pd.Int32):
                     pd.concat_str(["[", col_expr.cast(pd.List(pd.Utf8)).list.join(","), "]"])
+                elif isinstance(df[col_name].dtype, pd.Datetime):
+                    col_expr = col_expr.dt.to_string("%Y-%m-%d %H:%M:%S").cast(pd.Utf8).cast(pd.Binary)
                 else:
                     col_expr = col_expr.cast(pd.Utf8).cast(pd.Binary)
-                # print(col_expr)
+
 
             processed_expr = col_expr.map_elements(
                 serialize_bytes_only, return_dtype=pd.Binary
@@ -479,6 +483,8 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
         #print(expressions)
         processed_df = df.with_columns(expressions)
 
+        print("[PROCESSED_DF]", processed_df)
+
         chunk_size = 1000
         for i in range(0, processed_df.height, chunk_size):
             chunk = processed_df.slice(i, chunk_size)
@@ -488,7 +494,13 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
                 self.packet(body=body, length=len(body)).accum()
                 for body in concatenated_rows_bytes
             ])
-            self.socket.sendall(string_to_send)
+            print("[STRING_TO_SEND]", len(string_to_send))
+            try:
+                self.socket.sendall(string_to_send)
+            except Exception as e:                
+                logger.error(f"Error sendall {e}")
+                #print(string_to_send)
+                raise e
 
 
     def decode_utf(self, text):
@@ -805,8 +817,9 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
                     response = SQLAnswer(RESPONSE_TYPE.OK)                
                 
                 elif p.type.value == COMMANDS.COM_PING:
-                    logger.warning("COMAND_PING")
-                    response = SQLAnswer(RESPONSE_TYPE.OK)
+                    logger.warning("COMMAND_PING")
+                    response = SQLAnswer(RESPONSE_TYPE.OK, affected_rows=0, status=2)
+                    print(response)
 
                 else:
                     #print(str(p))
@@ -817,7 +830,7 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
                     # p.pprintPacket() TODO: Make a version of print packet
                     # that sends it to debug instead
                     #response = SQLAnswer(RESPONSE_TYPE.TABLE, result_set=ResultSet(df=pd.DataFrame()))
-                    response = SQLAnswer(RESPONSE_TYPE.OK)
+                    response = SQLAnswer(RESPONSE_TYPE.OK, affected_rows=0, status=2)
 
             except SqlApiException as e:
                 # classified error
@@ -889,8 +902,10 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
                     error_message=str(e),
                 )
 
-            print(response)
+            #print(response)
             print(response.__dict__)
+            #if response.result_set is not None:
+                #print(response.result_set.get_raw_df())
             print("---"*50)
 
             if response is not None:

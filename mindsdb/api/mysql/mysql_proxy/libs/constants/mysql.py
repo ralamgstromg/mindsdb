@@ -1204,13 +1204,18 @@ SERVER_VARIABLES = {
     "@@license": ("GPL", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
     "@@lower_case_table_names": (0, TYPES.MYSQL_TYPE_LONGLONG, CHARSET_NUMBERS["binary"]),
     "@@GLOBAL.lower_case_table_names": (0, TYPES.MYSQL_TYPE_LONGLONG, CHARSET_NUMBERS["binary"]),
-    "@@max_allowed_packet": (16777216, TYPES.MYSQL_TYPE_LONGLONG, CHARSET_NUMBERS["binary"]),
+    "@@max_allowed_packet": (104857600, TYPES.MYSQL_TYPE_LONGLONG, CHARSET_NUMBERS["binary"]),
     "@@net_buffer_length": (16384, TYPES.MYSQL_TYPE_LONGLONG, CHARSET_NUMBERS["binary"]),
     "@@net_write_timeout": (60, TYPES.MYSQL_TYPE_LONGLONG, CHARSET_NUMBERS["binary"]),
-    "@@query_cache_size": (16777216, TYPES.MYSQL_TYPE_LONGLONG, CHARSET_NUMBERS["binary"]),
+    "@@query_cache_size": (104857600, TYPES.MYSQL_TYPE_LONGLONG, CHARSET_NUMBERS["binary"]),
     "@@query_cache_type": ("OFF", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
+    # "@@sql_mode": (
+    #     "ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION",
+    #     TYPES.MYSQL_TYPE_VAR_STRING,
+    #     CHARSET_NUMBERS["utf8_general_ci"],
+    # ),
     "@@sql_mode": (
-        "ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION",
+        "STRICT_ALL_TABLES",
         TYPES.MYSQL_TYPE_VAR_STRING,
         CHARSET_NUMBERS["utf8_general_ci"],
     ),
@@ -1234,7 +1239,7 @@ SERVER_VARIABLES = {
     "@@event_scheduler": ("OFF", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
     "@@default_storage_engine": ("InnoDB", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
     "@@default_tmp_storage_engine": ("InnoDB", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
-    "@@autocommit": ("InnoDB", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
+    "@@autocommit": (1, TYPES.MYSQL_TYPE_LONGLONG, CHARSET_NUMBERS["binary"]),
 }
 
 
