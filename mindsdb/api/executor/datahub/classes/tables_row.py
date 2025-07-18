@@ -38,7 +38,7 @@ class TablesRow:
     TABLE_COLLATION: str = None
     CHECKSUM: int = None
     CREATE_OPTIONS: str = None
-    TABLE_COMMENT: str = ''
+    TABLE_COMMENT: str = ""
 
     def to_list(self) -> list:
         return list(astuple(self))

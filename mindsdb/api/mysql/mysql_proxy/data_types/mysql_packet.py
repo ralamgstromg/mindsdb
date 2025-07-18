@@ -89,10 +89,14 @@ class Packet:
 
     def send(self):
         string = self.get_packet_string()
-        print("[SEND]", string)
+        #print("[SEND]", string)
         self.session.logging.debug(f"Sending packet: {self.__class__.__name__}")
-        self.session.logging.debug(string)
-        self.mysql_socket.sendall(string)
+        self.session.logging.debug(string)        
+        #self.mysql_socket.sendall(string)
+        try:
+            self.mysql_socket.sendall(string)
+        except Exception as ex:
+            logger.error(f"[SEND] Error: {ex}")
 
     def accum(self):
         string = self.get_packet_string()

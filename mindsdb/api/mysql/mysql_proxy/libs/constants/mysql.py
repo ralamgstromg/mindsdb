@@ -1227,7 +1227,8 @@ SERVER_VARIABLES = {
     "@@wait_timeout": (28800, TYPES.MYSQL_TYPE_LONGLONG, CHARSET_NUMBERS["binary"]),
     "@@session.tx_read_only": ("0", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
     "@@version_comment": ("(MindsDB)", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
-    "@@version": ("8.0.17", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
+    #"@@version": ("8.0.17", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
+    "@@version": ("8.4.5", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
     "@@collation_connection": ("utf8_general_ci", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
     "@@performance_schema": (1, TYPES.MYSQL_TYPE_LONGLONG, CHARSET_NUMBERS["binary"]),
     "@@GLOBAL.transaction_isolation": (

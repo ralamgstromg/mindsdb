@@ -71,11 +71,13 @@ def column_to_mysql_column_dict(column: Column, database_name: str | None = None
         logger.warning(f"Unexpected column type: {column.type}. Use TEXT as fallback.")
         column.type = MYSQL_DATA_TYPE.TEXT
 
-    charset = CHARSET_NUMBERS["utf8_unicode_ci"]
+    charset = CHARSET_NUMBERS["utf8_general_ci"]
     if column.type in (MYSQL_DATA_TYPE.JSON, MYSQL_DATA_TYPE.VECTOR):
         charset = CHARSET_NUMBERS["binary"]
 
     type_properties: CTypeProperties = DATA_C_TYPE_MAP[column.type]
+
+    
 
     result = {
         "database": column.database or database_name,
@@ -401,7 +403,7 @@ def dump_result_set_to_mysql(
                 "size": type_properties.size if type_properties.size is not None else 1,
                 "flags": type_properties.flags,
                 "type": type_properties.code,
-                "charset": CHARSET_NUMBERS["utf8_unicode_ci"],
+                "charset": CHARSET_NUMBERS["utf8_general_ci"],
             }
         )
 

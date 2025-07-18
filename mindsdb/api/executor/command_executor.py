@@ -428,7 +428,7 @@ class ExecuteCommands:
                         Identifier("IS_DEFAULT", alias=Identifier("Default")),
                         Identifier("IS_COMPILED", alias=Identifier("Compiled")),
                         Identifier("SORTLEN", alias=Identifier("Sortlen")),
-                        Identifier("PAD_ATTRIBUTE", alias=Identifier("Pad_attribute")),
+                        #Identifier("PAD_ATTRIBUTE", alias=Identifier("Pad_attribute")),
                     ],
                     from_table=Identifier(parts=["INFORMATION_SCHEMA", "COLLATIONS"]),
                     where=_get_show_where(statement, like_name="Collation"),
@@ -542,7 +542,7 @@ class ExecuteCommands:
                 charsets = {
                     "utf8": CHARSET_NUMBERS["utf8_general_ci"],
                     "utf8mb4": CHARSET_NUMBERS["utf8mb4_general_ci"],
-                }
+                }                
                 self.charset = statement.value.value
                 self.charset_text_type = charsets.get(self.charset)
                 if self.charset_text_type is None:

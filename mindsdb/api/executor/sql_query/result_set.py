@@ -57,7 +57,9 @@ def get_mysql_data_type_from_series(series: pd.Series, do_infer: bool = False) -
 
     if dtype in (pd.Object, pd.String):
         return MYSQL_DATA_TYPE.TEXT
-    if dtype in (pd.Date, pd.Datetime):
+    if dtype in (pd.Date):
+        return MYSQL_DATA_TYPE.DATE
+    if dtype in (pd.Datetime):
         return MYSQL_DATA_TYPE.DATETIME
     if dtype == pd.String:
         return MYSQL_DATA_TYPE.TEXT

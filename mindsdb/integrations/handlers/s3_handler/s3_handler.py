@@ -502,7 +502,7 @@ class S3Handler(DatabaseHandler):
 
         supported_names = [
             f"`{obj['path']}`"
-            for obj in self._get_s3_objects(1000)
+            for obj in self._get_s3_objects(10000)
         ]                
 
         supported_names.insert(0, 'files')
@@ -540,6 +540,8 @@ class S3Handler(DatabaseHandler):
         )
 
         result = self.query(query)
+
+        #print("[get_columns]", result
 
         response = Response(
             RESPONSE_TYPE.TABLE,

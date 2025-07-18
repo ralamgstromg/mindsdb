@@ -714,7 +714,7 @@ class CollationsTable(Table):
         "IS_DEFAULT",
         "IS_COMPILED",
         "SORTLEN",
-        "PAD_ATTRIBUTE",
+        #"PAD_ATTRIBUTE",
     ]
 
     # mysql_types = [
@@ -729,9 +729,13 @@ class CollationsTable(Table):
 
     @classmethod
     def get_data(cls, **kwargs):
+        # data = [
+        #     ["utf8_general_ci", "utf8", 33, "Yes", "Yes", 1, "PAD SPACE"],
+        #     ["latin1_swedish_ci", "latin1", 8, "Yes", "Yes", 1, "PAD SPACE"],
+        # ]
         data = [
-            ["utf8_general_ci", "utf8", 33, "Yes", "Yes", 1, "PAD SPACE"],
-            ["latin1_swedish_ci", "latin1", 8, "Yes", "Yes", 1, "PAD SPACE"],
+            ["utf8_general_ci", "utf8", 33, "Yes", "Yes", 1],
+            ["latin1_swedish_ci", "latin1", 8, "Yes", "Yes", 1],
         ]
 
         df = pd.DataFrame(data, schema=cls.columns, orient="row")

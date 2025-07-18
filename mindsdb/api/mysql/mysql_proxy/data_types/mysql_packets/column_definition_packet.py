@@ -43,7 +43,8 @@ class ColumnDefenitionPacket(Packet):
             self._kwargs.get('column_name', '')
         )
         self.fixed_length = Datum('int<lenenc>', 0xC)
-        charset = self._kwargs.get('charset', CHARSET_NUMBERS["utf8_unicode_ci"])
+        #charset = self._kwargs.get('charset', CHARSET_NUMBERS["utf8_unicode_ci"])        
+        charset = self._kwargs.get('charset', CHARSET_NUMBERS["utf8_general_ci"])
         self.character_set = Datum('int<2>', charset)
         self.column_length = Datum('int<4>', self._kwargs.get('max_length', 0xf))  # may be this? https://books.google.ru/books?id=G2YqBS9CQ0AC&lpg=PP1&hl=ru&pg=PA428#v=onepage&q&f=false
         self.column_type = Datum(
