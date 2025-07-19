@@ -55,19 +55,19 @@ def get_mysql_data_type_from_series(series: pd.Series, do_infer: bool = False) -
     # if dtype == pd.Object and do_infer is True:
     #         dtype = series.infer_objects().dtype
 
-    if dtype in (pd.Object, pd.String):
+    if dtype in (pd.Object, pd.String,):
         return MYSQL_DATA_TYPE.TEXT
-    if dtype in (pd.Date):
+    if dtype in (pd.Date,):
         return MYSQL_DATA_TYPE.DATE
-    if dtype in (pd.Datetime):
+    if dtype in (pd.Datetime,):
         return MYSQL_DATA_TYPE.DATETIME
     if dtype == pd.String:
         return MYSQL_DATA_TYPE.TEXT
     if dtype == pd.Boolean:
         return MYSQL_DATA_TYPE.BOOL
-    if dtype in (pd.Int8, pd.Int16, pd.Int32, pd.Int64, pd.UInt16, pd.UInt32, pd.UInt64, pd.UInt8):
+    if dtype in (pd.Int8, pd.Int16, pd.Int32, pd.Int64, pd.UInt16, pd.UInt32, pd.UInt64, pd.UInt8,):
         return MYSQL_DATA_TYPE.INT
-    if dtype in (pd.Float32, pd.Float64):
+    if dtype in (pd.Float32, pd.Float64,):
         return MYSQL_DATA_TYPE.FLOAT
     return MYSQL_DATA_TYPE.TEXT
 

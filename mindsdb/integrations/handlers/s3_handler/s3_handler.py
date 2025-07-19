@@ -287,6 +287,12 @@ class S3Handler(DatabaseHandler):
 
                 if "timestampformat" in using:
                     config_duckdb["TIMESTAMPFORMAT"] = f'{using["timestampformat"]}'
+
+            if "partition_by" in using:
+                config_duckdb["PARTITION_BY"] = using["partition_by"]
+
+            if "overwrite_or_ignore" in using:
+                config_duckdb["OVERWRITE_OR_IGNORE"] = using["overwrite_or_ignore"]
                 
 
         return config_duckdb
@@ -294,6 +300,8 @@ class S3Handler(DatabaseHandler):
     def _config_to_sql(self, config_sql: dict):
         config_arr = []
         for key, val in config_sql.items():
+            if isinstance(val, list):
+                val = '(' + ', '.join([f"{v}" for v in val]) + ')'
             config_arr.append(f"{key} {val}")
         if len(config_arr)>0:
             return "(" + ", ".join(config_arr) + ")"
@@ -326,6 +334,8 @@ class S3Handler(DatabaseHandler):
         #print("[add_data_to_table]", config_duckdb)
         config_str = self._config_to_sql(config_duckdb)
 
+        #print(config_str)
+
 
         with self._connect_duckdb(self.bucket) as connection:
             # copy
@@ -357,6 +367,7 @@ class S3Handler(DatabaseHandler):
             config_duckdb = self._parse_using(query.using)
             #print("[_create_table]", config_duckdb)
             config_str = self._config_to_sql(config_duckdb)
+            #print(config_str)
             with self._connect_duckdb(self.bucket) as connection:
                 connection.execute(f"COPY df TO 's3://{self.bucket}/{table}' {config_str};")
 
