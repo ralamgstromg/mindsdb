@@ -207,7 +207,7 @@ class MySQLHandler(DatabaseHandler):
             try:
                 procedure_name = ".".join(sql.name.parts[1:])
                 params = sql.query_str
-                print(f"CALL {procedure_name}({params})")
+                #print(f"CALL {procedure_name}({params})")
                 res = conn.execute(text(f"CALL {procedure_name}({params})"))
                 conn.commit()                
                 return Response(RESPONSE_TYPE.OK, affected_rows=res.rowcount)
