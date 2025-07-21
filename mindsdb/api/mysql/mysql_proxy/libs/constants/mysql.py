@@ -1186,6 +1186,7 @@ SQL_RESERVED_WORDS = [
     "VERBOSE",
     "WHEN",
     "WHERE",
+    "CALL",
 ]
 
 SERVER_VARIABLES = {

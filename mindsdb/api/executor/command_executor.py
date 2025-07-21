@@ -38,6 +38,8 @@ from mindsdb_sql_parser.ast import (
     Tuple,
     Function,
     Variable,
+    Call,
+    Kill,
 )
 
 # typed models
@@ -645,9 +647,18 @@ class ExecuteCommands:
             return self.answer_create_kb_index(statement, database_name)
         elif statement_type is EvaluateKnowledgeBase:
             return self.answer_evaluate_kb(statement, database_name)
+        elif statement_type is Call:
+            #print("[COMMAND_EXECUTOR/CALL]", statement, database_name)
+            return self.answer_call(statement)
+        elif statement_type is Kill:
+            logger.warning(f"Kill not implemented: {sql}")
+            return self.answer_kill(statement)
         else:
             logger.warning(f"Unknown SQL statement: {sql}")
             raise NotSupportedYet(f"Unknown SQL statement: {sql}")
+        
+    def answer_kill(self, statement: Kill) -> ExecuteAnswer:
+        return ExecuteAnswer()
 
     def exec_service_function(self, statement: Select, database_name: str) -> Optional[ExecuteAnswer]:
         """
@@ -943,6 +954,24 @@ class ExecuteCommands:
             table_name=table_name, project_name=project_name, params=statement.params
         )
         return ExecuteAnswer(data=ResultSet.from_df(scores))
+    
+    def answer_call(self, statement: Call) -> ExecuteAnswer:
+        db_name = None
+        if len(statement.name.parts) > 1:
+            db_name = statement.name.parts[0]
+
+        handler = self.session.integration_controller.get_data_handler(db_name, connect=False)
+        handler.query(statement)
+        return ExecuteAnswer()
+        
+    
+    def answer_drop_view(self, statement, database_name):        
+        table_name = statement.name.parts[-1]
+        project_name = statement.name.parts[0] if len(statement.name.parts) > 1 else database_name
+        scores = self.session.kb_controller.evaluate(
+            table_name=table_name, project_name=project_name, params=statement.params
+        )
+        return ExecuteAnswer()
 
     def _get_model_info(self, identifier, except_absent=True, database_name=None):
         if len(identifier.parts) == 1:

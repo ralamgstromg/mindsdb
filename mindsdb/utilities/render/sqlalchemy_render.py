@@ -131,7 +131,8 @@ class SqlalchemyRender:
             self.dialect._setup_version_attributes()
         elif dialect_name == "mysql":
             # update version for support float cast
-            self.dialect.server_version_info = (8, 0, 17)
+            #self.dialect.server_version_info = (8, 0, 17)
+            self.dialect.server_version_info = (8, 4, 5)
 
     def to_column(self, identifier: ast.Identifier) -> sa.Column:
         # because sqlalchemy doesn't allow columns consist from parts therefore we do it manually
@@ -801,6 +802,14 @@ class SqlalchemyRender:
             stmt = stmt.where(self.to_expression(ast_query.where))
 
         return stmt
+    
+    def prepare_call(self, ast_query: ast.Call):
+        if ast_query.name is None:
+            raise RenderError("Call name is required")
+
+        stmt = sa.text(f"{ast_query.name.to_string()}({ast_query.query_str})")
+
+        return stmt
 
     def get_query(self, ast_query, with_params=False):
         params = None
@@ -818,6 +827,8 @@ class SqlalchemyRender:
             stmt = self.prepare_create_table(ast_query)
         elif isinstance(ast_query, ast.DropTables):
             stmt = self.prepare_drop_table(ast_query)
+        elif isinstance(ast_query, ast.Call):
+            stmt = self.prepare_call(ast_query)
         else:
             raise NotImplementedError(f"Unknown statement: {ast_query.__class__.__name__}")
         return stmt, params

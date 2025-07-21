@@ -23,61 +23,25 @@ from mindsdb.integrations.libs.response import (
     RESPONSE_TYPE
 )
 
-from mindsdb.integrations.libs.api_handler import APIResource, APIHandler
-from mindsdb.integrations.utilities.sql_utils import FilterCondition, FilterOperator
+import re
+
+#from mindsdb.integrations.libs.api_handler import APIResource, APIHandler
+
+from mindsdb.integrations.libs.base import DatabaseHandler
+
+#from mindsdb.integrations.utilities.sql_utils import FilterCondition, FilterOperator
 
 from sqlalchemy.sql import sqltypes
 
 logger = log.getLogger(__name__)
 
 
-class ListFilesTable(APIResource):
-
-    def list(self,
-             targets: List[str] = None,
-             conditions: List[FilterCondition] = [],
-             limit: int = 100,
-             *args, **kwargs) -> pd.DataFrame:        
-
-        data = []
-        for obj in self.handler.get_objects(limit=limit, conditions=conditions):
-            path = obj['Key']
-            path = path.replace('`', '')
-            item = {
-                'path': path,
-                'bucket': obj['Bucket'],
-                'name': path[path.rfind('/') + 1:],
-                'extension': path[path.rfind('.') + 1:]
-            }
-
-            data.append(item)
-
-        return pd.DataFrame(data=data, schema=self.get_columns(), orient="row")
-
-    def get_columns(self) -> List[str]:
-        return ["path", "name", "extension", "bucket", "content"]
-
-
-class FileTable(APIResource):
-
-    def list(self, targets: List[str] = None, table_name=None, *args, **kwargs) -> pd.DataFrame:
-        return self.handler.read_as_table(table_name)
-
-    # def add(self, data, table_name=None):        
-    #     # df = pd.DataFrame(data)
-    #     print("[DATA]")
-    #     print(data)
-    #     df = pd.DataFrame(data)
-    #     return self.handler.add_data_to_table(table_name, df)
-
-
-class S3Handler(APIHandler):
+class S3Handler(DatabaseHandler):
     """
     This handler handles connection and execution of the SQL statements on AWS S3.
     """
 
     name = 's3'
-    supported_file_formats = ['csv', 'tsv', 'json', 'parquet']
 
     def __init__(self, name: Text, connection_data: Optional[Dict], **kwargs):
         """
@@ -98,9 +62,9 @@ class S3Handler(APIHandler):
         self.bucket = self.connection_data.get('bucket')
         self._regions = {}
 
-        self.resource = None
+        self.supported_files = ["parquet", "csv", "tsv", "json", "csv.gz"]
 
-        self._files_table = ListFilesTable(self)
+        self.resource = None
 
     def __del__(self):
         if self.is_connected is True:
@@ -209,8 +173,6 @@ class S3Handler(APIHandler):
         else:
             client.list_buckets()
 
-        #print("self.bucket", self.bucket)
-
         self.resource = boto3.resource(
             's3',
             aws_access_key_id=self.connection_data['aws_access_key_id'],
@@ -257,37 +219,95 @@ class S3Handler(APIHandler):
 
         return response
 
-    def _get_bucket(self, key):
-        # if self.bucket is not None:
-        #     return self.bucket, key
-
-        # get bucket from first part of the key
-        ar = key.split('/')
-        return ar[0], '/'.join(ar[1:])
-
-    def read_as_table(self, key) -> pd.DataFrame:
+        
+    def read_from_sql(self, sql) -> pd.DataFrame:
         """
         Read object as dataframe. Uses duckdb
-        """
-        bucket, key = self._get_bucket(key)
+        """        
+        patron = r'`(.*?)`'
+        sql_modificado = re.sub(patron, rf"'s3://{self.bucket}/\1'", sql)
 
-        with self._connect_duckdb(bucket) as connection:
-            data = connection.execute(f"SELECT * FROM 's3://{bucket}/{key}'").pl()
+        with self._connect_duckdb(self.bucket) as connection:
+            data = connection.execute(sql_modificado).pl()
             return data
-
-    def _read_as_content(self, key) -> None:
+        
+    def read_from_sql_dataframe(self, sql, files) -> pd.DataFrame:
         """
-        Read object as content
-        """
-        bucket, key = self._get_bucket(key)
+        Read object as dataframe. Uses duckdb
+        """        
+        with self._connect_duckdb(self.bucket) as connection:
+            data = connection.execute(sql).pl()
+            return data
+        
+    def _parse_using(self, using: dict) -> dict:
+        config_duckdb = {}
+        if using is not None:
+            if "format" in using: 
+                config_duckdb["FORMAT"] = f'{using["format"]}'
+            else:
+                config_duckdb["FORMAT"] = "parquet"
+            
+            if config_duckdb["FORMAT"] == "parquet":
 
-        client = self.connect()
+                if "parquet_version" in using:
+                    config_duckdb["PARQUET_VERSION"] = f'{using["parquet_version"]}'
+                else:
+                    if config_duckdb["FORMAT"] == "parquet":
+                        config_duckdb["PARQUET_VERSION"] = "V2"
 
-        obj = client.get_object(Bucket=bucket, Key=key)
-        content = obj['Body'].read()
+                if "compression" in using:
+                    config_duckdb["COMPRESSION"] = f'{using["compression"]}'
+                else:
+                    config_duckdb["COMPRESSION"] = "zstd"
 
-        #print(content)
-        return content
+                if config_duckdb["COMPRESSION"] == "zstd" and "compression_level" in using:
+                    config_duckdb["COMPRESSION_LEVEL"] = using["compression_level"]
+
+            elif config_duckdb["FORMAT"] == "csv":
+                if "compression" in using:
+                    config_duckdb["COMPRESSION"] = f'{using["compression"]}'
+
+                if "dateformat" in using:
+                    config_duckdb["DATEFORMAT"] = f'{using["dateformat"]}'
+
+                if "delim" in using:
+                    config_duckdb["DELIM"] = f'{using["delim"]}'
+
+                if "escape" in using:
+                    config_duckdb["ESCAPE"] = f'{using["escape"]}'
+
+                if "header" in using:
+                    config_duckdb["HEADER"] = f'{using["header"]}'
+
+                if "nullstr" in using:
+                    config_duckdb["NULLSTR"] = f'{using["nullstr"]}'
+
+                if "quote" in using:
+                    config_duckdb["QUOTE"] = f'{using["quote"]}'
+
+                if "timestampformat" in using:
+                    config_duckdb["TIMESTAMPFORMAT"] = f'{using["timestampformat"]}'
+
+            if "partition_by" in using:
+                config_duckdb["PARTITION_BY"] = using["partition_by"]
+
+            if "overwrite_or_ignore" in using:
+                config_duckdb["OVERWRITE_OR_IGNORE"] = using["overwrite_or_ignore"]
+                
+
+        return config_duckdb
+
+    def _config_to_sql(self, config_sql: dict):
+        config_arr = []
+        for key, val in config_sql.items():
+            if isinstance(val, list):
+                val = '(' + ', '.join([f"{v}" for v in val]) + ')'
+            config_arr.append(f"{key} {val}")
+        if len(config_arr)>0:
+            return "(" + ", ".join(config_arr) + ")"
+        else:
+            return ""
+
 
     def add_data_to_table(self, key, query: Insert) -> None: #df) -> None:
         """
@@ -298,60 +318,87 @@ class S3Handler(APIHandler):
         """
 
         # Check if the file exists in the S3 bucket.
-        bucket, key = self._get_bucket(key)
+        #bucket, key = self._get_bucket(key)
 
         exists = False
         try:
             client = self.connect()
-            client.head_object(Bucket=bucket, Key=key)
+            client.head_object(Bucket=self.bucket, Key=key)
             exists = True
         except Exception as e:
             exists = False
 
         df = query.values
 
-        #print(query.values)
+        config_duckdb = self._parse_using(query.using)
+        #print("[add_data_to_table]", config_duckdb)
+        config_str = self._config_to_sql(config_duckdb)
 
-        with self._connect_duckdb(bucket) as connection:
+        #print(config_str)
+
+
+        with self._connect_duckdb(self.bucket) as connection:
             # copy
             if exists:
-                connection.execute(f"CREATE TABLE tmp_table AS SELECT * FROM 's3://{bucket}/{key}'")
+                connection.execute(f"CREATE TABLE tmp_table AS SELECT * FROM 's3://{self.bucket}/{key}'")
                 # insert
                 connection.execute("INSERT INTO tmp_table BY NAME SELECT * FROM df")
                 # upload
-                connection.execute(f"COPY tmp_table TO 's3://{bucket}/{key}' (FORMAT PARQUET, OVERWRITE_OR_IGNORE true);")
+                connection.execute(f"COPY tmp_table TO 's3://{self.bucket}/{key}' {config_str};")
             else:
-                # create table
-                #print(f's3://{bucket}/{key}')
-                #print(df.dtypes)
-                #print(df)                
-                connection.execute(f"COPY df TO 's3://{bucket}/{key}' (FORMAT PARQUET);")
+                connection.execute(f"COPY df TO 's3://{self.bucket}/{key}' {config_str};")
 
-    def _create_table(self, key, df) -> None:
+
+    def _create_table(self, query, df) -> None:
         """
         Create a table in the S3 bucket.
         """
-        # Check if the file exists in the S3 bucket.
-        bucket, key = self._get_bucket(key)
+        table = query.name.parts[-1]
+
+        #print(query.to_tree())
+        #print(query)
 
         client = self.connect()
         exists = False
         try:
-            client.head_object(Bucket=bucket, Key=key)
+            client.head_object(Bucket=self.bucket, Key=table)
             exists = True
         except Exception as e:
-            with self._connect_duckdb(bucket) as connection:
-                connection.execute(f"COPY df TO 's3://{bucket}/{key}'")
+            config_duckdb = self._parse_using(query.using)
+            #print("[_create_table]", config_duckdb)
+            config_str = self._config_to_sql(config_duckdb)
+            #print(config_str)
+            with self._connect_duckdb(self.bucket) as connection:
+                connection.execute(f"COPY df TO 's3://{self.bucket}/{table}' {config_str};")
 
         if exists:
-            logger.error(f'Table {key} already exists in the bucket {bucket}')
-            raise ValueError(f'Table {key} already exists in the bucket {bucket}')
+            logger.error(f'Table {table} already exists in the bucket {self.bucket}')
+            raise ValueError(f'Table {table} already exists in the bucket {self.bucket}')
 
 
-    def _get_columns(self) -> List[str]:
-        return ["path", "name", "extension", "bucket", "content"]
+    def _get_s3_objects(self, limit:int = None ) -> list[dict]:
+        s3_objects = self.resource.Bucket(self.bucket).objects.all()
+        arr_files = []
+        rid = 0
+        for obj in s3_objects:
+            path = obj.key.replace('`', '')        
+            item = {
+                'path': path,
+                'name': path[path.rfind('/') + 1:],
+                'extension': path[path.rfind('.') + 1:],
+                'bucket': obj.bucket_name,              
+                'content': None                             
+            }
+            if item["extension"] in self.supported_files:
+                arr_files.append(item)
+                rid+=1
 
-    def query(self, query: ASTNode, *args, **kwargs) -> Response:
+            if limit is not None and rid >= limit:
+                break
+
+        return arr_files
+
+    def query(self, query: ASTNode) -> Response:
         """
         Executes a SQL query represented by an ASTNode and retrieves the data.
 
@@ -365,9 +412,12 @@ class S3Handler(APIHandler):
             Response: A response object containing the result of the query or an error message.
         """        
 
-        self.connect()        
+        self.connect()                
+
+        #print(query.to_string())
 
         if isinstance(query, DropTables):
+            #print("[DROP TABLE]")
             for table_identifier in query.tables:
                 if len(table_identifier.parts) == 2 and table_identifier.parts[0] != self.name:
                     return Response(
@@ -385,10 +435,9 @@ class S3Handler(APIHandler):
             response = Response(RESPONSE_TYPE.OK)
 
         elif isinstance(query, CreateTable):
-            # print("[CREATE TABLE AS]")
-            # print(query.to_tree())
-            table = query.name.parts[-1]
-
+            #table = query.name.parts[-1]
+            #print("[S3_CREATE_TABLE]", query.using)
+            # print(query)
             df = pd.DataFrame([], schema=[col.name for col in query.columns])
 
             for col in query.columns:     
@@ -413,40 +462,24 @@ class S3Handler(APIHandler):
                     pd.col(col.name).cast(dtype).alias(col.name)
                 ])
                 
-            self._create_table(table, df)            
+            #self._create_table(table, df)            
+            self._create_table(query, df)
             response = Response(RESPONSE_TYPE.OK)
 
         elif isinstance(query, Select):
-            table_name = query.from_table.parts[-1]
-
-            if table_name == 'files':
-                table = self._files_table
-                df = table.select(query)
-
-                # add content
-                has_content = False
-                for target in query.targets:
-                    if isinstance(target, Identifier) and target.parts[-1].lower() == 'content':
-                        has_content = True
-                        break
-                if has_content:
-                    df['content'] = df['path'].apply(self._read_as_content)
+            if isinstance(query.from_table, Identifier) and query.from_table.parts[-1] == "files":
+                arr_files = self._get_s3_objects()
+                files = pd.DataFrame(data=arr_files, orient="row")
+                df = self.read_from_sql_dataframe(query.to_string(), files)
             else:
-                extension = table_name.split('.')[-1]
-                if extension not in self.supported_file_formats:
-                    logger.error(f'The file format {extension} is not supported!')
-                    raise ValueError(f'The file format {extension} is not supported!')
-
-                table = FileTable(self, table_name=table_name)
-                df = table.select(query)
+                df = self.read_from_sql(query.to_string())
 
             response = Response(
                 RESPONSE_TYPE.TABLE,
                 data_frame=df
             )
-        elif isinstance(query, Insert):
-            # print("[INSERT]")
-            # print(query.values)
+        elif isinstance(query, Insert):     
+            #print("[S3_INSERT]", query.using)
             table_name = query.table.parts[-1]
             self.add_data_to_table(table_name, query)
             response = Response(RESPONSE_TYPE.OK)
@@ -465,79 +498,8 @@ class S3Handler(APIHandler):
         Returns:
             Response: A response object containing the result of the query or an error message.
         """
-        #print("[query]", query)
         query_ast = parse_sql(query)
-        #print("[native_query]", query_ast.using)
         return self.query(query_ast)
-
-    def get_objects(self, limit=100, conditions=[]) -> List[dict]:
-        client = self.connect()
-        # print("[S3_CONNECTED]")
-        # print("conditions", conditions)
-        buckets = None
-        for condition in conditions:
-            if condition.column == 'bucket':
-                if condition.op == FilterOperator.IN:
-                    buckets = condition.value
-                elif condition.op == FilterOperator.EQUAL:
-                    buckets = [condition.value]            
-
-        #print("buckets", buckets)
-
-        if self.bucket is not None:
-            scan_buckets = [self.bucket]
-        else:
-            scan_buckets = [b['Name'] for b in client.list_buckets()['Buckets']]
-
-        #print("scan_buckets", scan_buckets)
-
-        objects = []
-        for bucket in scan_buckets:
-            if buckets is not None and bucket not in buckets:
-                continue
-
-            resp = self.resource.Bucket(bucket).objects.all()
-            if resp is not None:
-                for obj in resp: 
-                    include = True                   
-                    for condition in conditions:
-                        if condition.column == 'name':
-                            if condition.op == FilterOperator.EQUAL:
-                                if obj.key.split('/')[-1] != condition.value:
-                                    include = False
-                            elif condition.op == FilterOperator.LIKE:
-                                if condition.value.replace("%", "") not in obj.key.split('/')[-1]:
-                                    include = False
-                            elif condition.op == FilterOperator.IN:
-                                if obj.key.split('/')[-1] not in condition.value:
-                                    include = False
-                        elif condition.column == 'path':
-                            if condition.op == FilterOperator.EQUAL:
-                                if f'{bucket}/{obj.key}' != condition.value:
-                                    include = False
-                            elif condition.op == FilterOperator.LIKE:
-                                if condition.value.replace("%", "") not in f'{bucket}/{obj.key}':
-                                    include = False
-                            elif condition.op == FilterOperator.IN:
-                                if f'{bucket}/{obj.key}' not in condition.value:
-                                    include = False
-                        elif condition.column == 'extension':
-                            if condition.op == FilterOperator.EQUAL:
-                                if obj.key.split('.')[-1] != condition.value:
-                                    include = False
-                            elif condition.op == FilterOperator.LIKE:
-                                if condition.value.replace("%", "") not in obj.key.split('.')[-1]:
-                                    include = False
-                            elif condition.op == FilterOperator.IN:
-                                if obj.key.split('.')[-1] not in condition.value:
-                                    include = False
-
-                    if include or not conditions:
-                        objects.append({"Key":f'{bucket}/{obj.key}', "Bucket": bucket})
-                        if limit is not None and len(objects) >= limit:
-                            break
-
-        return objects
 
     def get_tables(self) -> Response:
         """
@@ -549,15 +511,11 @@ class S3Handler(APIHandler):
             Response: A response object containing the list of tables and views, formatted as per the `Response` class.
         """
 
-        # Get only the supported file formats.
-        # Wrap the object names with backticks to prevent SQL syntax errors.
         supported_names = [
-            f"`{obj['Key']}`"
-            for obj in self.get_objects()
-            if obj['Key'].split('.')[-1] in self.supported_file_formats
-        ]
+            f"`{obj['path']}`"
+            for obj in self._get_s3_objects(10000)
+        ]                
 
-        # virtual table with list of files
         supported_names.insert(0, 'files')
 
         response = Response(
@@ -584,6 +542,8 @@ class S3Handler(APIHandler):
         Returns:
             Response: A response object containing the column details, formatted as per the `Response` class.
         """
+
+        #print("[table_name]", table_name)
         query = Select(
             targets=[Star()],
             from_table=Identifier(parts=[table_name]),
@@ -591,6 +551,8 @@ class S3Handler(APIHandler):
         )
 
         result = self.query(query)
+
+        #print("[get_columns]", result
 
         response = Response(
             RESPONSE_TYPE.TABLE,

@@ -10,8 +10,8 @@ from sqlalchemy.sql import sqltypes
 import re
 from mindsdb.utilities.render.sqlalchemy_render import SqlalchemyRender
 from mindsdb_sql_parser.ast.base import ASTNode
-from mindsdb_sql_parser.ast import Select, Identifier, Insert, Star, Constant, DropTables, CreateTable, Delete, TypeCast, Function
-from mindsdb_sql_parser.ast.select import Star
+from mindsdb_sql_parser.ast import Select, Identifier, Insert, Star, Constant, DropTables, CreateTable, Delete, TypeCast, Function, Call
+#from mindsdb_sql_parser.ast.select import Star
 
 from mindsdb.utilities import log
 from mindsdb.integrations.libs.base import DatabaseHandler
@@ -187,9 +187,36 @@ class MySQLHandler(DatabaseHandler):
             return self._mysql_table_create(query)
         elif isinstance(query, DropTables):
             return self._mysql_exec_ddl(query)
+        elif isinstance(query, Call):
+            # Call is a MindsDB specific statement, we need to execute it
+            #query_str = self.renderer.get_string(query, with_failback=True)
+            #return self.native_query(query_str)
+            #print(query.to_tree())
+            #print("[MYSQL_HANDLER/CALL]")
+            #print(query.to_string())
+            return self._mysql_call_procedure(query)
+            #return Response(RESPONSE_TYPE.OK, affected_rows=0, data_frame=pd.DataFrame())
+
         else:
             logger.info(f"Operation not supported in MySQL {type(query)}")
             return Response(RESPONSE_TYPE.TABLE, data_frame=pd.DataFrame())
+        
+    def _mysql_call_procedure(self, sql):
+        engine = create_engine(self.sqlalchemy_uri)
+        with engine.connect() as conn:
+            try:
+                procedure_name = ".".join(sql.name.parts[1:])
+                params = sql.query_str
+                print(f"CALL {procedure_name}({params})")
+                res = conn.execute(text(f"CALL {procedure_name}({params})"))
+                conn.commit()                
+                return Response(RESPONSE_TYPE.OK, affected_rows=res.rowcount)
+            except Exception as ex:
+                conn.rollback()
+                logger.error(f"Error executing procedure {procedure_name}({params}), {ex}")                
+                #return Response(RESPONSE_TYPE.ERROR, error_message=f"Error executing procedure {procedure_name}({params}), {ex}")
+                raise Exception(f"Error executing procedure {procedure_name}({params}), {ex}")
+                
 
     def _mysql_table_delete(self, sql):
         engine = create_engine(self.sqlalchemy_uri)

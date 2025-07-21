@@ -806,7 +806,9 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
             # if hasattr(p, "sql"):
             #     print(self.decode_utf(p.sql.value))
             # else:
-            #     print(p._body)            
+            #     print(p._body)           
+            # 
+            #print("[MYSQL_PROXY]", p.__dict__) 
 
             try:
                 if p.type.value == COMMANDS.COM_QUERY:

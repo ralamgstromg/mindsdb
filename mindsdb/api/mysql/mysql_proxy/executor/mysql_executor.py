@@ -91,8 +91,9 @@ class Executor:
 
         #print(sql)
 
-        try:
+        try:            
             self.query = parse_sql(sql)
+            #print("[MYSQL_EXECUTOR/PARSE]", self.query)
             #print("[MUSQL_EXECUTOR/PARSE]", self.query)
         except Exception as mdb_error:
             # not all statements are parsed by parse_sql
@@ -113,12 +114,14 @@ class Executor:
         # it can be already run at prepare state
         if self.is_executed:
             return
-
-        #print("[DO_EXECUTE]", self.query)
+        
+        #print("[DO_EXECUTE/PRE]", self.query)
         #print("antes de ejecutado")        
         executor_answer: ExecuteAnswer = self.command_executor.execute_command(self.query)
         #print("despues de ejecutado")
         #print("[DO_EXECUTE_EXECUTE_ANSWER]", executor_answer)
+
+        #print("[DO_EXECUTE/POST]", executor_answer)
         
         self.executor_answer = executor_answer
 

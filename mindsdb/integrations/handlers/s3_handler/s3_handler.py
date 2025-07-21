@@ -220,23 +220,33 @@ class S3Handler(DatabaseHandler):
         return response
 
         
-    def read_from_sql(self, sql) -> pd.DataFrame:
+    def read_from_sql(self, sql, using: dict) -> pd.DataFrame:
         """
         Read object as dataframe. Uses duckdb
         """        
         patron = r'`(.*?)`'
         sql_modificado = re.sub(patron, rf"'s3://{self.bucket}/\1'", sql)
-
+        # print(sql_modificado)
+        # print(using)
+        # if using is not None and "hive_partitioning" in using and using["hive_partitioning"] == True:
+        #     sql_modificado = f"SET hive_partitioning=true; {sql_modificado}"        
+        sql_modificado = sql_modificado.split('USING')[0].strip()
+        #print(sql_modificado)
         with self._connect_duckdb(self.bucket) as connection:
             data = connection.execute(sql_modificado).pl()
             return data
         
-    def read_from_sql_dataframe(self, sql, files) -> pd.DataFrame:
+    def read_from_sql_dataframe(self, sql, file, using: dict) -> pd.DataFrame:
         """
         Read object as dataframe. Uses duckdb
         """        
+        sql_modificado = f"{sql.to_string()} FROM df"
+        if using is not None and "hive_partitioning" in using and using["hive_partitioning"] == True:
+            sql_modificado = f"SET hive_partitioning=true; {sql_modificado}"        
+        sql_modificado = sql_modificado.split('USING')[0].strip()
+        #print(sql_modificado)
         with self._connect_duckdb(self.bucket) as connection:
-            data = connection.execute(sql).pl()
+            data = connection.execute(sql_modificado).pl()
             return data
         
     def _parse_using(self, using: dict) -> dict:
@@ -470,9 +480,9 @@ class S3Handler(DatabaseHandler):
             if isinstance(query.from_table, Identifier) and query.from_table.parts[-1] == "files":
                 arr_files = self._get_s3_objects()
                 files = pd.DataFrame(data=arr_files, orient="row")
-                df = self.read_from_sql_dataframe(query.to_string(), files)
+                df = self.read_from_sql_dataframe(query.to_string(), files, query.using)
             else:
-                df = self.read_from_sql(query.to_string())
+                df = self.read_from_sql(query.to_string(), query.using)
 
             response = Response(
                 RESPONSE_TYPE.TABLE,
