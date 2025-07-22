@@ -195,16 +195,16 @@ class JobsHistoryTable(LogTable):
 default_log_types = {
     "name": pd.String,
     "project": pd.String,
-    "run_start": pd.String,
-    "run_end": pd.String,
+    "run_start": pd.Datetime,
+    "run_end": pd.Datetime,
     "error": pd.String,
     "query": pd.String,
     "api_key": pd.String,
     "model_name": pd.String,
     "input": pd.String,
     "output": pd.String,
-    "start_time": pd.String,
-    "end_time": pd.String,
+    "start_time": pd.Datetime,
+    "end_time": pd.Datetime,
     "prompt_tokens": pd.Int32,
     "completion_tokens": pd.Int32,
     "total_tokens": pd.Int32,
@@ -292,14 +292,14 @@ class LogDBController:
         render = SqlalchemyRender(render_engine)
         query_str = render.get_string(query, with_failback=False)      
         
-        df = pd.read_database(query_str, db.engine, schema_overrides=default_log_types)                  
+        df = pd.read_database(query_str, db.engine, schema_overrides=default_log_types)                          
 
         for t_name, t_table in self._tables.items():            
             casts = []
             if t_name in query_str:   
                 for column_name, column_type in t_table.schemas_map.items():        
                     if column_name in df.columns:            
-                        if column_type in (pd.Datetime, 'datetime[μs]'):
+                        if isinstance(column_type, pd.Datetime):
                             casts.append(pd.col(column_name).cast(pd.String).str.to_datetime("%Y-%m-%d %H:%M:%S%.f").alias(column_name))
                         else:
                             casts.append(pd.col(column_name).cast(column_type).alias(column_name))
