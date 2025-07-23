@@ -1196,10 +1196,16 @@ SERVER_VARIABLES = {
     "@@character_set_client": ("utf8", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
     "@@character_set_connection": ("utf8", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
     "@@character_set_results": ("utf8", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
-    "@@GLOBAL.character_set_server": ("latin1", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
-    "@@character_set_server": ("latin1", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
-    "@@GLOBAL.collation_server": ("latin1_swedish_ci", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
-    "@@collation_server": ("latin1_swedish_ci", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
+    # "@@GLOBAL.character_set_server": ("latin1", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
+    # "@@character_set_server": ("latin1", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
+    # "@@GLOBAL.collation_server": ("latin1_swedish_ci", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
+    # "@@collation_server": ("latin1_swedish_ci", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
+
+    "@@GLOBAL.character_set_server": ("utf8", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
+    "@@character_set_server": ("utf8", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
+    "@@GLOBAL.collation_server": ("utf8_general_ci", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
+    "@@collation_server": ("utf8_general_ci", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
+
     "@@init_connect": ("", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),  # None or '' ?
     "@@interactive_timeout": (28800, TYPES.MYSQL_TYPE_LONGLONG, CHARSET_NUMBERS["binary"]),
     "@@license": ("GPL", TYPES.MYSQL_TYPE_VAR_STRING, CHARSET_NUMBERS["utf8_general_ci"]),
