@@ -1,10 +1,11 @@
-from typing import List
+from typing import List, Union
 from copy import deepcopy
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 
 #import pandas as pd
 import polars as pd
+import datetime as dt
 from mindsdb_sql_parser import parse_sql
 from mindsdb_sql_parser.ast import Select, Identifier, Star, BinaryOperation, Constant, Join, Function
 from mindsdb_sql_parser.utils import JoinType
@@ -193,22 +194,42 @@ class JobsHistoryTable(LogTable):
         return query
 
 default_log_types = {
-    "name": pd.String,
-    "project": pd.String,
-    "run_start": pd.Datetime,
-    "run_end": pd.Datetime,
-    "error": pd.String,
-    "query": pd.String,
-    "api_key": pd.String,
-    "model_name": pd.String,
-    "input": pd.String,
-    "output": pd.String,
-    "start_time": pd.Datetime,
-    "end_time": pd.Datetime,
-    "prompt_tokens": pd.Int32,
-    "completion_tokens": pd.Int32,
-    "total_tokens": pd.Int32,
-    "success": pd.Boolean,
+    "postgresql": {
+        "name": pd.String,
+        "project": pd.String,
+        "run_start": pd.Datetime,
+        "run_end": pd.Datetime,
+        "error": pd.String,
+        "query": pd.String,
+        "api_key": pd.String,
+        "model_name": pd.String,
+        "input": pd.String,
+        "output": pd.String,
+        "start_time": pd.Datetime,
+        "end_time": pd.Datetime,
+        "prompt_tokens": pd.Int32,
+        "completion_tokens": pd.Int32,
+        "total_tokens": pd.Int32,
+        "success": pd.Boolean,
+    },
+    "sqlite": {
+        "name": pd.String,
+        "project": pd.String,
+        "run_start": pd.String,
+        "run_end": pd.String,
+        "error": pd.String,
+        "query": pd.String,
+        "api_key": pd.String,
+        "model_name": pd.String,
+        "input": pd.String,
+        "output": pd.String,
+        "start_time": pd.String,
+        "end_time": pd.String,
+        "prompt_tokens": pd.Int32,
+        "completion_tokens": pd.Int32,
+        "total_tokens": pd.Int32,
+        "success": pd.Boolean,
+    }
 }
 
 class LogDBController:
@@ -287,24 +308,27 @@ class LogDBController:
         query.from_table = log_table._get_base_subquery()
 
         render_engine = db.engine.name
-        if render_engine == "postgresql":
-            "postgres"
+        # if render_engine == "postgresql":
+        #     render_engine = "postgres"
+
         render = SqlalchemyRender(render_engine)
         query_str = render.get_string(query, with_failback=False)      
         
-        df = pd.read_database(query_str, db.engine, schema_overrides=default_log_types)                          
+        df = pd.read_database(query_str, db.engine, schema_overrides=default_log_types[render_engine])                          
 
         for t_name, t_table in self._tables.items():            
             casts = []
             if t_name in query_str:   
                 for column_name, column_type in t_table.schemas_map.items():        
-                    if column_name in df.columns:            
-                        if isinstance(column_type, pd.Datetime):
-                            casts.append(pd.col(column_name).cast(pd.String).str.to_datetime("%Y-%m-%d %H:%M:%S%.f").alias(column_name))
+                    if column_name in df.columns:        
+                        if column_type == pd.Datetime:
+                            if render_engine == "sqlite":                                
+                                casts.append(pd.col(column_name).str.to_datetime("%Y-%m-%d %H:%M:%S%.3f").alias(column_name))                                
                         else:
                             casts.append(pd.col(column_name).cast(column_type).alias(column_name))
             
                 df = df.with_columns(casts)
+    
 
         columns_info = [{"name": k, "type": v} for k, v in df.schema.items()]
 

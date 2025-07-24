@@ -9,6 +9,7 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
+    Time,
     Index,
     Integer,
     LargeBinary,
@@ -295,6 +296,9 @@ class Jobs(Base):
     deleted_at = Column(DateTime)
     updated_at = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     created_at = Column(DateTime, default=datetime.datetime.now)
+
+    starting_time = Column(Time, nullable=True)
+    ending_time = Column(Time, nullable=True)
 
 
 class JobsHistory(Base):

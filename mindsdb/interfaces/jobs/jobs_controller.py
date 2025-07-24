@@ -30,7 +30,7 @@ def split_sql(sql):
     return pattern.split(sql)[1::2]
 
 
-def calc_next_date(schedule_str, base_date: dt.datetime):
+def calc_next_date(schedule_str, base_date: dt.datetime, starting_time: dt.time = dt.time.min, ending_time: dt.time = dt.time.max):
     schedule_str = schedule_str.lower().strip()
 
     repeat_prefix = 'every '
@@ -75,7 +75,18 @@ def calc_next_date(schedule_str, base_date: dt.datetime):
 
     next_date = base_date + delta
 
-    return next_date
+    if next_date.time() >= starting_time and next_date.time() <= ending_time:
+        return next_date
+    else:
+        # if next date is not in the range, try to find next date in the range
+        if next_date.time() < starting_time:
+            next_date = next_date.replace(hour=starting_time.hour, minute=starting_time.minute, second=starting_time.second)
+        elif next_date.time() > ending_time:
+            # go to the next day
+            next_date += dt.timedelta(days=1)
+            next_date = next_date.replace(hour=starting_time.hour, minute=starting_time.minute, second=starting_time.second)
+
+        return next_date
 
 
 def parse_job_date(date_str: str) -> dt.datetime:
@@ -99,6 +110,27 @@ def parse_job_date(date_str: str) -> dt.datetime:
         raise ValueError(f"Can't parse date: {date_str}")
     return date
 
+def parse_job_time(time_str: str) -> dt.time:
+    """
+    Convert string used as job data to time object
+    :param time_str:
+    :return:
+    """
+
+    if time_str.upper() == 'NOW':
+        return dt.datetime.now().time()
+
+    time_formats = ['%H:%M:%S', '%H:%M']
+    time = None
+    for time_format in time_formats:
+        try:
+            time = dt.datetime.strptime(time_str, time_format).time()
+        except ValueError:
+            pass
+    if time is None:
+        raise ValueError(f"Can't parse time: {time_str}")
+    return time
+
 
 class JobsController:
     def add(
@@ -110,6 +142,8 @@ class JobsController:
         end_at: dt.datetime = None,
         if_query: str = None,
         schedule_str: str = None,
+        starting_time: dt.time = None,
+        ending_time: dt.time = None,
     ) -> str:
         """
         Create a new job
@@ -126,6 +160,8 @@ class JobsController:
               job will not be executed
         :param schedule_str: description how to repeat job
             at the moment supports: 'every <number> <dimension>' or 'every <dimension>'
+        :param starting_time: time at valid start of the job, optional
+        :param ending_time: time at valid end of the job, optional
         :return: name of created job
         """
 
@@ -141,6 +177,15 @@ class JobsController:
 
         if end_at is not None and end_at < start_at:
             raise Exception(f'Wrong end date {start_at} > {end_at}')
+        
+        if starting_time is None:
+            starting_time = dt.time.min
+
+        if ending_time is None:
+            ending_time = dt.time.max
+
+        if starting_time > ending_time:
+            raise Exception(f'Wrong time range {starting_time} > {ending_time}')
 
         # check sql = try to parse it
         for sql in split_sql(query):
@@ -167,7 +212,7 @@ class JobsController:
 
         if schedule_str is not None:
             # try to calculate schedule string
-            calc_next_date(schedule_str, start_at)
+            next_run_at = calc_next_date(schedule_str, start_at, starting_time, ending_time)
         else:
             # no schedule for job end_at is meaningless
             end_at = None
@@ -185,7 +230,9 @@ class JobsController:
             start_at=start_at,
             end_at=end_at,
             next_run_at=next_run_at,
-            schedule_str=schedule_str
+            schedule_str=schedule_str,
+            starting_time=starting_time,
+            ending_time=ending_time,
         )
         db.session.add(record)
         db.session.commit()
@@ -214,6 +261,14 @@ class JobsController:
         if query.end_str is not None:
             end_at = parse_job_date(query.end_str)
 
+        starting_time = None
+        if query.starting_time_str is not None:
+            starting_time = parse_job_time(query.starting_time_str)
+
+        ending_time = None
+        if query.ending_time_str is not None:
+            ending_time = parse_job_time(query.ending_time_str)
+
         query_str = query.query_str
         if_query_str = query.if_query_str
 
@@ -228,6 +283,8 @@ class JobsController:
             end_at=end_at,
             if_query=if_query_str,
             schedule_str=schedule_str,
+            starting_time=starting_time,
+            ending_time=ending_time,
         )
 
     def delete(self, name, project_name):
@@ -283,7 +340,9 @@ class JobsController:
                 'schedule_str': record.schedule_str,
                 'query': record.query_str,
                 'if_query': record.if_query_str,
-                'variables': query_context_controller.get_context_vars('job', record.id)
+                'variables': query_context_controller.get_context_vars('job', record.id),
+                'starting_time': record.starting_time,
+                'ending_time': record.ending_time
             })
         return data
 
@@ -316,7 +375,9 @@ class JobsController:
                 'schedule_str': record.schedule_str,
                 'query': record.query_str,
                 'if_query': record.if_query_str,
-                'variables': query_context_controller.get_context_vars('job', record.id)
+                'variables': query_context_controller.get_context_vars('job', record.id),
+                'starting_time': record.starting_time,
+                'ending_time': record.ending_time
             }
 
     def get_history(self, name: str, project_name: str) -> List[dict]:
@@ -337,7 +398,7 @@ class JobsController:
                 BinaryOperation(op='=', args=[Identifier('project'), Constant(project_name)])
             ])
         )
-        response = logs_db_controller.query(query)
+        response = logs_db_controller.query(query)        
 
         names = [i['name'] for i in response.columns]
         return response.data_frame[names].to_dict(orient='records')
@@ -367,7 +428,7 @@ class JobsExecutor:
             self._delete_record(record)
             return
 
-        next_run_at = calc_next_date(record.schedule_str, base_date=record.next_run_at)
+        next_run_at = calc_next_date(record.schedule_str, base_date=record.next_run_at, starting_time=record.starting_time, ending_time=record.ending_time)
 
         if next_run_at is None:
             # no need to run it
