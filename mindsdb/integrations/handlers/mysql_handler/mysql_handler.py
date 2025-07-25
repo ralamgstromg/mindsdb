@@ -275,35 +275,6 @@ class MySQLHandler(DatabaseHandler):
                 return Response(RESPONSE_TYPE.ERROR, error_code=10, error_message=f"Error executing DDL {sql}, {ex}")
 
 
-    # def _mysql_table_insert(self, table_name, df):
-    #     try:
-    #         print(table_name, df)
-    #         df.write_database(
-    #             table_name=f"{table_name}",
-    #             connection=self.sqlalchemy_uri,
-    #             engine="sqlalchemy",
-    #             if_table_exists = 'append'
-    #         )
-    #         return Response(RESPONSE_TYPE.OK, affected_rows=df.shape[0])
-    #     except Exception as ex:
-    #         logger.error(f"Error inserting data to table {table_name}, {ex}")
-    #         return StatusResponse(False, f"Error inserting data to table {table_name}, {ex}")
-
-    # def _mysql_table_insert(self, table_name, df):
-    #     try:
-    #         batch_size = 50_000
-    #         for _, chunk_df in enumerate(df.iter_slices(n_rows=batch_size)):
-    #             chunk_df.write_database(
-    #                 table_name=f"{table_name}",
-    #                 connection=self.sqlalchemy_uri,
-    #                 engine="sqlalchemy",
-    #                 if_table_exists = 'append'
-    #             )
-    #         return Response(RESPONSE_TYPE.OK, affected_rows=df.shape[0])
-    #     except Exception as ex:
-    #         logger.error(f"Error inserting data to table {table_name}, {ex}")
-    #         return Response(RESPONSE_TYPE.ERROR, error_code=10, error_message=f"Error executing INSERT to {table_name}, {ex}")
-
     def _mysql_table_insert(self, table_name, df):
         try:
             engine = create_engine(self.sqlalchemy_uri)
