@@ -2,9 +2,9 @@
 import polars as pd
 import mysql.connector
 
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser import parse_sql
 from mindsdb.utilities.render.sqlalchemy_render import SqlalchemyRender
-from mindsdb_sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser.ast.base import ASTNode
 
 from mindsdb.utilities import log
 from mindsdb.integrations.libs.base import DatabaseHandler

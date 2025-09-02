@@ -15,8 +15,8 @@ from mindsdb.api.executor.controllers.session_controller import SessionControlle
 from mindsdb.api.executor.datahub.classes.tables_row import TablesRow
 from mindsdb.api.executor.data_types.response_type import RESPONSE_TYPE
 from mindsdb.metrics.metrics import api_endpoint_metrics
-from mindsdb_sql_parser import parse_sql, ParsingException
-from mindsdb_sql_parser.ast import CreateTable, DropTables
+from mindsdb.sql_parser import parse_sql, ParsingException
+from mindsdb.sql_parser.ast import CreateTable, DropTables
 from mindsdb.utilities.exception import EntityNotExistsError
 from mindsdb.integrations.libs.response import HandlerStatusResponse
 

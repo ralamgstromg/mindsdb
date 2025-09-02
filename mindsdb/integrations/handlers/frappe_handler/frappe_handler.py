@@ -11,7 +11,7 @@ from mindsdb.integrations.libs.response import (
     HandlerResponse as Response,
 )
 from mindsdb.utilities import log
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser import parse_sql
 
 logger = log.getLogger(__name__)
 

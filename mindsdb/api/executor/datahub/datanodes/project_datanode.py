@@ -3,8 +3,8 @@ from dataclasses import astuple
 
 #import pandas as pd
 import polars as pd
-from mindsdb_sql_parser import parse_sql
-from mindsdb_sql_parser.ast import (
+from mindsdb.sql_parser import parse_sql
+from mindsdb.sql_parser.ast import (
     BinaryOperation,
     Identifier,
     Constant,

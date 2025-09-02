@@ -1,8 +1,8 @@
 from typing import Optional
 
 import jaydebeapi as jdbcconnector
-from mindsdb_sql_parser import parse_sql
-from mindsdb_sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser import parse_sql
+from mindsdb.sql_parser.ast.base import ASTNode
 import pandas as pd
 import pyodbc
 import numpy as np

@@ -1,4 +1,4 @@
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser import parse_sql
 from mindsdb.integrations.libs.api_handler import APIHandler
 from mindsdb.utilities import log
 from mindsdb.integrations.handlers.google_analytics_handler.google_analytics_tables import ConversionEventsTable

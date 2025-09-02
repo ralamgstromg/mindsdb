@@ -2,10 +2,10 @@ from typing import Optional
 import pysurrealdb as surreal
 import pandas as pd
 
-from mindsdb_sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser.ast.base import ASTNode
 from mindsdb.integrations.libs.base import DatabaseHandler
 from mindsdb.utilities import log
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser import parse_sql
 from mindsdb.integrations.libs.response import (
     HandlerStatusResponse as StatusResponse,
     HandlerResponse as Response,

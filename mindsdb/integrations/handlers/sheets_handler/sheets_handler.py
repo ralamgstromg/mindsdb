@@ -4,10 +4,10 @@ from typing import Optional
 import polars as pd
 import duckdb
 
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser import parse_sql
 from mindsdb.integrations.libs.base import DatabaseHandler
 
-from mindsdb_sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser.ast.base import ASTNode
 
 from mindsdb.utilities import log
 from mindsdb.integrations.libs.response import (

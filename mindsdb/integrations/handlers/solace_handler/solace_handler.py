@@ -6,8 +6,8 @@ from solace.messaging.receiver.message_receiver import MessageHandler
 from solace.messaging.resources.topic import Topic
 from solace.messaging.receiver.inbound_message import InboundMessage
 
-from mindsdb_sql_parser import parse_sql
-from mindsdb_sql_parser import ast
+from mindsdb.sql_parser import parse_sql
+from mindsdb.sql_parser import ast
 
 from mindsdb.api.executor.data_types.response_type import RESPONSE_TYPE
 from mindsdb.integrations.libs.base import DatabaseHandler

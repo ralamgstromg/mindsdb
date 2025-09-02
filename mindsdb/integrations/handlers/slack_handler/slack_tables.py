@@ -1,7 +1,7 @@
 import datetime as dt
 from typing import Any, Dict, List, Text
 
-from mindsdb_sql_parser.ast import Delete, Insert, Update
+from mindsdb.sql_parser.ast import Delete, Insert, Update
 import pandas as pd
 from slack_sdk.errors import SlackApiError
 

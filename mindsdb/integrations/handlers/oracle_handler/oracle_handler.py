@@ -3,7 +3,7 @@ from typing import Text, Dict, Optional, Any
 import oracledb
 import pandas as pd
 from oracledb import connect, Connection, DatabaseError, Cursor
-from mindsdb_sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser.ast.base import ASTNode
 
 from mindsdb.integrations.libs.base import DatabaseHandler
 from mindsdb.integrations.libs.response import (

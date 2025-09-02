@@ -1,5 +1,5 @@
-from mindsdb_sql_parser.ast.base import ASTNode
-from mindsdb_sql_parser.ast import Select
+from mindsdb.sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser.ast import Select
 from mindsdb.utilities import log
 from mindsdb.integrations.libs.base import DatabaseHandler
 from mindsdb.integrations.libs.response import (
@@ -208,8 +208,8 @@ def parse_sql(sql, dialect='sqlite'):
     # remove ending semicolon and spaces
     sql = re.sub(r'[\s;]+$', '', sql)
 
-    from mindsdb_sql_parser.lexer import MindsDBLexer
-    from mindsdb_sql_parser.parser import MindsDBParser
+    from mindsdb.sql_parser.lexer import MindsDBLexer
+    from mindsdb.sql_parser.parser import MindsDBParser
     lexer, parser = MindsDBLexer(), MindsDBParser()
 
     tokens = lexer.tokenize(sql)

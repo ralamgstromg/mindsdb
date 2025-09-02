@@ -3,7 +3,7 @@ import re
 import json
 from pydantic import BaseModel, Field
 from langchain_core.tools import BaseTool
-from mindsdb_sql_parser.ast import Describe, Select, Identifier, Constant, Star
+from mindsdb.sql_parser.ast import Describe, Select, Identifier, Constant, Star
 
 
 def llm_str_strip(s):

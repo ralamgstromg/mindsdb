@@ -2,7 +2,7 @@ import pandas as pd
 
 from mindsdb.integrations.libs.api_handler import APITable
 from mindsdb.integrations.utilities.sql_utils import conditions_to_filter, project_dataframe, sort_dataframe
-from mindsdb_sql_parser import ast
+from mindsdb.sql_parser import ast
 
 
 def message_to_dataframe_row(message: dict):

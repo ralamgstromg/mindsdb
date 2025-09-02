@@ -3,7 +3,7 @@ import pytz
 
 import pandas as pd
 
-from mindsdb_sql_parser import ast
+from mindsdb.sql_parser import ast
 
 from mindsdb.integrations.handlers.email_handler.email_ingestor import EmailIngestor
 from mindsdb.integrations.libs.api_handler import APITable

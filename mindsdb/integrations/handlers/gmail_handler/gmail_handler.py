@@ -7,9 +7,9 @@ from mindsdb.integrations.libs.response import (
 
 from mindsdb.integrations.utilities.sql_utils import extract_comparison_conditions
 from mindsdb.integrations.libs.api_handler import APIHandler, APITable
-from mindsdb_sql_parser import ast
+from mindsdb.sql_parser import ast
 from mindsdb.utilities import log
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser import parse_sql
 from mindsdb.utilities.config import Config
 
 import time

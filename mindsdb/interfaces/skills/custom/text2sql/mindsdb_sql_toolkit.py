@@ -102,22 +102,22 @@ class MindsDBSQLToolkit(SQLDatabaseToolkit):
             name=f"sql_db_query{prefix}", db=self.db, description=query_sql_database_tool_description
         )
 
-        mindsdb_sql_parser_tool_description = (
+        mindsdb.sql_parser_tool_description = (
             "Use this tool to ensure a SQL query passes the MindsDB SQL parser. "
             "If the query is not correct, it will be corrected and returned. Use the new query. "
             "If the query can't be corrected, an error is returned. In this case, rewrite and retry. "
             "If the query is correct, it will be parsed and returned. "
             f"ALWAYS run this tool before executing a query with {query_sql_database_tool.name}. "
         )
-        mindsdb_sql_parser_tool = MindsDBSQLParserTool(
-            name=f"mindsdb_sql_parser_tool{prefix}", description=mindsdb_sql_parser_tool_description
+        mindsdb.sql_parser_tool = MindsDBSQLParserTool(
+            name=f"mindsdb.sql_parser_tool{prefix}", description=mindsdb.sql_parser_tool_description
         )
 
         sql_tools = [
             query_sql_database_tool,
             info_sql_database_tool,
             list_sql_database_tool,
-            mindsdb_sql_parser_tool,
+            mindsdb.sql_parser_tool,
         ]
         if not self.include_knowledge_base_tools:
             return sql_tools

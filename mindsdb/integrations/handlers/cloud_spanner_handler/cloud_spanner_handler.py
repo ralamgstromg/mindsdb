@@ -5,9 +5,9 @@ from google.cloud.spanner_dbapi.connection import connect, Connection
 from google.cloud.sqlalchemy_spanner import SpannerDialect
 
 import pandas as pd
-from mindsdb_sql_parser import parse_sql
-from mindsdb_sql_parser.ast.base import ASTNode
-from mindsdb_sql_parser.ast import CreateTable, Function
+from mindsdb.sql_parser import parse_sql
+from mindsdb.sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser.ast import CreateTable, Function
 from mindsdb.utilities.render.sqlalchemy_render import SqlalchemyRender
 
 from mindsdb.integrations.libs.base import DatabaseHandler

@@ -6,12 +6,12 @@ import connectorx as cx
 from sqlalchemy import create_engine, text
 from sqlalchemy.sql import sqltypes
 
-#from mindsdb_sql_parser import parse_sql
+#from mindsdb.sql_parser import parse_sql
 import re
 from mindsdb.utilities.render.sqlalchemy_render import SqlalchemyRender
-from mindsdb_sql_parser.ast.base import ASTNode
-from mindsdb_sql_parser.ast import Select, Identifier, Insert, Star, Constant, DropTables, CreateTable, Delete, TypeCast, Function, Call
-#from mindsdb_sql_parser.ast.select import Star
+from mindsdb.sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser.ast import Select, Identifier, Insert, Star, Constant, DropTables, CreateTable, Delete, TypeCast, Function, Call
+#from mindsdb.sql_parser.ast.select import Star
 
 from mindsdb.utilities import log
 from mindsdb.integrations.libs.base import DatabaseHandler

@@ -1,9 +1,9 @@
 import unittest
 from unittest.mock import patch
 
-from mindsdb_sql_parser import ast
-from mindsdb_sql_parser.ast import BinaryOperation, Identifier, Constant
-from mindsdb_sql_parser.ast.select.star import Star
+from mindsdb.sql_parser import ast
+from mindsdb.sql_parser.ast import BinaryOperation, Identifier, Constant
+from mindsdb.sql_parser.ast.select.star import Star
 from mindsdb.integrations.handlers.discord_handler.discord_handler import DiscordHandler
 
 

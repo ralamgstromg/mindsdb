@@ -1,6 +1,6 @@
 import pandas as pd
 from mindsdb.integrations.libs.api_handler import APITable
-from mindsdb_sql_parser import ast
+from mindsdb.sql_parser import ast
 
 
 class AccountsTable(APITable):

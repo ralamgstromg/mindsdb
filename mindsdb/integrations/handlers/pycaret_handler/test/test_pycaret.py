@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser import parse_sql
 from tests.unit.executor_test_base import BaseExecutorTest
 
 try:

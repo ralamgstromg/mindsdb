@@ -1,7 +1,7 @@
 from mindsdb.integrations.handlers.intercom_handler.intercom_tables import Articles
 from mindsdb.integrations.libs.api_handler import APIHandler
 from mindsdb.integrations.libs.response import HandlerStatusResponse as StatusResponse
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser import parse_sql
 import requests
 import pandas as pd
 from collections import OrderedDict

@@ -4,9 +4,9 @@ import tempfile
 
 #import pandas as pd
 import polars as pd
-from mindsdb_sql_parser import parse_sql
-from mindsdb_sql_parser.ast import CreateTable, DropTables, Insert, Select, Identifier
-from mindsdb_sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser import parse_sql
+from mindsdb.sql_parser.ast import CreateTable, DropTables, Insert, Select, Identifier
+from mindsdb.sql_parser.ast.base import ASTNode
 
 from mindsdb.api.executor.utilities.sql import query_df
 from mindsdb.integrations.libs.base import DatabaseHandler

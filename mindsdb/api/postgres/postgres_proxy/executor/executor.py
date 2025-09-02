@@ -1,6 +1,6 @@
 from typing import Union
 
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser import parse_sql
 from mindsdb.api.executor.planner import utils as planner_utils
 
 from numpy import dtype as np_dtype

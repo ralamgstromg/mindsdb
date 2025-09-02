@@ -1,4 +1,4 @@
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser import parse_sql
 from mindsdb.api.executor.planner import utils as planner_utils
 
 import mindsdb.utilities.profiler as profiler

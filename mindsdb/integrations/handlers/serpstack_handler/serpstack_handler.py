@@ -1,7 +1,7 @@
 import requests
 
 from mindsdb.utilities import log
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser import parse_sql
 
 from mindsdb.integrations.libs.api_handler import APIHandler
 

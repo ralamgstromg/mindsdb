@@ -1,6 +1,6 @@
 from typing import Type
 import re
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser import parse_sql
 from pydantic import BaseModel, Field
 from langchain_core.tools import BaseTool
 
@@ -16,7 +16,7 @@ class _MindsDBSQLParserToolInput(BaseModel):
 
 
 class MindsDBSQLParserTool(BaseTool):
-    name: str = "mindsdb_sql_parser_tool"
+    name: str = "mindsdb.sql_parser_tool"
     description: str = "Parse a SQL query to check it is valid MindsDB SQL."
     args_schema: Type[BaseModel] = _MindsDBSQLParserToolInput
 

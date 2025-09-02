@@ -4,8 +4,8 @@ from typing import Any
 import polars as pd
 
 from mindsdb.api.executor.utilities.sql import query_df
-from mindsdb_sql_parser import ast
-from mindsdb_sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser import ast
+from mindsdb.sql_parser.ast.base import ASTNode
 
 from mindsdb.integrations.utilities.query_traversal import query_traversal
 from mindsdb.utilities.config import config

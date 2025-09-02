@@ -7,8 +7,8 @@ from typing import Iterable, List, Optional, Any
 
 #import pandas as pd
 import polars as pd
-from mindsdb_sql_parser import parse_sql
-from mindsdb_sql_parser.ast import Select, Show, Describe, Explain, Identifier
+from mindsdb.sql_parser import parse_sql
+from mindsdb.sql_parser.ast import Select, Show, Describe, Explain, Identifier
 
 from mindsdb.utilities import log
 from mindsdb.utilities.context import context as ctx

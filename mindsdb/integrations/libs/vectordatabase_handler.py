@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 
 #import pandas as pd
 import polars as pd
-from mindsdb_sql_parser.ast import (
+from mindsdb.sql_parser.ast import (
     BinaryOperation,
     Constant,
     CreateTable,
@@ -17,7 +17,7 @@ from mindsdb_sql_parser.ast import (
     Tuple,
     Update,
 )
-from mindsdb_sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser.ast.base import ASTNode
 
 from mindsdb.integrations.libs.response import RESPONSE_TYPE, HandlerResponse
 from mindsdb.utilities import log

@@ -1,8 +1,8 @@
 import tiktoken
 from typing import Callable
 
-from mindsdb_sql_parser import parse_sql
-from mindsdb_sql_parser.ast import Insert
+from mindsdb.sql_parser import parse_sql
+from mindsdb.sql_parser.ast import Insert
 from langchain_community.agent_toolkits.load_tools import load_tools
 
 from langchain_experimental.utilities import PythonREPL

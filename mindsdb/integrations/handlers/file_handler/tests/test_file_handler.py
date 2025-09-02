@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pandas
 import pytest
-from mindsdb_sql_parser.exceptions import ParsingException
-from mindsdb_sql_parser.ast import (
+from mindsdb.sql_parser.exceptions import ParsingException
+from mindsdb.sql_parser.ast import (
     CreateTable,
     DropTables,
     Identifier,

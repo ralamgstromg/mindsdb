@@ -1,7 +1,7 @@
 import os
 from typing import Callable
 
-from mindsdb_sql_parser import Function, Constant, Variable
+from mindsdb.sql_parser import Function, Constant, Variable
 
 from mindsdb.utilities import log
 from mindsdb.interfaces.storage.fs import RESOURCE_GROUP

@@ -101,7 +101,7 @@ class MindsDBSQL(SQLDatabase):
             # command = command.replace('`', '')
 
             # Parse the SQL string to an AST object first
-            from mindsdb_sql_parser import parse_sql
+            from mindsdb.sql_parser import parse_sql
 
             ast_query = parse_sql(command)
 

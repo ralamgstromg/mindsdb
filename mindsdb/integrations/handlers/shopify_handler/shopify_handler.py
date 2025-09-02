@@ -8,7 +8,7 @@ from mindsdb.integrations.libs.response import (
 )
 
 from mindsdb.utilities import log
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser import parse_sql
 from mindsdb.integrations.libs.api_handler_exceptions import InvalidNativeQuery, ConnectionFailed, MissingConnectionParams
 
 logger = log.getLogger(__name__)

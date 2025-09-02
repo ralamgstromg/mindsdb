@@ -6,10 +6,10 @@ from functools import reduce
 
 #import pandas as pd
 import polars as pd
-from mindsdb_sql_parser import parse_sql
-from mindsdb_sql_parser.ast.mindsdb import AlterDatabase
+from mindsdb.sql_parser import parse_sql
+from mindsdb.sql_parser.ast.mindsdb import AlterDatabase
 from mindsdb.api.mysql.mysql_proxy.libs.constants.mysql import MYSQL_DATA_TYPE
-from mindsdb_sql_parser.ast import (
+from mindsdb.sql_parser.ast import (
     Alter,
     ASTNode,
     BinaryOperation,
@@ -43,7 +43,7 @@ from mindsdb_sql_parser.ast import (
 )
 
 # typed models
-from mindsdb_sql_parser.ast.mindsdb import (
+from mindsdb.sql_parser.ast.mindsdb import (
     AlterView,
     CreateAgent,
     CreateAnomalyDetectionModel,

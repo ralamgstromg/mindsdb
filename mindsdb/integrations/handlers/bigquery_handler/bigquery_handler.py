@@ -5,7 +5,7 @@ from sqlalchemy_bigquery.base import BigQueryDialect
 from typing import Any, Dict, Optional, Text
 
 from mindsdb.utilities import log
-from mindsdb_sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser.ast.base import ASTNode
 from mindsdb.integrations.libs.base import MetaDatabaseHandler
 from mindsdb.utilities.render.sqlalchemy_render import SqlalchemyRender
 from mindsdb.integrations.utilities.handlers.auth_utilities.google import GoogleServiceAccountOAuth2Manager

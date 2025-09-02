@@ -3,8 +3,8 @@ from typing import Any
 
 import pandas as pd
 import requests
-from mindsdb_sql_parser import parse_sql
-from mindsdb_sql_parser import ast
+from mindsdb.sql_parser import parse_sql
+from mindsdb.sql_parser import ast
 
 from mindsdb.api.executor.data_types.response_type import RESPONSE_TYPE
 from mindsdb.integrations.utilities.handlers.query_utilities import SELECTQueryParser, SELECTQueryExecutor

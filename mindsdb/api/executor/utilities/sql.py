@@ -5,10 +5,10 @@ import duckdb
 from duckdb import InvalidInputException
 #import numpy as np
 
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser import parse_sql
 from mindsdb.utilities.render.sqlalchemy_render import SqlalchemyRender
 from mindsdb.integrations.utilities.query_traversal import query_traversal
-from mindsdb_sql_parser.ast import ASTNode, Select, Identifier, Function, Constant
+from mindsdb.sql_parser.ast import ASTNode, Select, Identifier, Function, Constant
 from mindsdb.utilities.functions import resolve_table_identifier, resolve_model_identifier
 
 from mindsdb.utilities import log
@@ -97,7 +97,7 @@ def query_df(df, query, session=None):
 
     Args:
         df (pandas.DataFrame): data
-        query (mindsdb_sql_parser.ast.Select | str): select query
+        query (mindsdb.sql_parser.ast.Select | str): select query
 
     Returns:
         pandas.DataFrame

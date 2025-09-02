@@ -9,8 +9,8 @@ from typing import Iterable, List
 import polars as pd
 from sqlalchemy.types import Integer, Float
 
-from mindsdb_sql_parser.ast.base import ASTNode
-from mindsdb_sql_parser.ast import Insert, Identifier, CreateTable, TableColumn, DropTables
+from mindsdb.sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser.ast import Insert, Identifier, CreateTable, TableColumn, DropTables
 
 from mindsdb.api.executor.datahub.classes.response import DataHubResponse
 from mindsdb.api.executor.datahub.datanodes.datanode import DataNode

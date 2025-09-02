@@ -8,7 +8,7 @@ import polars as pd
 import datetime as dt
 
 from mindsdb.api.executor.sql_query.result_set import ResultSet
-from mindsdb_sql_parser import Identifier, Select, Constant, Star, parse_sql
+from mindsdb.sql_parser import Identifier, Select, Constant, Star, parse_sql
 from mindsdb.utilities import log
 
 from mindsdb.interfaces.knowledge_base.llm_client import LLMClient

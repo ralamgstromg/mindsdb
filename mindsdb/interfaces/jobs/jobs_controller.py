@@ -5,9 +5,9 @@ from typing import List
 
 import sqlalchemy as sa
 
-from mindsdb_sql_parser import parse_sql, ParsingException
-from mindsdb_sql_parser.ast.mindsdb import CreateJob
-from mindsdb_sql_parser.ast import Select, Star, Identifier, BinaryOperation, Constant
+from mindsdb.sql_parser import parse_sql, ParsingException
+from mindsdb.sql_parser.ast.mindsdb import CreateJob
+from mindsdb.sql_parser.ast import Select, Star, Identifier, BinaryOperation, Constant
 
 from mindsdb.utilities.config import config
 from mindsdb.utilities.context import context as ctx

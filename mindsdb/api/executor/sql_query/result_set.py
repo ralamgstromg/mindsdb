@@ -10,7 +10,7 @@ import datetime
 # from pandas.api import types as pd_types
 import sqlalchemy.types as sqlalchemy_types
 
-from mindsdb_sql_parser.ast import TableColumn
+from mindsdb.sql_parser.ast import TableColumn
 
 from mindsdb.utilities import log
 from mindsdb.api.executor.exceptions import WrongArgumentError

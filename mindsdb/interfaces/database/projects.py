@@ -6,9 +6,9 @@ from collections import OrderedDict
 import sqlalchemy as sa
 import numpy as np
 
-from mindsdb_sql_parser.ast.base import ASTNode
-from mindsdb_sql_parser.ast import Select, Star, Constant, Identifier
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser.ast import Select, Star, Constant, Identifier
+from mindsdb.sql_parser import parse_sql
 
 from mindsdb.interfaces.storage import db
 from mindsdb.interfaces.model.model_controller import ModelController

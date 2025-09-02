@@ -1,8 +1,8 @@
 import copy
 from typing import List
 
-from mindsdb_sql_parser.ast import Identifier, Select, BinaryOperation, Constant, Parameter
-from mindsdb_sql_parser import ast
+from mindsdb.sql_parser.ast import Identifier, Select, BinaryOperation, Constant, Parameter
+from mindsdb.sql_parser import ast
 
 from mindsdb.integrations.utilities.query_traversal import query_traversal
 from mindsdb.api.executor.planner.exceptions import PlanningException

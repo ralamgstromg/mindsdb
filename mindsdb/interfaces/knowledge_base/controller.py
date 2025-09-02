@@ -9,9 +9,9 @@ import pandas
 import polars as pd
 import numpy as np
 
-from mindsdb_sql_parser.ast import BinaryOperation, Constant, Identifier, Select, Update, Delete, Star
-from mindsdb_sql_parser.ast.mindsdb import CreatePredictor
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser.ast import BinaryOperation, Constant, Identifier, Select, Update, Delete, Star
+from mindsdb.sql_parser.ast.mindsdb import CreatePredictor
+from mindsdb.sql_parser import parse_sql
 
 from mindsdb.integrations.utilities.query_traversal import query_traversal
 

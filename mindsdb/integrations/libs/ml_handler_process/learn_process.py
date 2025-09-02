@@ -5,8 +5,8 @@ import datetime as dt
 
 from sqlalchemy.orm.attributes import flag_modified
 
-from mindsdb_sql_parser import parse_sql
-from mindsdb_sql_parser.ast import Identifier, Select, Star, NativeQuery
+from mindsdb.sql_parser import parse_sql
+from mindsdb.sql_parser.ast import Identifier, Select, Star, NativeQuery
 
 from mindsdb.api.executor.sql_query import SQLQuery
 import mindsdb.utilities.profiler as profiler

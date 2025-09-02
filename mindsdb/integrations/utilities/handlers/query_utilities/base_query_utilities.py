@@ -1,7 +1,7 @@
 #import pandas as pd
 import polars as pd
 from typing import Text, List
-from mindsdb_sql_parser import ast
+from mindsdb.sql_parser import ast
 from abc import ABC, abstractmethod
 from mindsdb.integrations.utilities.sql_utils import extract_comparison_conditions, filter_dataframe
 

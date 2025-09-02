@@ -1,6 +1,6 @@
 from mindsdb.integrations.libs.api_handler import APITable
 from mindsdb.integrations.utilities.sql_utils import extract_comparison_conditions
-from mindsdb_sql_parser import ast
+from mindsdb.sql_parser import ast
 
 import pandas as pd
 

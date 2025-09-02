@@ -6,9 +6,9 @@ from sqlalchemy.orm.attributes import flag_modified
 #import pandas as pd
 import polars as pd
 
-from mindsdb_sql_parser import Select, Star, OrderBy
+from mindsdb.sql_parser import Select, Star, OrderBy
 
-from mindsdb_sql_parser.ast import (
+from mindsdb.sql_parser.ast import (
     Identifier, BinaryOperation, Last, Constant, ASTNode
 )
 from mindsdb.integrations.utilities.query_traversal import query_traversal

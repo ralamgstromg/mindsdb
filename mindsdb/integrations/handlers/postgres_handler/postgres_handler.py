@@ -7,7 +7,7 @@ import connectorx as cx
 
 import polars as pd
 
-from mindsdb_sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser.ast.base import ASTNode
 
 from mindsdb.integrations.libs.base import MetaDatabaseHandler
 from mindsdb.utilities import log
@@ -17,7 +17,7 @@ from mindsdb.integrations.libs.response import (
     HandlerResponse as Response,
     RESPONSE_TYPE
 )
-from mindsdb_sql_parser.ast.select import Identifier, Star, Function, Constant, Select, TypeCast
+from mindsdb.sql_parser.ast.select import Identifier, Star, Function, Constant, Select, TypeCast
 from mindsdb.api.mysql.mysql_proxy.libs.constants.mysql import MYSQL_DATA_TYPE
 
 
@@ -40,9 +40,9 @@ logger = log.getLogger(__name__)
 # from psycopg.postgres import TypeInfo, types as pg_types
 # from psycopg.pq import ExecStatus
 
-# from mindsdb_sql_parser import parse_sql
+# from mindsdb.sql_parser import parse_sql
 # from mindsdb.utilities.render.sqlalchemy_render import SqlalchemyRender
-# from mindsdb_sql_parser.ast.base import ASTNode
+# from mindsdb.sql_parser.ast.base import ASTNode
 
 # from mindsdb.integrations.libs.base import MetaDatabaseHandler
 # from mindsdb.utilities import log

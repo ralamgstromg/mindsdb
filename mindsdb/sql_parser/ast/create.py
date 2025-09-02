@@ -1,0 +1,134 @@
+from mindsdb.sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser.utils import indent
+from typing import List
+
+try:
+    from sqlalchemy import types as sa_types
+except ImportError:
+    sa_types = None
+
+
+class TableColumn():
+    def __init__(self, name, type='integer', length=None, length2=None, default=None,
+                 is_primary_key=False, nullable=None):
+        self.name = name
+        self.type = type
+        self.is_primary_key = is_primary_key
+        self.default = default
+        self.length = length
+        self.length2 = length2
+        self.nullable = nullable
+
+    def __eq__(self, other):
+        if type(self) != type(other):
+            return False
+
+        for k in ['name', 'is_primary_key', 'type', 'default', 'length']:
+
+            if getattr(self, k) != getattr(other, k):
+                return False
+
+        return True
+
+
+class CreateTable(ASTNode):
+    def __init__(self,
+                 name,
+                 from_select=None,
+                 columns: List[TableColumn] = None,
+                 is_replace=False,
+                 if_not_exists=False,
+                 using=None,
+                 *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.name = name
+        self.is_replace = is_replace
+        self.from_select = from_select
+        self.columns = columns
+        self.if_not_exists = if_not_exists
+        self.using = using
+
+    def to_tree(self, *args, level=0, **kwargs):
+        ind = indent(level)
+        ind1 = indent(level + 1)
+        ind2 = indent(level + 2)
+
+        replace_str = ''
+        if self.is_replace:
+            replace_str = f'{ind1}is_replace=True\n'
+
+        from_select_str = ''
+        if self.from_select is not None:
+            from_select_str = f'{ind1}from_select={self.from_select.to_tree(level=level+1)}\n'
+
+        columns_str = ''
+        if self.columns is not None:
+            columns = [
+                f'{ind2}{col.name}: {col.type}'
+                for col in self.columns
+            ]
+
+            columns_str = f'{ind1}columns=\n' + '\n'.join(columns)
+
+        using_str = ''
+        if self.using:
+            using_str = f'\n{ind1}using={repr(self.using)},'
+            #print(using_str)
+
+        out_str = f'{ind}CreateTable(\n' \
+                  f'{ind1}if_not_exists={self.if_not_exists},\n' \
+                  f'{ind1}name={self.name}\n' \
+                  f'{replace_str}' \
+                  f'{from_select_str}' \
+                  f'{columns_str}\n' \
+                  f'{using_str}\n' \
+                  f'{ind})\n'
+        return out_str
+
+    def get_string(self, *args, **kwargs):
+
+        replace_str = ''
+        if self.is_replace:
+            replace_str = f' OR REPLACE'
+
+        columns_str = ''
+        if self.columns is not None:
+            columns = []
+            for col in self.columns:
+
+                if not isinstance(col.type, str) and sa_types is not None:
+                    if issubclass(col.type, sa_types.Integer):
+                        type = 'int'
+                    elif issubclass(col.type, sa_types.Float):
+                        type = 'float'
+                    elif issubclass(col.type, sa_types.Text):
+                        type = 'text'
+                else:
+                    type = str(col.type)
+                if col.length is not None:
+                    len_str = str(col.length)
+                    if col.length2 is not None:
+                        len_str += f", {col.length2}"
+                    type = f'{type}({len_str})'
+                col_str = f'{col.name} {type}'
+                if col.nullable is True:
+                    col_str += ' NULL'
+                elif col.nullable is False:
+                    col_str += ' NOT NULL'
+                columns.append(col_str)
+
+            columns_str = '({})'.format(', '.join(columns))
+
+        from_select_str = ''
+        if self.from_select is not None:
+            from_select_str = self.from_select.to_string()
+                
+        using_str = ''
+        if self.using:
+            using_str = "USING " + ", ".join([f"{k}={v}" for k, v in self.using.items()])
+            # print(using_str)
+
+        name_str = str(self.name)
+
+        #print(f'CREATE{replace_str} TABLE {"IF NOT EXISTS " if self.if_not_exists else ""}{name_str} {columns_str} {from_select_str} {using_str}')
+        return f'CREATE{replace_str} TABLE {"IF NOT EXISTS " if self.if_not_exists else ""}{name_str} {columns_str} {from_select_str} {using_str}'

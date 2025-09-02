@@ -3,7 +3,7 @@ from dataclasses import dataclass, fields
 
 #import pandas as pd
 import polars as pd
-from mindsdb_sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser.ast.base import ASTNode
 
 from mindsdb.utilities import log
 from mindsdb.utilities.config import config

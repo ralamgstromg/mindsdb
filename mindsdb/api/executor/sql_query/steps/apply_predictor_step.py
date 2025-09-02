@@ -4,14 +4,14 @@ import re
 #import pandas as pd
 import polars as pd
 
-from mindsdb_sql_parser.ast import (
+from mindsdb.sql_parser.ast import (
     BinaryOperation,
     Identifier,
     Constant,
     BetweenOperation,
     Parameter,
 )
-from mindsdb_sql_parser.ast.mindsdb import Latest
+from mindsdb.sql_parser.ast.mindsdb import Latest
 
 from mindsdb.api.executor.planner.step_result import Result
 from mindsdb.api.executor.planner.steps import (

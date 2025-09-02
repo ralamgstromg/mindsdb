@@ -1,4 +1,4 @@
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser import parse_sql
 
 from mindsdb.integrations.handlers.aqicn_handler.aqicn_tables import (
     AQByUserLocationTable,

@@ -6,9 +6,9 @@ from collections import OrderedDict
 #import pandas as pd
 import polars as pd
 import datetime as dt
-from mindsdb_sql_parser import parse_sql
-from mindsdb_sql_parser.ast import Select, Identifier, Star, BinaryOperation, Constant, Join, Function
-from mindsdb_sql_parser.utils import JoinType
+from mindsdb.sql_parser import parse_sql
+from mindsdb.sql_parser.ast import Select, Identifier, Star, BinaryOperation, Constant, Join, Function
+from mindsdb.sql_parser.utils import JoinType
 
 from mindsdb.utilities.render.sqlalchemy_render import SqlalchemyRender
 from mindsdb.integrations.utilities.query_traversal import query_traversal

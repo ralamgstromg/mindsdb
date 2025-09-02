@@ -1,6 +1,6 @@
 from typing import Dict, List, Text
 
-from mindsdb_sql_parser.ast import Select, Star, Identifier
+from mindsdb.sql_parser.ast import Select, Star, Identifier
 import pandas as pd
 from salesforce_api.exceptions import RestRequestCouldNotBeUnderstoodError
 

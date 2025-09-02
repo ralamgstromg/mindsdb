@@ -2,8 +2,8 @@ import json
 
 #import pandas as pd
 import polars as pd
-from mindsdb_sql_parser.ast import BinaryOperation, Constant, Select
-from mindsdb_sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser.ast import BinaryOperation, Constant, Select
+from mindsdb.sql_parser.ast.base import ASTNode
 
 from mindsdb.interfaces.agents.agents_controller import AgentsController
 from mindsdb.interfaces.jobs.jobs_controller import JobsController

@@ -1,4 +1,4 @@
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser import parse_sql
 import pandas as pd
 from mendeley import Mendeley
 from mindsdb.integrations.libs.api_handler import APIHandler

@@ -1,8 +1,8 @@
 import duckdb
 import pandas as pd
 from duckdb import DuckDBPyConnection
-from mindsdb_sql_parser import parse_sql
-from mindsdb_sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser import parse_sql
+from mindsdb.sql_parser.ast.base import ASTNode
 from mindsdb.utilities.render.sqlalchemy_render import SqlalchemyRender
 
 from mindsdb.integrations.libs.base import DatabaseHandler

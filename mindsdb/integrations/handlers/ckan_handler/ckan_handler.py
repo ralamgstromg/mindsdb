@@ -7,7 +7,7 @@ from mindsdb.integrations.libs.response import (
     HandlerStatusResponse,
     RESPONSE_TYPE,
 )
-from mindsdb_sql_parser import ast
+from mindsdb.sql_parser import ast
 from mindsdb.utilities import log
 from mindsdb.integrations.utilities.sql_utils import extract_comparison_conditions
 

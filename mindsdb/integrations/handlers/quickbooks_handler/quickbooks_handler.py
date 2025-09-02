@@ -6,7 +6,7 @@ from mindsdb.integrations.libs.response import (
 )
 from mindsdb.utilities.config import Config
 from mindsdb.utilities import log
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser import parse_sql
 from .quickbooks_table import AccountsTable, PurchasesTable, BillPaymentsTable, VendorsTable, BillsTable, EmployeesTable
 
 logger = log.getLogger(__name__)

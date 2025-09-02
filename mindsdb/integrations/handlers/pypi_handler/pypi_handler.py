@@ -1,4 +1,4 @@
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser import parse_sql
 
 from mindsdb.integrations.handlers.pypi_handler.api import PyPI
 from mindsdb.integrations.handlers.pypi_handler.pypi_tables import (

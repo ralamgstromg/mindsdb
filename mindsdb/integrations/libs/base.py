@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 
 #import pandas as pd
 import polars as pd
-from mindsdb_sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser.ast.base import ASTNode
 from mindsdb.utilities import log
 
 from mindsdb.integrations.libs.response import HandlerResponse, HandlerStatusResponse, RESPONSE_TYPE

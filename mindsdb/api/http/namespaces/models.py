@@ -14,8 +14,8 @@ from mindsdb.api.executor.controllers.session_controller import SessionControlle
 from mindsdb.metrics.metrics import api_endpoint_metrics
 from mindsdb.interfaces.model.functions import PredictorRecordNotFound
 from mindsdb.interfaces.storage.db import Predictor
-from mindsdb_sql_parser import parse_sql
-from mindsdb_sql_parser.ast.mindsdb import CreatePredictor
+from mindsdb.sql_parser import parse_sql
+from mindsdb.sql_parser.ast.mindsdb import CreatePredictor
 
 
 @ns_conf.route('/<project_name>/models')

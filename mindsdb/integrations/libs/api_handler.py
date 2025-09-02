@@ -3,8 +3,8 @@ import ast as py_ast
 
 #import pandas as pd
 import polars as pd
-from mindsdb_sql_parser.ast import ASTNode, Select, Insert, Update, Delete, Star
-from mindsdb_sql_parser.ast.select.identifier import Identifier
+from mindsdb.sql_parser.ast import ASTNode, Select, Insert, Update, Delete, Star
+from mindsdb.sql_parser.ast.select.identifier import Identifier
 
 from mindsdb.integrations.utilities.sql_utils import (
     extract_comparison_conditions,

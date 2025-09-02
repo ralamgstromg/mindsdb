@@ -8,7 +8,7 @@ from functools import wraps
 from collections.abc import Callable
 
 from cryptography.fernet import Fernet
-from mindsdb_sql_parser.ast import Identifier
+from mindsdb.sql_parser.ast import Identifier
 
 from mindsdb.utilities.fs import create_process_mark, delete_process_mark, set_process_mark
 from mindsdb.utilities import log
@@ -72,8 +72,8 @@ def mark_process(name: str, custom_mark: str = None) -> Callable:
 
 
 def init_lexer_parsers():
-    from mindsdb_sql_parser.lexer import MindsDBLexer
-    from mindsdb_sql_parser.parser import MindsDBParser
+    from mindsdb.sql_parser.lexer import MindsDBLexer
+    from mindsdb.sql_parser.parser import MindsDBParser
     return MindsDBLexer(), MindsDBParser()
 
 

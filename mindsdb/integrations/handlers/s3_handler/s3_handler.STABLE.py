@@ -4,7 +4,7 @@ from contextlib import contextmanager
 import boto3
 import duckdb
 from duckdb import HTTPException
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser import parse_sql
 
 #import pandas as pd
 import polars as pd
@@ -13,8 +13,8 @@ from typing import Text, Dict, Optional
 from botocore.exceptions import ClientError
 from botocore.client import Config
 
-from mindsdb_sql_parser.ast.base import ASTNode
-from mindsdb_sql_parser.ast import Select, Identifier, Insert, Star, Constant, DropTables, CreateTable
+from mindsdb.sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser.ast import Select, Identifier, Insert, Star, Constant, DropTables, CreateTable
 
 from mindsdb.utilities import log
 from mindsdb.integrations.libs.response import (

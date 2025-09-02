@@ -3,7 +3,7 @@ import polars as pd
 
 from typing import List
 
-from mindsdb_sql_parser import ASTNode
+from mindsdb.sql_parser import ASTNode
 from mindsdb.api.executor.planner.steps import FetchDataframeStepPartition
 from mindsdb.integrations.utilities.query_traversal import query_traversal
 

@@ -1,7 +1,7 @@
 
 from typing import Union
 
-from mindsdb_sql_parser.ast import Identifier, Select, BinaryOperation, Constant, OrderBy
+from mindsdb.sql_parser.ast import Identifier, Select, BinaryOperation, Constant, OrderBy
 
 from mindsdb.interfaces.storage import db
 from .types import ChatBotMessage

@@ -3,7 +3,7 @@ from collections import defaultdict
 #import pandas as pd
 import polars as pd
 
-from mindsdb_sql_parser.ast import Identifier, Select, Star, Constant, Parameter, Function, Variable, BinaryOperation
+from mindsdb.sql_parser.ast import Identifier, Select, Star, Constant, Parameter, Function, Variable, BinaryOperation
 
 from mindsdb.api.mysql.mysql_proxy.libs.constants.mysql import SERVER_VARIABLES
 from mindsdb.api.executor.planner.step_result import Result

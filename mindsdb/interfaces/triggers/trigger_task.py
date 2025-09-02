@@ -1,7 +1,7 @@
 import copy
 import traceback
-from mindsdb_sql_parser import parse_sql
-from mindsdb_sql_parser.ast import Data, Identifier
+from mindsdb.sql_parser import parse_sql
+from mindsdb.sql_parser.ast import Data, Identifier
 from mindsdb.integrations.utilities.query_traversal import query_traversal
 
 from mindsdb.interfaces.storage import db

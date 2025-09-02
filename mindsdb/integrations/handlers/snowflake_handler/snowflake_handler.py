@@ -8,8 +8,8 @@ from snowflake.connector.errors import NotSupportedError
 from snowflake.connector.cursor import SnowflakeCursor, ResultMetadata
 from typing import Any, Optional, List
 
-from mindsdb_sql_parser.ast.base import ASTNode
-from mindsdb_sql_parser.ast import Select, Identifier
+from mindsdb.sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser.ast import Select, Identifier
 
 from mindsdb.utilities import log
 from mindsdb.integrations.libs.base import MetaDatabaseHandler

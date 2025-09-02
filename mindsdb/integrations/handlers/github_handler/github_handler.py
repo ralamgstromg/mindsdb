@@ -1,6 +1,6 @@
 import github
 
-from mindsdb_sql_parser import parse_sql
+from mindsdb.sql_parser import parse_sql
 
 from mindsdb.integrations.handlers.github_handler.github_tables import (
     GithubIssuesTable,

@@ -7,7 +7,8 @@ import connectorx as cx
 
 import polars as pd
 
-from mindsdb_sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser.ast.base import ASTNode
+from mindsdb.sql_parser.ast import Select, Identifier, Insert, Star, Constant, DropTables, CreateTable, Delete, TypeCast, Function, Call
 
 from mindsdb.integrations.libs.base import DatabaseHandler
 from mindsdb.utilities import log

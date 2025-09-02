@@ -1,6 +1,6 @@
 import pandas as pd
 import datetime
-from mindsdb_sql_parser import ast
+from mindsdb.sql_parser import ast
 from pandas import DataFrame
 
 from mindsdb.integrations.libs.api_handler import APITable

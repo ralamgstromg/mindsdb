@@ -4,8 +4,8 @@ import time
 import polars as pd
 from flask import request
 from flask_restx import Resource
-from mindsdb_sql_parser import parse_sql
-from mindsdb_sql_parser.ast import Constant
+from mindsdb.sql_parser import parse_sql
+from mindsdb.sql_parser.ast import Constant
 #from pandas.core.frame import DataFrame
 from polars import DataFrame
 
