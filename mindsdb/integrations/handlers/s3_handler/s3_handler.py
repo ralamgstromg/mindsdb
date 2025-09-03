@@ -111,6 +111,9 @@ class S3Handler(DatabaseHandler):
             duckdb_conn.execute("FORCE INSTALL httpfs;")
 
         duckdb_conn.execute("LOAD httpfs;")
+        # duckdb_conn.execute("SET threads=4;")
+        # duckdb_conn.execute("SET temp_directory = '/tmp/';")
+        # duckdb_conn.execute("SET preserve_insertion_order=false;")
 
         # detect region for bucket
         if bucket not in self._regions:

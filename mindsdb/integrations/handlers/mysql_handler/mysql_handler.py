@@ -110,10 +110,12 @@ class MySQLHandler(DatabaseHandler):
                 }
             
             if lower_col_names:
-                result.cast({col: column_types_pl.get(col, pd.String) for col in result.columns})
                 result.columns = [col.lower() for col in result.columns]
-            else:
-                result.cast({col: column_types_pl.get(col, pd.String) for col in result.columns})
+
+            if column_types_pl:
+                result = result.with_columns([
+                    pd.col(col).cast(column_types_pl.get(col, pd.String)) for col in result.columns if col in column_types_pl
+                ])
 
             response = Response(RESPONSE_TYPE.TABLE, data_frame=result)
         except Exception as e:
@@ -130,9 +132,9 @@ class MySQLHandler(DatabaseHandler):
         """
         Retrieve the data from the SQL statement.
         """        
-        # print(query)
         if isinstance(query, Select):            
             column_types_pl = {}
+            targets = []
             for tar in query.targets:
                 if isinstance(tar, Star):                                    
                     cols = cx.read_sql(conn=self.uri,
@@ -147,7 +149,7 @@ class MySQLHandler(DatabaseHandler):
                             column_types_pl[r_col] = pd.Date
                             identifiers_arr.append(TypeCast(type_name="date", arg=Function(op="nullif", distinct=False, args=[Identifier(r_col), Constant("0000-00-00")]), alias=Identifier(r_col)))
                             continue
-                        elif r_type in ('datetime', 'timestamp',):
+                        elif r_type in ('datetime', 'timestamp', 'datetime2', 'datetimeoffset', 'smalldatetime',):
                             column_types_pl[r_col] = pd.Datetime
                             identifiers_arr.append(TypeCast(type_name="datetime", arg=Function(op="nullif", distinct=False, alias=Identifier(r_col), args=[Identifier(r_col), Constant("0000-00-00 00:00:00")]), alias=Identifier(r_col)))
                             continue
@@ -157,15 +159,15 @@ class MySQLHandler(DatabaseHandler):
                             column_types_pl[r_col] = pd.Int64
                         elif r_type in ('int',):
                             column_types_pl[r_col] = pd.Int32
-                        elif r_type in ('smallint','tinyint','enum'):
+                        elif r_type in ('smallint','tinyint','enum',):
                             column_types_pl[r_col] = pd.Int16
                         elif r_type in ('bit',):
                             column_types_pl[r_col] = pd.Boolean
-                        elif r_type in ('decimal','double', 'float',):
+                        elif r_type in ('decimal','double', 'float', 'money', 'numeric', 'real'):
                             column_types_pl[r_col] = pd.Float64
-                        elif r_type in ('varchar','json','longblob','longtext','mediumblob','mediumtext', 'char', 'blob', 'text'):
+                        elif r_type in ('varchar','json','longblob','longtext','mediumblob','mediumtext', 'char', 'blob', 'text', 'nchar', 'nvarchar', 'ntext', 'sql_variant', 'uniqueidentifier', 'set'):
                             column_types_pl[r_col] = pd.String
-                        elif r_type in ('varbinary'):
+                        elif r_type in ('varbinary', 'image',):
                             column_types_pl[r_col] = pd.Binary
                         else:
                             logger.info(f"Unknown type: {r_type}, use VARCHAR as fallback.")
@@ -173,10 +175,12 @@ class MySQLHandler(DatabaseHandler):
                         
                         identifiers_arr.append(Identifier(r_col))
                     
-                    query.targets.remove(tar)
-                    query.targets = identifiers_arr + query.targets                
+                    targets += identifiers_arr
+                else:
+                    targets += [tar]
 
-            query_str = self.renderer.get_string(query, with_failback=True)        
+            query.targets = targets
+            query_str = self.renderer.get_string(query, with_failback=True)
             return self.native_query(query_str, column_types_pl=column_types_pl)
     
         elif isinstance(query, Insert):
