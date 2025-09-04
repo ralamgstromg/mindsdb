@@ -262,28 +262,18 @@ class S3Handler(DatabaseHandler):
     def _parse_using(self, using: dict) -> dict:
         config_duckdb = {}
         if using is not None:
-            if "format" in using: 
-                config_duckdb["FORMAT"] = f'{using["format"]}'
-            else:
-                config_duckdb["FORMAT"] = "parquet"
+            config_duckdb["FORMAT"] = str(using.get("format", "parquet"))
             
             if config_duckdb["FORMAT"] == "parquet":
-
-                if "parquet_version" in using:
-                    config_duckdb["PARQUET_VERSION"] = f'{using["parquet_version"]}'
-                else:
-                    if config_duckdb["FORMAT"] == "parquet":
-                        config_duckdb["PARQUET_VERSION"] = "V2"
-
-                if "compression" in using:
-                    config_duckdb["COMPRESSION"] = f'{using["compression"]}'
-                else:
-                    config_duckdb["COMPRESSION"] = "zstd"
+                config_duckdb["PARQUET_VERSION"] = str(using.get("parquet_version", "V2"))
+                config_duckdb["COMPRESSION"] = str(using.get("compression", "gzip"))
+                config_duckdb["ROW_GROUP_SIZE"] = int(using.get("row_group_size", 245760))
 
                 if config_duckdb["COMPRESSION"] == "zstd" and "compression_level" in using:
-                    config_duckdb["COMPRESSION_LEVEL"] = using["compression_level"]
+                    config_duckdb["COMPRESSION_LEVEL"] = int(using.get("compression_level", 18))
 
             elif config_duckdb["FORMAT"] == "csv":
+
                 if "compression" in using:
                     config_duckdb["COMPRESSION"] = f'{using["compression"]}'
 
@@ -311,10 +301,8 @@ class S3Handler(DatabaseHandler):
             if "partition_by" in using:
                 config_duckdb["PARTITION_BY"] = using["partition_by"]
 
-            if "overwrite_or_ignore" in using:
-                config_duckdb["OVERWRITE_OR_IGNORE"] = using["overwrite_or_ignore"]
+            config_duckdb["OVERWRITE_OR_IGNORE"] = bool(using.get("overwrite_or_ignore", False))            
                 
-
         return config_duckdb
 
     def _config_to_sql(self, config_sql: dict):
@@ -484,7 +472,7 @@ class S3Handler(DatabaseHandler):
                 
             #self._create_table(table, df)            
             self._create_table(query, df)
-            response = Response(RESPONSE_TYPE.OK)
+            response = Response(RESPONSE_TYPE.OK, affected_rows=df.shape[0])
 
         elif isinstance(query, Select):
             #print(type(query.from_table), query.from_table)
@@ -499,12 +487,13 @@ class S3Handler(DatabaseHandler):
 
             response = Response(
                 RESPONSE_TYPE.TABLE,
-                data_frame=df
+                data_frame=df,
+                affected_rows=df.shape[0]
             )
         elif isinstance(query, Insert):     
             table_name = query.table.parts[-1]
             self.add_data_to_table(table_name, query)
-            response = Response(RESPONSE_TYPE.OK)
+            response = Response(RESPONSE_TYPE.OK, affected_rows=query.values.shape[0])
         else:
             raise NotImplementedError
 
