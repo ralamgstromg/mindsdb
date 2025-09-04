@@ -310,8 +310,9 @@ class MySQLHandler(DatabaseHandler):
             WHERE
                 TABLE_TYPE IN ('BASE TABLE', 'VIEW')
                 AND TABLE_SCHEMA = DATABASE()
-            ORDER BY 2
-            ;
+            ORDER BY
+                table_schema,
+                table_name
         """
         result = self.native_query(sql, lower_col_names=False)
         return result

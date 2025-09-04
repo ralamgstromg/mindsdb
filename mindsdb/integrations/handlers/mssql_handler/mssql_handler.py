@@ -298,7 +298,10 @@ class SqlServerHandler(DatabaseHandler):
                 table_name,
                 table_type
             FROM {self.database}.INFORMATION_SCHEMA.TABLES
-            WHERE TABLE_TYPE in ('BASE TABLE', 'VIEW');
+            WHERE TABLE_TYPE in ('BASE TABLE', 'VIEW')
+            ORDER BY
+                table_schema,
+                table_name
         """
         resp = self.native_query(query, lower_col_names=False)
         return resp

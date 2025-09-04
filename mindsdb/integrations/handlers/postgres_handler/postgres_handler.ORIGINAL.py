@@ -452,7 +452,14 @@ class PostgresHandler(MetaDatabaseHandler):
             WHERE
                 table_schema NOT IN ('information_schema', 'pg_catalog')
                 and table_type in ('BASE TABLE', 'VIEW')
+                and table_name NOT IN (
+                SELECT inhrelid::regclass::text AS partitioned_table
+                FROM pg_inherits
+                )
                 {all_filter}
+            ORDER BY
+                table_schema,
+                table_name
         """
         return self.native_query(query, lower_col_names=False)
 
