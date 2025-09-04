@@ -19,6 +19,8 @@ from mindsdb.integrations.libs.response import (
     RESPONSE_TYPE,
 )
 
+from joblib import Parallel, delayed
+
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -182,7 +184,7 @@ class SqlServerHandler(DatabaseHandler):
             return self.native_query(query_str, column_types_pl=column_types_pl)
     
         elif isinstance(query, Insert):
-            return self._mssql_table_insert(query.table, query.values)
+            return self._mssql_table_insert(query.table, query.values, query.using)
         elif isinstance(query, Delete):
             return self._mssql_table_delete(query)
         elif isinstance(query, CreateTable):
@@ -268,16 +270,13 @@ class SqlServerHandler(DatabaseHandler):
                 return Response(RESPONSE_TYPE.ERROR, error_code=10, error_message=f"Error executing DDL {sql}, {ex}")
 
 
-    def _mssql_table_insert(self, table_name, df):
+    def _mssql_table_insert(self, table_name: str, df: pd.DataFrame, using: dict = {}):
         try:
-            engine = create_engine(self.sqlalchemy_uri)
-            batch_size = 15000
-            for _, chunk_df in enumerate(df.iter_slices(n_rows=batch_size)):
-                chunk_df.write_database(
-                    table_name=f"{table_name}",
-                    connection=engine,
-                    if_table_exists = 'append'
-                )
+            Parallel(n_jobs=int(using.get("n_jobs", 4)))(delayed(chunk_df.write_database)(
+                table_name=f"{table_name}",
+                connection=self.sqlalchemy_uri,
+                if_table_exists='append'
+            ) for _, chunk_df in enumerate(df.iter_slices(n_rows=int(using.get("batch_size", 5000)))))
             return Response(RESPONSE_TYPE.OK, affected_rows=df.shape[0])
         except Exception as ex:
             logger.error(f"Error inserting data to table {table_name}, {ex}")

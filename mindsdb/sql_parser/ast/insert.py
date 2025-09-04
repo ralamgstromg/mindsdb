@@ -1,8 +1,12 @@
+#from typing import List, Union
+import json
+
 from mindsdb.sql_parser.ast.base import ASTNode
 from mindsdb.sql_parser.utils import indent
 from mindsdb.sql_parser.ast.create import TableColumn
 from mindsdb.sql_parser.ast.select.identifier import Identifier
 from mindsdb.sql_parser.ast.select.constant import Constant
+from mindsdb.sql_parser.ast.select.operation import Object
 
 class Insert(ASTNode):
 
@@ -34,7 +38,9 @@ class Insert(ASTNode):
 
         if using is None:
             using = {}
-        self.using = using
+        self.using = using        
+
+            #out_str += f' USING ' + ', '.join(using_ar)
 
     def to_column(self, col):
         if isinstance(col, str):
@@ -106,5 +112,25 @@ class Insert(ASTNode):
             from_select_str = self.from_select.to_string()
         else:
             from_select_str = ''
+
+        # out_str_using = ''
+        # if self.using:
+        #     using_ar = []
+        #     for key, value in self.using.items():
+        #         if isinstance(value, Object):
+        #             args = [
+        #                 f'{k}={json.dumps(v)}'
+        #                 for k, v in value.params.items()
+        #             ]
+        #             args_str = ', '.join(args)
+        #             value = f'{value.type}({args_str})'
+        #         if isinstance(value, Identifier):
+        #             value = value.to_string()
+        #         else:
+        #             value = json.dumps(value)
+
+        #         using_ar.append(f'{Identifier(key).to_string()}={value}')
+
+        #     out_str_using += f' USING ' + ', '.join(using_ar)
 
         return f'INSERT INTO {str(self.table)}{columns_str} {values_str}{from_select_str}'

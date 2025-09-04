@@ -153,7 +153,6 @@ class Select(ASTNode):
             out_str += f' {self.mode}'
 
         if self.using:
-
             using_ar = []
             for key, value in self.using.items():
                 if isinstance(value, Object):

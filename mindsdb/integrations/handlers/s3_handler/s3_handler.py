@@ -227,13 +227,20 @@ class S3Handler(DatabaseHandler):
         """
         Read object as dataframe. Uses duckdb
         """        
-        patron = r'`(.*?)`'
-        sql_modificado = re.sub(patron, rf"'s3://{self.bucket}/\1'", sql)
+        #patron = r'`(.*?)`'
+        #sql_modificado = re.sub(patron, rf"'s3://{self.bucket}/\1'", sql)
+        # sql_modificado = f"{str(sql).replace('`', '\'')}"
+        sql_modificado = str(sql).replace('`id`', 'id')
+        sql_modificado = sql_modificado.replace('`', '\'')
+        sql_modificado = sql_modificado.split('USING')[0].strip()
+        # print(sql_modificado)
+        # print("---------------------------------")
         # print(sql_modificado)
         # print(using)
         # if using is not None and "hive_partitioning" in using and using["hive_partitioning"] == True:
-        #     sql_modificado = f"SET hive_partitioning=true; {sql_modificado}"        
-        sql_modificado = sql_modificado.split('USING')[0].strip()
+        #     sql_modificado = f"SET hive_partitioning=true; {sql_modificado}"
+        #sql_modificado = f"{sql}"        
+        # sql_modificado = sql_modificado.split('USING')[0].strip()
         #print(sql_modificado)
         with self._connect_duckdb(self.bucket) as connection:
             data = connection.execute(sql_modificado).pl()
@@ -322,7 +329,7 @@ class S3Handler(DatabaseHandler):
             return ""
 
 
-    def add_data_to_table(self, key, query: Insert) -> None: #df) -> None:
+    def add_data_to_table(self, key: str, query: Insert, using: dict = {}) -> None: #df) -> None:
         """
         Writes the table to a file in the S3 bucket.
 
@@ -480,11 +487,14 @@ class S3Handler(DatabaseHandler):
             response = Response(RESPONSE_TYPE.OK)
 
         elif isinstance(query, Select):
+            #print(type(query.from_table), query.from_table)
             if isinstance(query.from_table, Identifier) and query.from_table.parts[-1] == "files":
                 arr_files = self._get_s3_objects()
                 files = pd.DataFrame(data=arr_files, orient="row")
                 df = self.read_from_sql_dataframe(query.to_string(), files, query.using)
             else:
+                #print(query)
+                query.from_table = Identifier(parts=[f"s3://{self.bucket}/{str(query.from_table).replace('`', '')}"])
                 df = self.read_from_sql(query.to_string(), query.using)
 
             response = Response(
@@ -492,7 +502,6 @@ class S3Handler(DatabaseHandler):
                 data_frame=df
             )
         elif isinstance(query, Insert):     
-            #print("[S3_INSERT]", query.using)
             table_name = query.table.parts[-1]
             self.add_data_to_table(table_name, query)
             response = Response(RESPONSE_TYPE.OK)

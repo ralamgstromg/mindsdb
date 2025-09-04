@@ -664,12 +664,16 @@ class MindsDBParser(Parser):
         return Update(table=p.identifier,
                       keys=keys,
                       from_select=p.select)
-
+    
+    #USING kw_parameter_list
     # INSERT
     @_('INSERT INTO identifier LPAREN column_list RPAREN select',
        'INSERT INTO identifier LPAREN column_list RPAREN union',
        'INSERT INTO identifier select',
-       'INSERT INTO identifier union'
+       'INSERT INTO identifier union',
+
+       'INSERT INTO identifier LPAREN column_list RPAREN LPAREN select RPAREN USING kw_parameter_list',
+       'INSERT INTO identifier LPAREN select RPAREN USING kw_parameter_list',
        )
     def insert(self, p):
         columns = getattr(p, 'column_list', None)
@@ -681,7 +685,7 @@ class MindsDBParser(Parser):
         return Insert(table=p.identifier, columns=columns, from_select=query, using=params)
 
     @_('INSERT INTO identifier LPAREN column_list RPAREN VALUES expr_list_set',
-       'INSERT INTO identifier VALUES expr_list_set'
+       'INSERT INTO identifier VALUES expr_list_set'       
        )
     def insert(self, p):
         columns = getattr(p, 'column_list', None)
