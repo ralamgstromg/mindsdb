@@ -80,6 +80,7 @@ aioodbc>=0.5.0
 connectorx>=0.4.3
 pymssql
 mssql-python
+
 #adbc-driver-manager>=1.6.0
 #adbc-driver-odbc
 #adbc-driver-postgresql

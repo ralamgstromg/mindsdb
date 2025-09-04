@@ -145,13 +145,13 @@ class MySQLHandler(DatabaseHandler):
                     )
                     identifiers_arr = []
                     for _, col in cols.iterrows():
-                        r_col = col["column_name"]
+                        r_col = str(col["column_name"]).replace('`', '')
                         r_type = col["data_type"]
                         if r_type in ('date',):
                             column_types_pl[r_col] = pd.Date
                             identifiers_arr.append(TypeCast(type_name="date", arg=Function(op="nullif", distinct=False, args=[Identifier(r_col), Constant("0000-00-00")]), alias=Identifier(r_col)))
                             continue
-                        elif r_type in ('datetime', 'timestamp', 'datetime2', 'datetimeoffset', 'smalldatetime',):
+                        elif r_type in ('datetime', 'timestamp', 'datetime2', 'datetimeoffset', 'smalldatetime', 'timestamp without time zone'):
                             column_types_pl[r_col] = pd.Datetime
                             identifiers_arr.append(TypeCast(type_name="datetime", arg=Function(op="nullif", distinct=False, alias=Identifier(r_col), args=[Identifier(r_col), Constant("0000-00-00 00:00:00")]), alias=Identifier(r_col)))
                             continue
@@ -159,18 +159,20 @@ class MySQLHandler(DatabaseHandler):
                             column_types_pl[r_col] = pd.Time
                         elif r_type in ('bigint',):
                             column_types_pl[r_col] = pd.Int64
-                        elif r_type in ('int',):
+                        elif r_type in ('int', 'integer',):
                             column_types_pl[r_col] = pd.Int32
                         elif r_type in ('smallint','tinyint','enum',):
                             column_types_pl[r_col] = pd.Int16
                         elif r_type in ('bit',):
                             column_types_pl[r_col] = pd.Boolean
-                        elif r_type in ('decimal','double', 'float', 'money', 'numeric', 'real'):
+                        elif r_type in ('decimal','double', 'float', 'money', 'numeric', 'real', 'double precision', 'smallmoney'):
                             column_types_pl[r_col] = pd.Float64
-                        elif r_type in ('varchar','json','longblob','longtext','mediumblob','mediumtext', 'char', 'blob', 'text', 'nchar', 'nvarchar', 'ntext', 'sql_variant', 'uniqueidentifier', 'set'):
+                        elif r_type in ('varchar','json','longblob','longtext','mediumblob','mediumtext', 'char', 'blob', 'text', 'nchar', 'nvarchar', 'ntext', 'sql_variant', 'uniqueidentifier', 'set', 'character', 'character varying'):
                             column_types_pl[r_col] = pd.String
-                        elif r_type in ('varbinary', 'image',):
+                        elif r_type in ('varbinary',):
                             column_types_pl[r_col] = pd.Binary
+                        elif r_type in ('image',):
+                            raise Exception(f"Column type not supported: {r_type}, column: {r_col}")
                         else:
                             logger.info(f"Unknown type: {r_type}, use VARCHAR as fallback.")
                             column_types_pl[r_col] = pd.String

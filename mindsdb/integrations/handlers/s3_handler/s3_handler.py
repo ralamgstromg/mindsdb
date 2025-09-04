@@ -227,21 +227,9 @@ class S3Handler(DatabaseHandler):
         """
         Read object as dataframe. Uses duckdb
         """        
-        #patron = r'`(.*?)`'
-        #sql_modificado = re.sub(patron, rf"'s3://{self.bucket}/\1'", sql)
-        # sql_modificado = f"{str(sql).replace('`', '\'')}"
         sql_modificado = str(sql).replace('`id`', 'id')
         sql_modificado = sql_modificado.replace('`', '\'')
         sql_modificado = sql_modificado.split('USING')[0].strip()
-        # print(sql_modificado)
-        # print("---------------------------------")
-        # print(sql_modificado)
-        # print(using)
-        # if using is not None and "hive_partitioning" in using and using["hive_partitioning"] == True:
-        #     sql_modificado = f"SET hive_partitioning=true; {sql_modificado}"
-        #sql_modificado = f"{sql}"        
-        # sql_modificado = sql_modificado.split('USING')[0].strip()
-        #print(sql_modificado)
         with self._connect_duckdb(self.bucket) as connection:
             data = connection.execute(sql_modificado).pl()
             return data
@@ -254,7 +242,6 @@ class S3Handler(DatabaseHandler):
         if using is not None and "hive_partitioning" in using and using["hive_partitioning"] == True:
             sql_modificado = f"SET hive_partitioning=true; {sql_modificado}"        
         sql_modificado = sql_modificado.split('USING')[0].strip()
-        #print(sql_modificado)
         with self._connect_duckdb(self.bucket) as connection:
             data = connection.execute(sql_modificado).pl()
             return data
@@ -363,9 +350,6 @@ class S3Handler(DatabaseHandler):
         """
         table = query.name.parts[-1]
 
-        #print(query.to_tree())
-        #print(query)
-
         client = self.connect()
         exists = False
         try:
@@ -373,9 +357,7 @@ class S3Handler(DatabaseHandler):
             exists = True
         except Exception as e:
             config_duckdb = self._parse_using(query.using)
-            #print("[_create_table]", config_duckdb)
             config_str = self._config_to_sql(config_duckdb)
-            #print(config_str)
             with self._connect_duckdb(self.bucket) as connection:
                 connection.execute(f"COPY df TO 's3://{self.bucket}/{table}' {config_str};")
 
@@ -422,7 +404,6 @@ class S3Handler(DatabaseHandler):
 
         self.connect()                
 
-        #print(query.to_string())
 
         if isinstance(query, DropTables):
             #print("[DROP TABLE]")
