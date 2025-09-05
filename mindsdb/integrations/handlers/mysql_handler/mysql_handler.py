@@ -164,7 +164,7 @@ class MySQLHandler(DatabaseHandler):
                         elif r_type in ('smallint','tinyint','enum',):
                             column_types_pl[r_col] = pd.Int16
                         elif r_type in ('bit',):
-                            column_types_pl[r_col] = pd.Boolean
+                            column_types_pl[r_col] = pd.UInt8
                         elif r_type in ('decimal','double', 'float', 'money', 'numeric', 'real', 'double precision', 'smallmoney'):
                             column_types_pl[r_col] = pd.Float64
                         elif r_type in ('varchar','json','longblob','longtext','mediumblob','mediumtext', 'char', 'blob', 'text', 'nchar', 'nvarchar', 'ntext', 'sql_variant', 'uniqueidentifier', 'set', 'character', 'character varying'):
