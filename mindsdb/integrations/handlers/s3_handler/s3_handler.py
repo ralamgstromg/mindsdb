@@ -228,7 +228,7 @@ class S3Handler(DatabaseHandler):
         Read object as dataframe. Uses duckdb
         """        
         sql_modificado = str(sql).replace('`id`', 'id')
-        sql_modificado = sql_modificado.replace('`', '\'')
+        sql_modificado = sql_modificado.replace('`', '"')
         sql_modificado = sql_modificado.split('USING')[0].strip()
         with self._connect_duckdb(self.bucket) as connection:
             data = connection.execute(sql_modificado).pl()
@@ -442,7 +442,7 @@ class S3Handler(DatabaseHandler):
                 elif col.type in (sqltypes.DATETIME, sqltypes.DateTime,):
                     dtype=pd.Datetime
                 elif col.type in (sqltypes.BOOLEAN,):
-                    dtype=pd.Boolean
+                    dtype=pd.UInt8
                 else:
                     logger.error(f'Unsupported data type {col.type} for column {col.name}')
                     raise ValueError(f'Unsupported data type {col.type} for column {col.name}')
