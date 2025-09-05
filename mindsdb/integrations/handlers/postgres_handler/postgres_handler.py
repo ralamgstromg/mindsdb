@@ -1,5 +1,6 @@
 from typing import Optional
 import polars as pd
+import polars.selectors as cs
 from urllib import parse
 import connectorx as cx
 #import mysql.connector
@@ -156,7 +157,7 @@ class PostgresHandler(DatabaseHandler):
                         elif r_type in ('smallint','tinyint','enum',):
                             column_types_pl[r_col] = pd.Int16
                         elif r_type in ('bit',):
-                            column_types_pl[r_col] = pd.Boolean
+                            column_types_pl[r_col] = pd.UInt8
                         elif r_type in ('decimal','double', 'float', 'money', 'numeric', 'real', 'double precision', 'smallmoney'):
                             column_types_pl[r_col] = pd.Float64
                         elif r_type in ('varchar','json','longblob','longtext','mediumblob','mediumtext', 'char', 'blob', 'text', 'nchar', 'nvarchar', 'ntext', 'sql_variant', 'uniqueidentifier', 'set', 'character', 'character varying'):
@@ -268,11 +269,14 @@ class PostgresHandler(DatabaseHandler):
 
     def _postgres_table_insert(self, table_name: str, df: pd.DataFrame, using: dict = {}):
         try:
+            df_limpio = df.with_columns(
+                cs.string().str.replace_all("\x00", "")
+            )
             Parallel(n_jobs=int(using.get("n_jobs", 4)))(delayed(chunk_df.write_database)(
                 table_name=f"{table_name}",
                 connection=self.sqlalchemy_uri,
                 if_table_exists='append'
-            ) for _, chunk_df in enumerate(df.iter_slices(n_rows=int(using.get("batch_size", 5000)))))
+            ) for _, chunk_df in enumerate(df_limpio.iter_slices(n_rows=int(using.get("batch_size", 5000)))))
             return Response(RESPONSE_TYPE.OK, affected_rows=df.shape[0])            
         except Exception as ex:
             logger.error(f"Error inserting data to table {table_name}, {ex}")
