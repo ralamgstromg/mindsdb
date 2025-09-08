@@ -11,7 +11,7 @@ from sqlalchemy.sql import sqltypes
 import re
 from mindsdb.utilities.render.sqlalchemy_render import SqlalchemyRender
 from mindsdb.sql_parser.ast.base import ASTNode
-from mindsdb.sql_parser.ast import Select, Identifier, Insert, Star, Constant, DropTables, CreateTable, Delete, TypeCast, Function, Call
+from mindsdb.sql_parser.ast import Select, Identifier, Insert, Star, Constant, DropTables, CreateTable, Delete, TypeCast, Function, Call, Truncate
 #from mindsdb.sql_parser.ast.select import Star
 
 from mindsdb.utilities import log
@@ -184,6 +184,8 @@ class PostgresHandler(DatabaseHandler):
             return self._postgres_table_insert(query.table, query.values, query.using)
         elif isinstance(query, Delete):
             return self._postgres_table_delete(query)
+        elif isinstance(query, Truncate):
+            return self._postgres_table_truncate(query)
         elif isinstance(query, CreateTable):
             return self._postgres_table_create(query)
         elif isinstance(query, DropTables):
@@ -221,6 +223,18 @@ class PostgresHandler(DatabaseHandler):
                 logger.error(f"Error deleting data from table {sql}, {ex}")
                 conn.rollback()
                 return Response(RESPONSE_TYPE.ERROR, error_code=10, error_message=f"Error deleting data from table {sql}, {ex}")
+
+    def _postgres_table_truncate(self, sql):
+        engine = create_engine(self.sqlalchemy_uri)
+        with engine.connect() as conn:
+            try:
+                res = conn.execute(text(f"{sql}"))
+                conn.commit()
+                return Response(RESPONSE_TYPE.OK, affected_rows=res.rowcount)
+            except Exception as ex:
+                logger.error(f"Error truncate data from table {sql}, {ex}")
+                conn.rollback()
+                return Response(RESPONSE_TYPE.ERROR, error_code=10, error_message=f"Error truncate data from table {sql}, {ex}")
             
     def _postgres_table_create(self, query):
         engine = create_engine(self.sqlalchemy_uri)

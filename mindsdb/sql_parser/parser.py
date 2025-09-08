@@ -82,6 +82,7 @@ class MindsDBParser(Parser):
        'union',
        'update',
        'delete',
+       'truncate',
        'evaluate',
        'drop_database',
        'alter_database',
@@ -640,6 +641,11 @@ class MindsDBParser(Parser):
                 f"WHERE must contain an operation that evaluates to a boolean, got: {str(where)}")
 
         return Delete(table=p.identifier, where=where)
+
+    # TRUNCATE
+    @_('TRUNCATE TABLE identifier')
+    def truncate(self, p):
+        return Truncate(table=p.identifier)
 
     # UPDATE
     @_('UPDATE identifier SET update_parameter_list FROM LPAREN select RPAREN AS id WHERE expr',

@@ -12,6 +12,7 @@ from .alter_table import *
 from .insert import *
 from .update import *
 from .delete import *
+from .truncate import *
 from .drop import *
 from .create import *
 from .variable import *
