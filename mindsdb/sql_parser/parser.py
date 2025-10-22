@@ -2034,6 +2034,7 @@ class MindsDBParser(Parser):
        'SEARCH_PATH',
        'CALL',
        'KILL',
+       'TRUNCATE',
        )
     def id(self, p):
         return p[0]

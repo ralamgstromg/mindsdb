@@ -15,7 +15,7 @@ class MindsDBLexer(Lexer):
     ignore_line_comment = r'--[^\n]*'
 
     tokens = {
-        USE, DROP, CREATE, DESCRIBE, RETRAIN, REPLACE,
+        USE, DROP, CREATE, DESCRIBE, RETRAIN, REPLACE, TRUNCATE,
 
         # Misc
         SET, START, TRANSACTION, COMMIT, ROLLBACK, ALTER, EXPLAIN,
@@ -228,6 +228,7 @@ class MindsDBLexer(Lexer):
     REPLACE = r'\bREPLACE\b'
     COLLATE = r'\bCOLLATE\b'
     SEARCH_PATH = r'\bSEARCH_PATH\b'
+    TRUNCATE = r'\bTRUNCATE\b'
 
     # SELECT
 

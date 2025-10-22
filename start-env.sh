@@ -9,7 +9,7 @@ python -m mindsdb --api http,mysql,mongodb,postgres,mcp --config mindsdb_config.
 # pip install .[handler_name]
 
 export MINDSDB_USERNAME=root
-export MINDSDB_PASSWORD=
+export MINDSDB_PASSWORD=test
 
 
 unset MINDSDB_USERNAME
@@ -39,5 +39,12 @@ uv pip install -r requirements/requirements.txt
 # uv pip install -e .
 # uv pip install -r requirements_test.txt
 
+# if firewall is enabled
+sudo ufw allow 47334
+sudo ufw allow 47335
 
-python -m mindsdb --api mysql,http --config mindsdb_config.json
+
+export MINDSDB_USERNAME=root
+export MINDSDB_PASSWORD=test
+
+python -m mindsdb --api mysql --config mindsdb_config.json
