@@ -24,6 +24,7 @@ from mindsdb.integrations.libs.response import (
 )
 
 import re
+import os
 
 from mindsdb.integrations.libs.base import DatabaseHandler
 
@@ -301,29 +302,6 @@ class SFTPHandler(DatabaseHandler):
         pass
 
 
-    def _get_s3_objects(self, limit:int = None ) -> list[dict]:
-        # s3_objects = self.resource.Bucket(self.bucket).objects.all()
-        # arr_files = []
-        # rid = 0
-        # for obj in s3_objects:
-        #     path = obj.key.replace('`', '')        
-        #     item = {
-        #         'path': path,
-        #         'name': path[path.rfind('/') + 1:],
-        #         'extension': path[path.rfind('.') + 1:],
-        #         'bucket': obj.bucket_name,              
-        #         'content': None                             
-        #     }
-        #     if item["extension"] in self.supported_files:
-        #         arr_files.append(item)
-        #         rid+=1
-
-        #     if limit is not None and rid >= limit:
-        #         break
-
-        # return arr_files
-        pass
-
     def query(self, query: ASTNode) -> Response:
         """
         Executes a SQL query represented by an ASTNode and retrieves the data.
@@ -392,32 +370,18 @@ class SFTPHandler(DatabaseHandler):
             response = Response(RESPONSE_TYPE.OK) #Response(RESPONSE_TYPE.OK, affected_rows=df.shape[0])
 
         elif isinstance(query, Select):
-            #print(type(query.from_table), query.from_table)
-            # if isinstance(query.from_table, Identifier) and query.from_table.parts[-1] == "files":
-            #     arr_files = self._get_s3_objects()
-            #     files = pd.DataFrame(data=arr_files, orient="row")
-            #     df = self.read_from_sql_dataframe(query.to_string(), files, query.using)
-            # else:
-            #     #print(query)
-            #     query.from_table = Identifier(parts=[f"s3://{self.bucket}/{str(query.from_table).replace('`', '')}"])
-            #     df = self.read_from_sql(query.to_string(), query.using)            
+     
             sftp_client = self.ssh_client.open_sftp()            
             
             remote_path = "/".join(str(query.from_table).replace("`", "").split("/")[:-1])
             file = str(query.from_table).replace("`", "").split("/")[-1]
 
-            print(remote_path, file)
-
             files = sftp_client.listdir(remote_path)
-            #compiled_regex = re.compile(file)            
             compiled_regex = re.compile(file.replace('*', '.*').replace('?', '.') + '$')
-
-            #print(files)
 
             matching_files = []
             matching_files = [f for f in files if compiled_regex.match(f)]
             
-            #print(matching_files)
             matching_local_files = []
             query = ""
             for fl in matching_files:
@@ -427,26 +391,18 @@ class SFTPHandler(DatabaseHandler):
 
             arr_files = "'" + "','".join(matching_local_files) + "'"
             query = f"SELECT * FROM read_csv([{arr_files}])"
-            print(query)
 
-            #print("matching_local_files", )
+            df = self.read_from_sql(query, {})      
 
-            
-            #print(str(query.from_table).replace("`", ""))
-
-
-
-            #print(sftp_client.listdir(str(query.from_table).replace("`", ""))) 
-            #local_file = f'/tmp/{str(query.from_table).split('/')[-1].replace("`", "").replace(".txt", ".csv")}'            
-            
-            #query.from_table = Identifier(parts=[local_file])
-            #print(query.to_tree())
-            #query.from_table = Function(alias="read_csv", from_arg=[f'/tmp/{str(query.from_table).split('/')[-1].replace("`", "")}'])
-            print(query)
-            #query.from_fun()
-            #print("table", query.from_table)
-            #print(query.to_string())
-            df = self.read_from_sql(query, {})            
+            for file_path in matching_local_files:
+                try:
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                    else:
+                        print(f"File '{file_path}' does not exist.")
+                except OSError as e:
+                    print(f"Error removing file '{file_path}': {e}")
+     
 
             response = Response(
                 RESPONSE_TYPE.TABLE,
