@@ -182,10 +182,12 @@ class S3Handler(DatabaseHandler):
             aws_secret_access_key=self.connection_data['aws_secret_access_key'],
             endpoint_url=endpoint_url,
             region_name=self.connection_data.get('region_name', 'us-east-1'),
-            config=Config(signature_version='s3v4')
+            config=Config(signature_version='s3v4', s3={'addressing_style': 'path'}),
         )
 
         return client
+
+   
 
     def disconnect(self):
         """
@@ -405,18 +407,21 @@ class S3Handler(DatabaseHandler):
         self.connect()                
 
 
-        if isinstance(query, DropTables):
-            #print("[DROP TABLE]")
+        if isinstance(query, DropTables):            
             for table_identifier in query.tables:
                 if len(table_identifier.parts) == 2 and table_identifier.parts[0] != self.name:
                     return Response(
                         RESPONSE_TYPE.ERROR,
                         error_message=f"Can't delete table from database '{table_identifier.parts[0]}'",
                     )
-                table_name = table_identifier.parts[-1].replace(f"{self.bucket}/", "")
+                table_name = str(table_identifier).replace('`', '') + "/"
                 try:
-                    self.connection.delete_object(Bucket=self.bucket, Key=table_name)                    
+                    bucket = self.resource.Bucket(self.bucket)                    
+                    objects_to_delete = bucket.objects.filter(Prefix=table_name)                    
+                    for obj in objects_to_delete.all():
+                        obj.delete()                   
                 except Exception as e:
+                    print(e)
                     return Response(
                         RESPONSE_TYPE.ERROR,
                         error_message=f"Can't delete table '{table_name}': {e}",
